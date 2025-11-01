@@ -2,88 +2,66 @@
 
 namespace App\Http\Controllers\Admin;
 
-
-
 use App\Http\Controllers\Controller;
-use App\Models\Election;
-use App\Models\Party;
-use App\Models\User;
-use App\Models\Vote;
 use Illuminate\Http\Request;
+use App\Models\User;
+use App\Models\Election;
+use App\Models\Position;
+use App\Models\Candidate;
+use App\Models\Party;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
-    // public function __construct()
-    // {
-    //     $this->middleware(['auth', 'role:admin']);
-    // }
-
     public function index()
     {
-        // Get dashboard statistics
-        $stats = [
-            'total_students' => User::students()->count(),
-            'total_parties' => Party::active()->count(),
-            'total_elections' => Election::count(),
-            'active_elections' => Election::active()->count(),
-            'total_votes' => Vote::count(),
-        ];
-
-        // Get recent elections
-        $recentElections = Election::latest()->take(5)->get();
-
-        // Get active election data for charts
-        $activeElection = Election::current()->first();
-        $chartData = [];
+        // Get statistics
+        $totalStudents = User::where('user_type', 'student')->count();
+        $totalVoted = User::where('user_type', 'student')->where('has_voted', true)->count();
+        $votingPercentage = $totalStudents > 0 ? round(($totalVoted / $totalStudents) * 100, 2) : 0;
         
+        $activeElections = Election::where('is_active', true)->count();
+        $totalCandidates = Candidate::count();
+        $totalParties = Party::count();
+        
+        // Get active election details
+        $activeElection = Election::where('is_active', true)
+            ->with(['positions.candidates.party'])
+            ->first();
+        
+        // Get recent voters
+        $recentVoters = User::where('user_type', 'student')
+            ->where('has_voted', true)
+            ->orderBy('updated_at', 'desc')
+            ->take(10)
+            ->get();
+        
+        // Get voting progress by position (if active election exists)
+        $positionStats = [];
         if ($activeElection) {
-            $results = $activeElection->getResults();
-            $chartData = $this->prepareChartData($results);
-        }
-
-        return view('admin.dashboard', compact('stats', 'recentElections', 'chartData', 'activeElection'));
-    }
-
-    public function analytics()
-    {
-        $elections = Election::with(['votes', 'positions.candidates'])->get();
-        
-        $analyticsData = [];
-        foreach ($elections as $election) {
-            $analyticsData[] = [
-                'name' => $election->name,
-                'total_votes' => $election->getTotalVotes(),
-                'positions' => $election->positions->count(),
-                'candidates' => $election->candidates->count(),
-                'status' => $election->status,
-            ];
-        }
-
-        return view('admin.analytics', compact('analyticsData'));
-    }
-
-    private function prepareChartData($results)
-    {
-        $chartData = [];
-        
-        foreach ($results as $position) {
-            $positionData = [
-                'position' => $position->name,
-                'candidates' => []
-            ];
+            $positions = Position::where('election_id', $activeElection->id)
+                ->withCount('candidates')
+                ->get();
             
-            foreach ($position->candidates_with_votes as $candidate) {
-                $positionData['candidates'][] = [
-                    'name' => $candidate->name,
-                    'party' => $candidate->party->name,
-                    'votes' => $candidate->vote_count,
-                    'color' => $candidate->party->color
+            foreach ($positions as $position) {
+                $positionStats[] = [
+                    'name' => $position->name,
+                    'candidates' => $position->candidates_count,
+                    'max_winners' => $position->max_winners,
                 ];
             }
-            
-            $chartData[] = $positionData;
         }
         
-        return $chartData;
+        return view('admin.dashboard', compact(
+            'totalStudents',
+            'totalVoted',
+            'votingPercentage',
+            'activeElections',
+            'totalCandidates',
+            'totalParties',
+            'activeElection',
+            'recentVoters',
+            'positionStats'
+        ));
     }
 }

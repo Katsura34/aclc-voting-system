@@ -1,190 +1,352 @@
-@extends('layouts.admin')
-
-@section('title', 'Positions')
-
-@section('page-header')
-    <div class="d-flex justify-content-between align-items-center">
-        <div>
-            <h1 class="page-title">{{ $election->name }} - Positions</h1>
-            <p class="page-subtitle mb-0">Manage election positions and their configurations</p>
-        </div>
-        <div>
-            <div class="btn-group" role="group">
-                <a href="{{ route('admin.elections.positions.create', $election) }}" class="btn btn-primary">
-                    <i class="bi bi-plus me-2"></i>New Position
-                </a>
-                <a href="{{ route('admin.elections.show', $election) }}" class="btn btn-outline-secondary">
-                    <i class="bi bi-arrow-left me-2"></i>Back to Election
+<x-admin-layout title="Positions Management">
+    <div class="container-fluid">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2><i class="bi bi-award"></i> Positions Management</h2>
+                <p class="text-muted mb-0">Manage election positions and their settings</p>
+            </div>
+            <div class="btn-group">
+                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#importModal">
+                    <i class="bi bi-file-earmark-arrow-up"></i> Import CSV
+                </button>
+                <a href="{{ route('admin.positions.create') }}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Add Position
                 </a>
             </div>
         </div>
-    </div>
-@endsection
 
-@section('content')
-    <!-- Statistics Cards -->
-    <div class="row mb-4">
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card stats-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <div class="flex-grow-1">
-                            <div class="stats-number">{{ $positions->count() }}</div>
-                            <div class="stats-label">Total Positions</div>
-                        </div>
-                        <div class="ms-3">
-                            <i class="bi bi-list" style="font-size: 2rem; opacity: 0.7;"></i>
-                        </div>
-                    </div>
-                </div>
+        <!-- Success/Error Messages -->
+        @if(session('success'))
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle"></i> {{ session('success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
-        </div>
+        @endif
 
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card stats-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <div class="flex-grow-1">
-                            <div class="stats-number">{{ $totalCandidates ?? 0 }}</div>
-                            <div class="stats-label">Total Candidates</div>
-                        </div>
-                        <div class="ms-3">
-                            <i class="bi bi-person-badge" style="font-size: 2rem; opacity: 0.7;"></i>
-                        </div>
-                    </div>
-                </div>
+        @if(session('error'))
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle"></i> {{ session('error') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
-        </div>
+        @endif
 
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card stats-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <div class="flex-grow-1">
-                            <div class="stats-number">{{ $filledPositions ?? 0 }}</div>
-                            <div class="stats-label">Filled Positions</div>
-                        </div>
-                        <div class="ms-3">
-                            <i class="bi bi-check-circle" style="font-size: 2rem; opacity: 0.7;"></i>
-                        </div>
-                    </div>
-                </div>
+        @if(session('import_errors'))
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle"></i> <strong>Import Errors:</strong>
+                <ul class="mb-0 mt-2">
+                    @foreach(session('import_errors') as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
-        </div>
+        @endif
 
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card stats-card" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <div class="flex-grow-1">
-                            <div class="stats-number">{{ $emptyPositions ?? 0 }}</div>
-                            <div class="stats-label">Empty Positions</div>
-                        </div>
-                        <div class="ms-3">
-                            <i class="bi bi-exclamation-circle" style="font-size: 2rem; opacity: 0.7;"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Positions List -->
-    <div class="card">
-        <div class="card-header">
-            <h5 class="mb-0">
-                <i class="bi bi-list-ul me-2"></i>
-                Election Positions
-            </h5>
-        </div>
-        <div class="card-body">
-            @if($positions->count() > 0)
-                <div class="row">
-                    @foreach($positions as $position)
-                        <div class="col-lg-6 col-md-12 mb-4">
-                            <div class="card h-100 border-0 shadow-sm">
-                                <div class="card-body">
-                                    <div class="d-flex justify-content-between align-items-start mb-3">
-                                        <div class="flex-grow-1">
-                                            <h6 class="mb-1">{{ $position->name }}</h6>
-                                            <small class="text-muted">{{ $position->description ?? 'No description' }}</small>
-                                        </div>
-                                        <div class="dropdown">
-                                            <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                                <i class="bi bi-three-dots"></i>
-                                            </button>
-                                            <ul class="dropdown-menu">
-                                                <li><a class="dropdown-item" href="{{ route('admin.elections.positions.show', [$election, $position]) }}"><i class="bi bi-eye me-2"></i>View</a></li>
-                                                <li><a class="dropdown-item" href="{{ route('admin.elections.positions.edit', [$election, $position]) }}"><i class="bi bi-pencil me-2"></i>Edit</a></li>
-                                                <li><a class="dropdown-item" href="{{ route('admin.elections.candidates.index', $election) }}?position={{ $position->id }}"><i class="bi bi-people me-2"></i>View Candidates</a></li>
-                                                <li><hr class="dropdown-divider"></li>
-                                                <li>
-                                                    <form method="POST" action="{{ route('admin.elections.positions.destroy', [$election, $position]) }}" class="d-inline" onsubmit="return confirm('Are you sure?')">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit" class="dropdown-item text-danger"><i class="bi bi-trash me-2"></i>Delete</button>
-                                                    </form>
-                                                </li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="row text-center mb-3">
-                                        <div class="col-4">
-                                            <div class="border-end">
-                                                <h6 class="mb-1 text-primary">{{ $position->candidates_count ?? 0 }}</h6>
-                                                <small class="text-muted">Candidates</small>
-                                            </div>
-                                        </div>
-                                        <div class="col-4">
-                                            <div class="border-end">
-                                                <h6 class="mb-1 text-success">{{ $position->max_selections ?? 1 }}</h6>
-                                                <small class="text-muted">Max Select</small>
-                                            </div>
-                                        </div>
-                                        <div class="col-4">
-                                            <h6 class="mb-1 text-info">{{ $position->votes_count ?? 0 }}</h6>
-                                            <small class="text-muted">Votes</small>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div>
-                                            @if(($position->candidates_count ?? 0) > 0)
-                                                <span class="badge bg-success"><i class="bi bi-check me-1"></i>Has Candidates</span>
-                                            @else
-                                                <span class="badge bg-warning"><i class="bi bi-exclamation me-1"></i>No Candidates</span>
-                                            @endif
-                                        </div>
-                                        <div>
-                                            <small class="text-muted">Order: {{ $position->order ?? 'N/A' }}</small>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="card-footer bg-transparent">
-                                    <div class="d-flex justify-content-between">
-                                        <a href="{{ route('admin.elections.candidates.create', $election) }}?position={{ $position->id }}" class="btn btn-outline-primary btn-sm">
-                                            <i class="bi bi-plus me-1"></i>Add Candidate
-                                        </a>
-                                        <a href="{{ route('admin.elections.positions.show', [$election, $position]) }}" class="btn btn-outline-secondary btn-sm">
-                                            <i class="bi bi-eye me-1"></i>View Details
-                                        </a>
-                                    </div>
-                                </div>
+        <!-- Search and Filter -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <form action="{{ route('admin.positions.index') }}" method="GET" id="filterForm">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                <input type="text" 
+                                       class="form-control" 
+                                       name="search" 
+                                       placeholder="Search by position name..." 
+                                       value="{{ request('search') }}">
                             </div>
                         </div>
-                    @endforeach
+                        <div class="col-md-4">
+                            <select class="form-select" name="election_id" id="election_id">
+                                <option value="">All Elections</option>
+                                @foreach($elections as $election)
+                                    <option value="{{ $election->id }}" 
+                                            {{ request('election_id') == $election->id ? 'selected' : '' }}>
+                                        {{ $election->title }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-funnel"></i> Filter
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Active Filters -->
+        @if(request()->hasAny(['search', 'election_id']))
+            <div class="mb-3">
+                <span class="badge bg-secondary me-2">Active Filters:</span>
+                @if(request('search'))
+                    <span class="badge bg-info me-2">
+                        Search: "{{ request('search') }}"
+                        <a href="{{ route('admin.positions.index', array_merge(request()->except('search'))) }}" 
+                           class="text-white ms-1" style="text-decoration: none;">×</a>
+                    </span>
+                @endif
+                @if(request('election_id'))
+                    <span class="badge bg-info me-2">
+                        Election: {{ $elections->find(request('election_id'))->title ?? 'Unknown' }}
+                        <a href="{{ route('admin.positions.index', array_merge(request()->except('election_id'))) }}" 
+                           class="text-white ms-1" style="text-decoration: none;">×</a>
+                    </span>
+                @endif
+                <a href="{{ route('admin.positions.index') }}" class="badge bg-danger">
+                    Clear All
+                </a>
+            </div>
+        @endif
+
+        <!-- Statistics Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="bi bi-award-fill" style="font-size: 2.5rem; color: var(--aclc-blue);"></i>
+                        <h3 class="mt-2 mb-0">{{ $positions->count() }}</h3>
+                        <p class="text-muted mb-0">Total Positions</p>
+                    </div>
                 </div>
-            @else
-                <div class="text-center py-5">
-                    <i class="bi bi-list-ul" style="font-size: 4rem; color: #dee2e6;"></i>
-                    <h4 class="mt-3 text-muted">No Positions Found</h4>
-                    <p class="text-muted mb-4">You haven't created any positions for this election yet. Positions are required before adding candidates.</p>
-                    <a href="{{ route('admin.elections.positions.create', $election) }}" class="btn btn-primary">
-                        <i class="bi bi-plus me-2"></i>Create First Position
-                    </a>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="bi bi-calendar-event-fill" style="font-size: 2.5rem; color: #28a745;"></i>
+                        <h3 class="mt-2 mb-0">{{ $positions->pluck('election_id')->unique()->count() }}</h3>
+                        <p class="text-muted mb-0">Elections</p>
+                    </div>
                 </div>
-            @endif
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="bi bi-people-fill" style="font-size: 2.5rem; color: var(--aclc-red);"></i>
+                        <h3 class="mt-2 mb-0">{{ $positions->sum(function($p) { return $p->candidates->count(); }) }}</h3>
+                        <p class="text-muted mb-0">Total Candidates</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="bi bi-check-circle-fill" style="font-size: 2.5rem; color: #ffc107;"></i>
+                        <h3 class="mt-2 mb-0">{{ $positions->avg('max_votes') ?? 0 }}</h3>
+                        <p class="text-muted mb-0">Avg Max Votes</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Positions List -->
+        @if($positions->isEmpty())
+            <div class="card text-center py-5">
+                <div class="card-body">
+                    <i class="bi bi-award" style="font-size: 4rem; color: var(--aclc-light-blue);"></i>
+                    @if(request()->hasAny(['search', 'election_id']))
+                        <h4 class="mt-3">No Positions Found</h4>
+                        <p class="text-muted">No positions match your search criteria.</p>
+                        <a href="{{ route('admin.positions.index') }}" class="btn btn-outline-primary mt-2">
+                            <i class="bi bi-x-circle"></i> Clear Filters
+                        </a>
+                    @else
+                        <h4 class="mt-3">No Positions Found</h4>
+                        <p class="text-muted">Get started by adding your first position.</p>
+                        <a href="{{ route('admin.positions.create') }}" class="btn btn-primary mt-2">
+                            <i class="bi bi-plus-circle"></i> Add First Position
+                        </a>
+                    @endif
+                </div>
+            </div>
+        @else
+            <!-- Results Counter -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0">
+                    <i class="bi bi-list-ul"></i> Positions List 
+                    <span class="badge bg-primary">{{ $positions->count() }} {{ Str::plural('result', $positions->count()) }}</span>
+                </h5>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Position Name</th>
+                                    <th>Election</th>
+                                    <th>Max Votes</th>
+                                    <th>Display Order</th>
+                                    <th>Candidates</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            @foreach($positions as $position)
+                                <tr>
+                                    <td>
+                                        <strong>{{ $position->name }}</strong>
+                                        @if($position->description)
+                                            <br><small class="text-muted">{{ Str::limit($position->description, 50) }}</small>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-success">
+                                            {{ $position->election->title ?? 'N/A' }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">{{ $position->max_votes }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ $position->display_order ?? '-' }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-primary">{{ $position->candidates->count() }} candidates</span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{{ route('admin.positions.show', $position) }}" 
+                                               class="btn btn-sm btn-outline-info"
+                                               title="View">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a href="{{ route('admin.positions.edit', $position) }}" 
+                                               class="btn btn-sm btn-outline-warning"
+                                               title="Edit">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <button type="button" 
+                                                    class="btn btn-sm btn-outline-danger" 
+                                                    onclick="deletePosition({{ $position->id }}, '{{ $position->name }}')"
+                                                    title="Delete">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Positions by Election -->
+            <h5 class="mt-5 mb-3"><i class="bi bi-calendar-event"></i> Positions by Election</h5>
+            <div class="row">
+                @foreach($positions->groupBy('election_id') as $electionId => $electionPositions)
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100">
+                            <div class="card-header bg-primary text-white">
+                                <h6 class="mb-0">
+                                    {{ $electionPositions->first()->election->title ?? 'Unknown Election' }}
+                                    <span class="badge bg-white text-dark float-end">{{ $electionPositions->count() }}</span>
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <ul class="list-unstyled mb-0">
+                                    @foreach($electionPositions->sortBy('display_order') as $position)
+                                        <li class="mb-2">
+                                            <i class="bi bi-award-fill text-warning"></i>
+                                            <strong>{{ $position->name }}</strong>
+                                            <br>
+                                            <small class="text-muted ms-3">
+                                                Max {{ $position->max_votes }} vote(s) • 
+                                                {{ $position->candidates->count() }} candidate(s)
+                                            </small>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        @endif
+    </div>
+
+    <!-- Import CSV Modal -->
+    <div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="importModalLabel">
+                        <i class="bi bi-file-earmark-arrow-up"></i> Import Positions from CSV
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form action="{{ route('admin.positions.import') }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <div class="modal-body">
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> 
+                            <strong>CSV Format:</strong> Your CSV file must include these columns:
+                            <ul class="mb-0 mt-2">
+                                <li><strong>name</strong> - Position name (required)</li>
+                                <li><strong>description</strong> - Position description (optional)</li>
+                                <li><strong>election_id</strong> - Election ID number (required)</li>
+                                <li><strong>max_votes</strong> - Maximum votes allowed (required)</li>
+                                <li><strong>display_order</strong> - Display order number (optional)</li>
+                            </ul>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="csv_file" class="form-label fw-bold">Select CSV File</label>
+                            <input type="file" 
+                                   class="form-control @error('csv_file') is-invalid @enderror" 
+                                   id="csv_file" 
+                                   name="csv_file" 
+                                   accept=".csv,.txt"
+                                   required>
+                            @error('csv_file')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                            <small class="text-muted">Accepted formats: .csv, .txt (Max: 2MB)</small>
+                        </div>
+
+                        <div class="text-center">
+                            <a href="{{ route('admin.positions.download-template') }}" class="btn btn-outline-primary">
+                                <i class="bi bi-download"></i> Download Sample Template
+                            </a>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-upload"></i> Import Positions
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
-@endsection
+
+    <!-- Hidden delete forms for individual positions -->
+    @foreach($positions as $position)
+        <form id="delete-form-{{ $position->id }}" 
+              action="{{ route('admin.positions.destroy', $position) }}" 
+              method="POST" 
+              style="display: none;">
+            @csrf
+            @method('DELETE')
+        </form>
+    @endforeach
+
+    <x-slot name="scripts">
+        <script>
+            function deletePosition(id, name) {
+                if (confirm(`Are you sure you want to delete "${name}"?\n\nThis action cannot be undone and will fail if the position has candidates.`)) {
+                    document.getElementById('delete-form-' + id).submit();
+                }
+            }
+        </script>
+    </x-slot>
+</x-admin-layout>

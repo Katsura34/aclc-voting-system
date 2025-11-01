@@ -2,103 +2,41 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Carbon\Carbon;
 
 class Election extends Model
 {
-    use HasFactory;
-
     protected $fillable = [
-        'name',
+        'title',
         'description',
         'start_date',
         'end_date',
-        'status'
+        'is_active',
+        'allow_abstain',
+        'show_live_results',
     ];
 
     protected $casts = [
         'start_date' => 'datetime',
-        'end_date' => 'datetime'
+        'end_date' => 'datetime',
+        'is_active' => 'boolean',
+        'allow_abstain' => 'boolean',
+        'show_live_results' => 'boolean',
     ];
 
-    // Relationships
+    /**
+     * Get the positions for this election.
+     */
     public function positions()
     {
-        return $this->hasMany(ElectionPosition::class)->orderBy('order');
+        return $this->hasMany(Position::class)->orderBy('display_order');
     }
 
+    /**
+     * Get the candidates for this election through positions.
+     */
     public function candidates()
     {
-        return $this->hasMany(ElectionCandidate::class);
-    }
-
-    public function votes()
-    {
-        return $this->hasMany(Vote::class);
-    }
-
-    public function winners()
-    {
-        return $this->hasMany(ElectionWinner::class);
-    }
-
-    // Scopes
-    public function scopeActive($query)
-    {
-        return $query->where('status', 'active');
-    }
-
-    public function scopeCurrent($query)
-    {
-        return $query->where('status', 'active')
-                    ->where('start_date', '<=', now())
-                    ->where('end_date', '>=', now());
-    }
-
-    // Status checks
-    public function isActive()
-    {
-        return $this->status === 'active' && 
-               $this->start_date <= now() && 
-               $this->end_date >= now();
-    }
-
-    public function isDraft()
-    {
-        return $this->status === 'draft';
-    }
-
-    public function isClosed()
-    {
-        return $this->status === 'closed' || $this->end_date < now();
-    }
-
-    // Vote counting
-    public function getTotalVotes()
-    {
-        return $this->votes()->count();
-    }
-
-    public function getVoteCountByPosition($positionId)
-    {
-        return $this->votes()->where('position_id', $positionId)->count();
-    }
-
-    public function getResults()
-    {
-        return $this->positions()
-            ->with(['candidates.votes', 'candidates.party'])
-            ->get()
-            ->map(function ($position) {
-                $candidates = $position->candidates->map(function ($candidate) {
-                    $candidate->vote_count = $candidate->votes->count();
-                    return $candidate;
-                })->sortByDesc('vote_count');
-                
-                $position->candidates_with_votes = $candidates;
-                return $position;
-            });
+        return $this->hasManyThrough(Candidate::class, Position::class);
     }
 }

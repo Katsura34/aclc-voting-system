@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
 use App\Models\Election;
+use App\Models\Position;
 use App\Models\Vote;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -11,98 +12,107 @@ use Illuminate\Support\Facades\DB;
 
 class VotingController extends Controller
 {
-    // public function __construct()
-    // {
-    //     $this->middleware(['auth', 'role:student']);
-    // }
-
+    /**
+     * Show the voting page with active election.
+     */
     public function index()
     {
-        $activeElection = Election::current()->first();
-        
-        if (!$activeElection) {
-            return redirect()->route('student.dashboard')
-                           ->with('info', 'No active election at this time.');
-        }
-
         // Check if user has already voted
-        $user = Auth::user();
-        if ($user->hasVotedFor($activeElection->id)) {
-            return redirect()->route('student.dashboard')
-                           ->with('info', 'You have already voted in this election.');
+        if (Auth::user()->has_voted) {
+            return redirect()->route('voting.success');
         }
 
-        // Load election with positions and candidates
-        $activeElection->load([
-            'positions' => function($query) {
-                $query->orderBy('order');
-            },
-            'positions.candidates.party'
-        ]);
+        // Get active election with positions and candidates
+        $election = Election::where('is_active', true)
+            ->with(['positions.candidates.party'])
+            ->first();
 
-        return view('student.vote.index', compact('activeElection'));
+        if (!$election) {
+            return view('student.no-election');
+        }
+
+        return view('student.voting', compact('election'));
     }
 
-    public function store(Request $request)
+    /**
+     * Submit the votes.
+     */
+    public function submit(Request $request)
     {
-        $activeElection = Election::current()->first();
-        
-        if (!$activeElection) {
-            return redirect()->route('student.dashboard')
-                           ->with('error', 'No active election found.');
-        }
-
         $user = Auth::user();
-        
+
         // Check if user has already voted
-        if ($user->hasVotedFor($activeElection->id)) {
-            return redirect()->route('student.dashboard')
-                           ->with('error', 'You have already voted in this election.');
+        if ($user->has_voted) {
+            return redirect()->route('voting.success')
+                ->with('error', 'You have already voted!');
         }
 
-        // Validate votes - one vote per position
-        $positions = $activeElection->positions;
+        // Get active election
+        $election = Election::where('is_active', true)->first();
+
+        if (!$election) {
+            return redirect()->back()
+                ->with('error', 'No active election found.');
+        }
+
+        // Validate votes
+        $positions = Position::where('election_id', $election->id)->get();
+        
         $rules = [];
-        
         foreach ($positions as $position) {
-            $rules["votes.{$position->id}"] = 'required|exists:election_candidates,id';
+            if ($election->allow_abstain) {
+                $rules["position_{$position->id}"] = 'nullable|exists:candidates,id';
+            } else {
+                $rules["position_{$position->id}"] = 'required|exists:candidates,id';
+            }
         }
 
-        $validated = $request->validate($rules);
+        $request->validate($rules);
 
-        // Store votes in a transaction
-        DB::transaction(function () use ($validated, $activeElection, $user) {
-            foreach ($validated['votes'] as $positionId => $candidateId) {
-                Vote::create([
-                    'user_id' => $user->id,
-                    'election_id' => $activeElection->id,
-                    'position_id' => $positionId,
-                    'candidate_id' => $candidateId,
-                ]);
+        // Start transaction
+        DB::beginTransaction();
+
+        try {
+            // Save votes
+            foreach ($positions as $position) {
+                $candidateId = $request->input("position_{$position->id}");
+                
+                if ($candidateId) {
+                    Vote::create([
+                        'user_id' => $user->id,
+                        'election_id' => $election->id,
+                        'position_id' => $position->id,
+                        'candidate_id' => $candidateId,
+                    ]);
+                }
             }
-        });
 
-        return redirect()->route('student.vote.confirmation')
-                        ->with('success', 'Your votes have been successfully cast!');
+            // Mark user as voted
+            $user->has_voted = true;
+            $user->save();
+
+            DB::commit();
+
+            return redirect()->route('voting.success')
+                ->with('success', 'Your vote has been recorded successfully!');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            return redirect()->back()
+                ->with('error', 'An error occurred while submitting your vote. Please try again.');
+        }
     }
 
-    public function confirmation()
+    /**
+     * Show success page after voting.
+     */
+    public function success()
     {
-        $user = Auth::user();
-        $activeElection = Election::current()->first();
-        
-        if (!$activeElection) {
-            return redirect()->route('student.dashboard');
+        if (!Auth::user()->has_voted) {
+            return redirect()->route('voting.index');
         }
 
-        // Get user's votes for this election
-        $userVotes = $user->getVotesForElection($activeElection->id);
-        
-        if ($userVotes->isEmpty()) {
-            return redirect()->route('student.vote.index')
-                           ->with('info', 'Please cast your votes first.');
-        }
-
-        return view('student.vote.confirmation', compact('userVotes', 'activeElection'));
+        return view('student.success');
     }
 }

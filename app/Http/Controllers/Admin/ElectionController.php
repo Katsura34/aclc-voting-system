@@ -4,165 +4,147 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Election;
-use App\Models\ElectionWinner;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
-use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class ElectionController extends Controller
 {
-    // public function __construct()
-    // {
-    //     $this->middleware(['auth', 'role:admin']);
-    // }
-
+    /**
+     * Display a listing of elections.
+     */
     public function index()
     {
-        $elections = Election::latest()->get();
-        
+        $elections = Election::withCount(['positions', 'candidates'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
         return view('admin.elections.index', compact('elections'));
     }
 
+    /**
+     * Show the form for creating a new election.
+     */
     public function create()
     {
         return view('admin.elections.create');
     }
 
+    /**
+     * Store a newly created election in storage.
+     */
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:elections',
-            'description' => 'required|string',
-            'start_date' => 'required|date|after:now',
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'start_date' => 'required|date',
             'end_date' => 'required|date|after:start_date',
+            'is_active' => 'boolean',
+            'allow_abstain' => 'boolean',
+            'show_live_results' => 'boolean',
         ]);
 
-        // Convert dates to Carbon instances
-        $validated['start_date'] = Carbon::parse($validated['start_date']);
-        $validated['end_date'] = Carbon::parse($validated['end_date']);
+        // If setting this election as active, deactivate others
+        if ($request->has('is_active') && $request->is_active) {
+            Election::where('is_active', true)->update(['is_active' => false]);
+        }
 
-        Election::create($validated);
+        $election = Election::create($validated);
 
         return redirect()->route('admin.elections.index')
-                        ->with('success', 'Election created successfully.');
+            ->with('success', 'Election created successfully!');
     }
 
+    /**
+     * Display the specified election.
+     */
     public function show(Election $election)
     {
-        $election->load(['positions.candidates.party', 'votes']);
-        $results = $election->getResults();
+        $election->load(['positions.candidates.party']);
         
-        return view('admin.elections.show', compact('election', 'results'));
+        // Get vote statistics
+        $totalVoters = \App\Models\User::where('user_type', 'student')->count();
+        $votedCount = \App\Models\User::where('user_type', 'student')
+            ->where('has_voted', true)
+            ->count();
+
+        return view('admin.elections.show', compact('election', 'totalVoters', 'votedCount'));
     }
 
+    /**
+     * Show the form for editing the specified election.
+     */
     public function edit(Election $election)
     {
-        // Only allow editing draft elections
-        if ($election->status !== 'draft') {
-            return redirect()->route('admin.elections.show', $election)
-                           ->with('error', 'Only draft elections can be edited.');
-        }
-        
         return view('admin.elections.edit', compact('election'));
     }
 
+    /**
+     * Update the specified election in storage.
+     */
     public function update(Request $request, Election $election)
     {
-        // Only allow updating draft elections
-        if ($election->status !== 'draft') {
-            return redirect()->route('admin.elections.show', $election)
-                           ->with('error', 'Only draft elections can be updated.');
-        }
-
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255', Rule::unique('elections')->ignore($election)],
-            'description' => 'required|string',
-            'start_date' => 'required|date|after:now',
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'start_date' => 'required|date',
             'end_date' => 'required|date|after:start_date',
+            'is_active' => 'boolean',
+            'allow_abstain' => 'boolean',
+            'show_live_results' => 'boolean',
         ]);
 
-        // Convert dates to Carbon instances
-        $validated['start_date'] = Carbon::parse($validated['start_date']);
-        $validated['end_date'] = Carbon::parse($validated['end_date']);
+        // If setting this election as active, deactivate others
+        if ($request->has('is_active') && $request->is_active) {
+            Election::where('id', '!=', $election->id)
+                ->where('is_active', true)
+                ->update(['is_active' => false]);
+        }
 
         $election->update($validated);
 
-        return redirect()->route('admin.elections.show', $election)
-                        ->with('success', 'Election updated successfully.');
+        return redirect()->route('admin.elections.index')
+            ->with('success', 'Election updated successfully!');
     }
 
-    public function activate(Election $election)
+    /**
+     * Remove the specified election from storage.
+     */
+    public function destroy(Election $election)
     {
-        // Validation checks before activation
-        if ($election->status !== 'draft') {
-            return redirect()->back()->with('error', 'Election is not in draft status.');
-        }
+        $election->delete();
 
-        // Check if election has positions
-        if ($election->positions()->count() === 0) {
-            return redirect()->back()->with('error', 'Election must have at least one position.');
-        }
-
-        // Check if all positions have at least 1 candidate
-        foreach ($election->positions as $position) {
-            if ($position->candidates()->count() === 0) {
-                return redirect()->back()
-                    ->with('error', "Position '{$position->name}' must have at least one candidate.");
-            }
-        }
-
-        // Deactivate other active elections
-        Election::where('status', 'active')->update(['status' => 'closed']);
-
-        // Activate this election
-        $election->update(['status' => 'active']);
-
-        return redirect()->route('admin.elections.show', $election)
-                        ->with('success', 'Election activated successfully!');
+        return redirect()->route('admin.elections.index')
+            ->with('success', 'Election deleted successfully!');
     }
 
-    public function close(Election $election)
+    /**
+     * Toggle election active status.
+     */
+    public function toggleActive(Election $election)
     {
-        if ($election->status !== 'active') {
-            return redirect()->back()->with('error', 'Only active elections can be closed.');
-        }
-
-        // Calculate and store winners
-        $this->declareWinners($election);
-
-        // Close the election
-        $election->update(['status' => 'closed']);
-
-        return redirect()->route('admin.elections.show', $election)
-                        ->with('success', 'Election closed and winners declared!');
-    }
-
-    public function results(Election $election)
-    {
-        $results = $election->getResults();
-        $winners = $election->winners()->with(['candidate.party', 'position'])->get();
+        DB::beginTransaction();
         
-        return view('admin.elections.results', compact('election', 'results', 'winners'));
-    }
-
-    private function declareWinners(Election $election)
-    {
-        // Clear existing winners
-        $election->winners()->delete();
-
-        foreach ($election->positions as $position) {
-            $candidatesWithVotes = $position->getCandidateVoteCounts();
-            
-            if ($candidatesWithVotes->isNotEmpty()) {
-                $winner = $candidatesWithVotes->first();
-                
-                ElectionWinner::create([
-                    'election_id' => $election->id,
-                    'position_id' => $position->id,
-                    'candidate_id' => $winner->id,
-                    'vote_count' => $winner->votes_count,
-                ]);
+        try {
+            if ($election->is_active) {
+                // Deactivate
+                $election->is_active = false;
+            } else {
+                // Activate and deactivate others
+                Election::where('is_active', true)->update(['is_active' => false]);
+                $election->is_active = true;
             }
+            
+            $election->save();
+            
+            DB::commit();
+            
+            $status = $election->is_active ? 'activated' : 'deactivated';
+            return redirect()->back()->with('success', "Election {$status} successfully!");
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Failed to toggle election status.');
         }
     }
 }

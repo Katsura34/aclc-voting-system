@@ -1,42 +1,50 @@
-@extends('layouts.admin')
+<x-admin-layout title="Create Position">
+    <x-slot name="styles">
+        <style>
+            .form-section {
+                background: white;
+                padding: 30px;
+                border-radius: 10px;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            }
+            .preview-card {
+                position: sticky;
+                top: 20px;
+            }
+        </style>
+    </x-slot>
 
-@section('title', 'Create Position')
-
-@section('page-header')
-    <div class="d-flex justify-content-between align-items-center">
-        <div>
-            <h1 class="page-title">Create New Position</h1>
-            <p class="page-subtitle mb-0">Add a new position for {{ $election->name }}</p>
-        </div>
-        <div>
-            <a href="{{ route('admin.elections.positions.index', $election) }}" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left me-2"></i>Back to Positions
+    <div class="container-fluid">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2><i class="bi bi-award-fill"></i> Add New Position</h2>
+                <p class="text-muted mb-0">Create a new position for an election</p>
+            </div>
+            <a href="{{ route('admin.positions.index') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Positions
             </a>
         </div>
-    </div>
-@endsection
 
-@section('content')
-    <div class="row">
-        <div class="col-lg-8">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="bi bi-plus-circle me-2"></i>
-                        Position Details
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <form method="POST" action="{{ route('admin.elections.positions.store', $election) }}">
+        <!-- Form -->
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="form-section">
+                    <form action="{{ route('admin.positions.store') }}" method="POST">
                         @csrf
+
+                        <h5 class="mb-3"><i class="bi bi-info-circle"></i> Position Information</h5>
                         
-                        <div class="mb-3">
-                            <label for="name" class="form-label">Position Name <span class="text-danger">*</span></label>
+                        <!-- Position Name -->
+                        <div class="mb-4">
+                            <label for="name" class="form-label fw-bold">
+                                Position Name <span class="text-danger">*</span>
+                            </label>
                             <input type="text" 
                                    class="form-control @error('name') is-invalid @enderror" 
                                    id="name" 
                                    name="name" 
-                                   value="{{ old('name') }}" 
+                                   value="{{ old('name') }}"
                                    placeholder="e.g., President, Vice President, Secretary"
                                    required>
                             @error('name')
@@ -44,142 +52,164 @@
                             @enderror
                         </div>
 
-                        <div class="mb-3">
-                            <label for="description" class="form-label">Description</label>
+                        <!-- Description -->
+                        <div class="mb-4">
+                            <label for="description" class="form-label fw-bold">
+                                Description
+                            </label>
                             <textarea class="form-control @error('description') is-invalid @enderror" 
                                       id="description" 
                                       name="description" 
-                                      rows="4" 
-                                      placeholder="Describe the responsibilities and requirements for this position...">{{ old('description') }}</textarea>
+                                      rows="4"
+                                      placeholder="Brief description of the position's responsibilities...">{{ old('description') }}</textarea>
                             @error('description')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
 
+                        <!-- Election -->
+                        <div class="mb-4">
+                            <label for="election_id" class="form-label fw-bold">
+                                Election <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select @error('election_id') is-invalid @enderror" 
+                                    id="election_id" 
+                                    name="election_id" 
+                                    required>
+                                <option value="">Select Election</option>
+                                @foreach($elections as $election)
+                                    <option value="{{ $election->id }}" {{ old('election_id') == $election->id ? 'selected' : '' }}>
+                                        {{ $election->title }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('election_id')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
                         <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="max_selections" class="form-label">Maximum Selections</label>
+                            <!-- Max Votes -->
+                            <div class="col-md-6 mb-4">
+                                <label for="max_votes" class="form-label fw-bold">
+                                    Maximum Votes <span class="text-danger">*</span>
+                                </label>
                                 <input type="number" 
-                                       class="form-control @error('max_selections') is-invalid @enderror" 
-                                       id="max_selections" 
-                                       name="max_selections" 
-                                       value="{{ old('max_selections', 1) }}"
+                                       class="form-control @error('max_votes') is-invalid @enderror" 
+                                       id="max_votes" 
+                                       name="max_votes" 
+                                       value="{{ old('max_votes', 1) }}"
                                        min="1"
-                                       max="10">
-                                @error('max_selections')
+                                       required>
+                                <small class="text-muted">Number of candidates a voter can select for this position</small>
+                                @error('max_votes')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
-                                <small class="text-muted">How many candidates voters can select for this position</small>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="order" class="form-label">Display Order</label>
+
+                            <!-- Display Order -->
+                            <div class="col-md-6 mb-4">
+                                <label for="display_order" class="form-label fw-bold">
+                                    Display Order
+                                </label>
                                 <input type="number" 
-                                       class="form-control @error('order') is-invalid @enderror" 
-                                       id="order" 
-                                       name="order" 
-                                       value="{{ old('order', 1) }}"
-                                       min="1">
-                                @error('order')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                                <small class="text-muted">Order in which this position appears on the ballot</small>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="required" class="form-label">Voting Required</label>
-                                <select class="form-select @error('required') is-invalid @enderror" id="required" name="required">
-                                    <option value="0" {{ old('required') == '0' ? 'selected' : '' }}>Optional</option>
-                                    <option value="1" {{ old('required') == '1' ? 'selected' : '' }}>Required</option>
-                                </select>
-                                @error('required')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                                <small class="text-muted">Whether voters must make a selection for this position</small>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="status" class="form-label">Status</label>
-                                <select class="form-select @error('status') is-invalid @enderror" id="status" name="status">
-                                    <option value="active" {{ old('status') === 'active' ? 'selected' : '' }}>Active</option>
-                                    <option value="inactive" {{ old('status') === 'inactive' ? 'selected' : '' }}>Inactive</option>
-                                </select>
-                                @error('status')
+                                       class="form-control @error('display_order') is-invalid @enderror" 
+                                       id="display_order" 
+                                       name="display_order" 
+                                       value="{{ old('display_order', 0) }}"
+                                       min="0">
+                                <small class="text-muted">Order in which this position appears (lower numbers first)</small>
+                                @error('display_order')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
                         </div>
 
-                        <div class="d-flex justify-content-between mt-4">
-                            <a href="{{ route('admin.elections.positions.index', $election) }}" class="btn btn-outline-secondary">
-                                <i class="bi bi-x-circle me-2"></i>Cancel
-                            </a>
+                        <!-- Submit Buttons -->
+                        <div class="d-flex gap-2 mt-4">
                             <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-check-circle me-2"></i>Create Position
+                                <i class="bi bi-save"></i> Create Position
                             </button>
+                            <a href="{{ route('admin.positions.index') }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle"></i> Cancel
+                            </a>
                         </div>
                     </form>
                 </div>
             </div>
-        </div>
 
-        <div class="col-lg-4">
-            <!-- Election Info -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h6 class="mb-0">
-                        <i class="bi bi-info-circle me-2"></i>
-                        Election Information
-                    </h6>
-                </div>
-                <div class="card-body">
-                    <h6 class="text-primary">{{ $election->name }}</h6>
-                    <p class="text-muted small mb-2">{{ $election->description ?? 'No description' }}</p>
-                    <div class="small text-muted">
-                        <div><strong>Status:</strong> 
-                            @if($election->status === 'active')
-                                <span class="badge bg-success">Active</span>
-                            @elseif($election->status === 'pending')
-                                <span class="badge bg-warning">Pending</span>
-                            @else
-                                <span class="badge bg-secondary">Completed</span>
-                            @endif
+            <!-- Preview Card -->
+            <div class="col-lg-4">
+                <div class="preview-card">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0"><i class="bi bi-eye"></i> Preview</h5>
                         </div>
-                        <div class="mt-2"><strong>Existing Positions:</strong> {{ $election->positions_count ?? 0 }}</div>
+                        <div class="card-body">
+                            <div class="text-center mb-3">
+                                <i class="bi bi-award-fill" style="font-size: 4rem; color: var(--aclc-blue);"></i>
+                            </div>
+                            <h4 class="text-center mb-3" id="preview-name">Position Name</h4>
+                            <p class="text-muted text-center" id="preview-description">Description will appear here...</p>
+                            
+                            <hr>
+                            
+                            <div class="mb-2">
+                                <strong>Election:</strong>
+                                <span id="preview-election" class="float-end badge bg-success">Not selected</span>
+                            </div>
+                            <div class="mb-2">
+                                <strong>Max Votes:</strong>
+                                <span id="preview-max-votes" class="float-end badge bg-info">1</span>
+                            </div>
+                            <div class="mb-2">
+                                <strong>Display Order:</strong>
+                                <span id="preview-display-order" class="float-end badge bg-secondary">0</span>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </div>
 
-            <!-- Position Guidelines -->
-            <div class="card">
-                <div class="card-header">
-                    <h6 class="mb-0">
-                        <i class="bi bi-lightbulb me-2"></i>
-                        Position Guidelines
-                    </h6>
-                </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <h6 class="text-primary">Position Name</h6>
-                        <small class="text-muted">Use clear, official titles that voters will recognize (e.g., President, Secretary).</small>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <h6 class="text-primary">Max Selections</h6>
-                        <small class="text-muted">Set to 1 for single-winner positions, or higher for committee positions.</small>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <h6 class="text-primary">Display Order</h6>
-                        <small class="text-muted">Higher-ranked positions (President, VP) typically appear first on ballots.</small>
-                    </div>
-                    
-                    <div>
-                        <h6 class="text-primary">Required Voting</h6>
-                        <small class="text-muted">Mark as required for essential positions, optional for supplementary roles.</small>
+                    <!-- Help Card -->
+                    <div class="card mt-3">
+                        <div class="card-header bg-info text-white">
+                            <h6 class="mb-0"><i class="bi bi-info-circle"></i> Help</h6>
+                        </div>
+                        <div class="card-body">
+                            <small>
+                                <strong>Max Votes:</strong> Set to 1 if voters can choose only one candidate. 
+                                Set higher for positions where multiple winners are allowed.<br><br>
+                                <strong>Display Order:</strong> Lower numbers appear first in the voting interface.
+                            </small>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-@endsection
+
+    <x-slot name="scripts">
+        <script>
+            // Live preview
+            document.getElementById('name').addEventListener('input', function() {
+                document.getElementById('preview-name').textContent = this.value || 'Position Name';
+            });
+
+            document.getElementById('description').addEventListener('input', function() {
+                document.getElementById('preview-description').textContent = this.value || 'Description will appear here...';
+            });
+
+            document.getElementById('election_id').addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                document.getElementById('preview-election').textContent = selectedOption.text === 'Select Election' ? 'Not selected' : selectedOption.text;
+            });
+
+            document.getElementById('max_votes').addEventListener('input', function() {
+                document.getElementById('preview-max-votes').textContent = this.value || '1';
+            });
+
+            document.getElementById('display_order').addEventListener('input', function() {
+                document.getElementById('preview-display-order').textContent = this.value || '0';
+            });
+        </script>
+    </x-slot>
+</x-admin-layout>

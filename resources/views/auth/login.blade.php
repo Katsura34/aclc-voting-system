@@ -1,449 +1,406 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="en">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Voting System</title>
-
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <style>
-        :root {
-            --primary-color: #3b82f6;
-            --primary-dark: #2563eb;
-            --gradient-start: #667eea;
-            --gradient-end: #764ba2;
-            --card-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
         body {
-            background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
+            background: linear-gradient(135deg, #003366 0%, #002147 100%);
             min-height: 100vh;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 2rem 1rem;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
         }
 
         .login-container {
+            display: flex;
+            max-width: 900px;
             width: 100%;
-            max-width: 400px;
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.3);
         }
 
-        .login-card {
-            background: white;
-            border-radius: 1rem;
-            box-shadow: var(--card-shadow);
-            border: none;
+        /* Left Panel - Blue and Red Side */
+        .left-panel {
+            background: linear-gradient(135deg, #003366 0%, #00509E 50%, #CC0000 100%);
+            flex: 1;
+            padding: 60px 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
             overflow: hidden;
         }
 
-        .login-header {
-            background: white;
-            padding: 2rem 2rem 1rem 2rem;
-            text-align: center;
-            border-bottom: none;
+        .left-panel::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60%;
+            background: linear-gradient(180deg, transparent 0%, rgba(204, 0, 0, 0.2) 100%);
+            border-radius: 50% 50% 0 0 / 30% 30% 0 0;
         }
 
-        .login-logo {
-            width: 80px;
-            height: 80px;
-            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
-            border-radius: 1rem;
+        .logo-container {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            width: 100%;
+        }
+
+        .main-logo {
+            width: 180px;
+            height: 180px;
+            margin-bottom: 30px;
+            background: white;
+            border-radius: 50%;
+            padding: 15px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 1.5rem auto;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            margin-left: auto;
+            margin-right: auto;
         }
 
-        .login-title {
-            font-size: 1.75rem;
+        .main-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .company-name {
+            color: white;
+            font-size: 24px;
             font-weight: 700;
-            color: #1f2937;
-            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
         }
 
-        .login-subtitle {
-            color: #6b7280;
-            font-size: 0.875rem;
-            margin-bottom: 0;
+        .company-tagline {
+            color: rgba(255, 255, 255, 0.95);
+            font-size: 14px;
+            margin-bottom: 30px;
         }
 
-        .login-body {
-            padding: 1rem 2rem 2rem 2rem;
+        .sparkles {
+            position: absolute;
+            color: white;
+            font-size: 24px;
+            animation: sparkle 2s infinite;
         }
 
-        .form-floating {
-            margin-bottom: 1.5rem;
+        .sparkle-1 { top: 15%; left: 15%; animation-delay: 0s; }
+        .sparkle-2 { top: 25%; right: 20%; animation-delay: 0.5s; }
+        .sparkle-3 { bottom: 30%; left: 10%; animation-delay: 1s; }
+        .sparkle-4 { bottom: 20%; right: 15%; animation-delay: 1.5s; }
+
+        @keyframes sparkle {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
         }
 
-        .form-floating > .form-control {
-            height: 58px;
-            border: 2px solid #e5e7eb;
-            border-radius: 0.75rem;
-            font-size: 1rem;
-            transition: all 0.2s ease;
+        .org-logo {
+            width: 80px;
+            height: 80px;
+            background: white;
+            border-radius: 50%;
+            padding: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 10px;
         }
 
-        .form-floating > .form-control:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.15);
+        .org-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
         }
 
-        .form-floating > label {
-            color: #6b7280;
-            font-weight: 500;
+        .org-logos {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin-top: 30px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Right Panel - Login Form */
+        .right-panel {
+            flex: 1;
+            padding: 60px 50px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .login-header h2 {
+            color: #333;
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .login-header p {
+            color: #888;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        .form-group i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #888;
+            font-size: 18px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 14px 15px 14px 45px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #003366;
+            box-shadow: 0 0 0 3px rgba(0, 51, 102, 0.1);
+        }
+
+        .form-control::placeholder {
+            color: #aaa;
+        }
+
+        .remember-me {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .remember-me input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            margin-right: 8px;
+            cursor: pointer;
+            accent-color: #CC0000;
+        }
+
+        .remember-me label {
+            font-size: 14px;
+            color: #666;
+            cursor: pointer;
+            user-select: none;
         }
 
         .btn-login {
-            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
-            border: none;
-            border-radius: 0.75rem;
-            padding: 0.875rem 2rem;
-            font-weight: 600;
-            font-size: 1rem;
             width: 100%;
-            height: 52px;
-            transition: all 0.2s ease;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            padding: 14px;
+            background: linear-gradient(135deg, #CC0000 0%, #990000 100%);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .btn-login:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(204, 0, 0, 0.4);
+            background: linear-gradient(135deg, #003366 0%, #00509E 100%);
         }
 
         .btn-login:active {
             transform: translateY(0);
         }
 
-        .alert {
-            border-radius: 0.75rem;
-            border: none;
-            margin-bottom: 1.5rem;
-        }
-
-        .alert-danger {
-            background-color: #fef2f2;
-            color: #dc2626;
-            border-left: 4px solid #dc2626;
-        }
-
-        .forgot-password {
+        .login-footer {
             text-align: center;
-            margin-top: 1.5rem;
+            margin-top: 25px;
+            font-size: 14px;
+            color: #888;
         }
 
-        .forgot-password a {
-            color: var(--primary-color);
-            text-decoration: none;
-            font-weight: 500;
-            font-size: 0.875rem;
-            transition: color 0.2s ease;
-        }
-
-        .forgot-password a:hover {
-            color: var(--primary-dark);
-            text-decoration: underline;
-        }
-
-        .register-link {
-            text-align: center;
-            margin-top: 1.5rem;
-            padding-top: 1.5rem;
-            border-top: 1px solid #e5e7eb;
-        }
-
-        .register-link p {
-            margin: 0;
-            color: #6b7280;
-            font-size: 0.875rem;
-        }
-
-        .register-link a {
-            color: var(--primary-color);
+        .login-footer a {
+            color: #CC0000;
             text-decoration: none;
             font-weight: 600;
-            transition: color 0.2s ease;
         }
 
-        .register-link a:hover {
-            color: var(--primary-dark);
+        .login-footer a:hover {
+            text-decoration: underline;
+            color: #003366;
+        }
         }
 
-        .input-group {
-            position: relative;
+        .alert {
+            border-radius: 8px;
+            margin-bottom: 20px;
+            padding: 12px 15px;
         }
 
-        .password-toggle {
-            position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            color: #6b7280;
-            cursor: pointer;
-            z-index: 10;
-            padding: 0;
-            width: 20px;
-            height: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .password-toggle:hover {
-            color: var(--primary-color);
-        }
-
-        .form-check {
-            margin: 1rem 0;
-        }
-
-        .form-check-input:checked {
-            background-color: var(--primary-color);
-            border-color: var(--primary-color);
-        }
-
-        .form-check-label {
-            color: #4b5563;
-            font-size: 0.875rem;
-        }
-
-        /* Loading state */
-        .btn-login:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
-        }
-
-        .spinner-border-sm {
-            width: 1rem;
-            height: 1rem;
-        }
-
-        @media (max-width: 576px) {
-            body {
-                padding: 1rem 0.5rem;
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .login-container {
+                flex-direction: column;
             }
-            
-            .login-header {
-                padding: 1.5rem 1.5rem 1rem 1.5rem;
-            }
-            
-            .login-body {
-                padding: 1rem 1.5rem 1.5rem 1.5rem;
-            }
-        }
 
-        /* Animations */
-        .login-card {
-            animation: slideIn 0.5s ease-out;
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
+            .left-panel {
+                padding: 40px 30px;
             }
-            to {
-                opacity: 1;
-                transform: translateY(0);
+
+            .right-panel {
+                padding: 40px 30px;
+            }
+
+            .main-logo {
+                width: 120px;
+                height: 120px;
+            }
+
+            .company-name {
+                font-size: 20px;
+            }
+
+            .org-logos {
+                flex-wrap: wrap;
+            }
+
+            .org-logo {
+                width: 60px;
+                height: 60px;
             }
         }
     </style>
 </head>
 <body>
     <div class="login-container">
-        <div class="card login-card">
-            <div class="login-header">
-                <div class="login-logo">
-                    <i class="bi bi-check2-square text-white" style="font-size: 2rem;"></i>
+        <!-- Left Panel with Logos -->
+        <div class="left-panel">
+            <div class="sparkles sparkle-1">✦</div>
+            <div class="sparkles sparkle-2">✦</div>
+            <div class="sparkles sparkle-3">✦</div>
+            <div class="sparkles sparkle-4">✦</div>
+
+            <div class="logo-container">
+                <div class="main-logo">
+                    <!-- ACLC Logo -->
+                    <img src="/storage/logos/aclc-logo.png" alt="ACLC College of Ormoc City" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 200 200%27%3E%3Ccircle cx=%27100%27 cy=%27100%27 r=%2780%27 fill=%27%23003366%27/%3E%3Ctext x=%27100%27 y=%27110%27 text-anchor=%27middle%27 fill=%27white%27 font-size=%2724%27 font-weight=%27bold%27%3EACLC%3C/text%3E%3C/svg%3E'">
                 </div>
-                <h1 class="login-title">Welcome Back</h1>
-                <p class="login-subtitle">Sign in to your voting system account</p>
-            </div>
-            
-            <div class="login-body">
-                @if ($errors->any())
-                    <div class="alert alert-danger" role="alert">
-                        <i class="bi bi-exclamation-triangle me-2"></i>
-                        @foreach ($errors->all() as $error)
-                            {{ $error }}<br>
-                        @endforeach
+                
+                <div class="company-name">ACLC COLLEGE</div>
+                <div class="company-tagline">Student Voting System</div>
+                
+                <div class="org-logos">
+                    <!-- Programmers Guild Logo -->
+                    <div class="org-logo">
+                        <img src="/storage/logos/programmers-guild-logo.png" alt="Programmers Guild" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 200 200%27%3E%3Ccircle cx=%27100%27 cy=%27100%27 r=%2790%27 fill=%27black%27/%3E%3Ctext x=%27100%27 y=%27110%27 text-anchor=%27middle%27 fill=%27white%27 font-size=%2748%27 font-weight=%27bold%27%3EPG%3C/text%3E%3C/svg%3E'">
                     </div>
-                @endif
-
-                @if (session('error'))
-                    <div class="alert alert-danger" role="alert">
-                        <i class="bi bi-exclamation-triangle me-2"></i>
-                        {{ session('error') }}
-                    </div>
-                @endif
-
-                @if (session('success'))
-                    <div class="alert alert-success" role="alert">
-                        <i class="bi bi-check-circle me-2"></i>
-                        {{ session('success') }}
-                    </div>
-                @endif
-
-                <form method="POST" action="{{ route('login.submit') }}" id="loginForm">
-                    @csrf
                     
-                    <div class="form-floating">
-                        <input type="text" 
-                               class="form-control @error('usn') is-invalid @enderror" 
-                               id="usn" 
-                               name="usn" 
-                               value="{{ old('usn') }}" 
-                               placeholder="Enter your USN"
-                               required 
-                               autofocus>
-                        <label for="usn">
-                            <i class="bi bi-person me-2"></i>USN (University Serial Number)
-                        </label>
-                        @error('usn')
-                            <div class="invalid-feedback">
-                                {{ $message }}
-                            </div>
-                        @enderror
+                    <!-- ACLC Ormoc City Logo -->
+                    <div class="org-logo">
+                        <img src="/storage/logos/aclc-ormoc-logo.png" alt="ACLC Ormoc City" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 200 200%27%3E%3Ccircle cx=%27100%27 cy=%27100%27 r=%2790%27 fill=%27%23003366%27/%3E%3Ctext x=%27100%27 y=%27110%27 text-anchor=%27middle%27 fill=%27white%27 font-size=%2748%27 font-weight=%27bold%27%3E🗳️%3C/text%3E%3C/svg%3E'">
                     </div>
-
-                    <div class="form-floating">
-                        <div class="input-group">
-                            <input type="password" 
-                                   class="form-control @error('password') is-invalid @enderror" 
-                                   id="password" 
-                                   name="password" 
-                                   placeholder="Enter your password"
-                                   required>
-                            <button type="button" class="password-toggle" onclick="togglePassword()">
-                                <i class="bi bi-eye" id="toggleIcon"></i>
-                            </button>
-                        </div>
-                        <label for="password">
-                            <i class="bi bi-lock me-2"></i>Password
-                        </label>
-                        @error('password')
-                            <div class="invalid-feedback">
-                                {{ $message }}
-                            </div>
-                        @enderror
-                    </div>
-
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" name="remember" id="remember" {{ old('remember') ? 'checked' : '' }}>
-                        <label class="form-check-label" for="remember">
-                            Remember me on this device
-                        </label>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary btn-login" id="loginBtn">
-                        <span class="btn-text">
-                            <i class="bi bi-box-arrow-in-right me-2"></i>
-                            Sign In
-                        </span>
-                        <span class="btn-loading d-none">
-                            <span class="spinner-border spinner-border-sm me-2" role="status">
-                                <span class="visually-hidden">Loading...</span>
-                            </span>
-                            Signing in...
-                        </span>
-                    </button>
-
-                    <div class="forgot-password">
-                        <a href="#" onclick="showForgotPassword()">
-                            <i class="bi bi-question-circle me-1"></i>
-                            Forgot your password?
-                        </a>
-                    </div>
-                </form>
-
-                @if(Route::has('register'))
-                    <div class="register-link">
-                        <p>
-                            Don't have an account? 
-                            <a href="{{ route('register') }}">
-                                Create one here
-                            </a>
-                        </p>
-                    </div>
-                @endif
+                </div>
             </div>
         </div>
 
-        <div class="text-center mt-4">
-            <small class="text-white-50">
-                <i class="bi bi-shield-check me-1"></i>
-                Secure Voting System © {{ date('Y') }}
-            </small>
+        <!-- Right Panel with Login Form -->
+        <div class="right-panel">
+            <div class="login-header">
+                <h2>Log in</h2>
+                <p>Enter your credentials to access your account</p>
+            </div>
+
+            @if ($errors->any())
+                <div class="alert alert-danger" role="alert">
+                    <strong>Error!</strong> {{ $errors->first() }}
+                </div>
+            @endif
+
+            <form method="POST" action="{{ route('login') }}">
+                @csrf
+
+                <div class="form-group">
+                    <i class="bi bi-person-circle"></i>
+                    <input 
+                        type="text" 
+                        id="usn" 
+                        name="usn" 
+                        class="form-control @error('usn') is-invalid @enderror" 
+                        value="{{ old('usn') }}" 
+                        placeholder="Username (USN)"
+                        required 
+                        autofocus
+                    >
+                    @error('usn')
+                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                    @enderror
+                </div>
+
+                <div class="form-group">
+                    <i class="bi bi-lock-fill"></i>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password" 
+                        class="form-control @error('password') is-invalid @enderror" 
+                        placeholder="Password"
+                        required
+                    >
+                    @error('password')
+                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                    @enderror
+                </div>
+
+
+                <button type="submit" class="btn-login">Log In</button>
+            </form>
+
+
         </div>
     </div>
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <script>
-        // Password toggle functionality
-        function togglePassword() {
-            const passwordInput = document.getElementById('password');
-            const toggleIcon = document.getElementById('toggleIcon');
-            
-            if (passwordInput.type === 'password') {
-                passwordInput.type = 'text';
-                toggleIcon.classList.remove('bi-eye');
-                toggleIcon.classList.add('bi-eye-slash');
-            } else {
-                passwordInput.type = 'password';
-                toggleIcon.classList.remove('bi-eye-slash');
-                toggleIcon.classList.add('bi-eye');
-            }
-        }
-
-        // Form submission with loading state
-        document.getElementById('loginForm').addEventListener('submit', function() {
-            const loginBtn = document.getElementById('loginBtn');
-            const btnText = loginBtn.querySelector('.btn-text');
-            const btnLoading = loginBtn.querySelector('.btn-loading');
-            
-            loginBtn.disabled = true;
-            btnText.classList.add('d-none');
-            btnLoading.classList.remove('d-none');
-        });
-
-        // Forgot password modal (placeholder)
-        function showForgotPassword() {
-            alert('Password reset functionality will be implemented here.\n\nFor now, please contact your system administrator.');
-        }
-
-        // Auto-dismiss alerts after 5 seconds
-        setTimeout(function() {
-            const alerts = document.querySelectorAll('.alert');
-            alerts.forEach(function(alert) {
-                alert.style.transition = 'opacity 0.5s ease';
-                alert.style.opacity = '0';
-                setTimeout(() => alert.remove(), 500);
-            });
-        }, 5000);
-
-        // Add subtle hover effects to form inputs
-        document.querySelectorAll('.form-control').forEach(input => {
-            input.addEventListener('focus', function() {
-                this.parentElement.style.transform = 'translateY(-2px)';
-            });
-            
-            input.addEventListener('blur', function() {
-                this.parentElement.style.transform = 'translateY(0)';
-            });
-        });
-    </script>
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

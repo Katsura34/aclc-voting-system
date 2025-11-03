@@ -34,25 +34,50 @@ class ElectionController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after:start_date',
-            'is_active' => 'boolean',
-            'allow_abstain' => 'boolean',
-            'show_live_results' => 'boolean',
-        ]);
+        try {
+            $validated = $request->validate([
+                'title' => 'required|string|max:255',
+                'description' => 'nullable|string',
+                'start_date' => 'required|date',
+                'end_date' => 'required|date|after:start_date',
+                'is_active' => 'boolean',
+                'allow_abstain' => 'boolean',
+                'show_live_results' => 'boolean',
+            ]);
 
-        // If setting this election as active, deactivate others
-        if ($request->has('is_active') && $request->is_active) {
-            Election::where('is_active', true)->update(['is_active' => false]);
+            DB::beginTransaction();
+            
+            try {
+                // If setting this election as active, deactivate others
+                if ($request->has('is_active') && $request->is_active) {
+                    Election::where('is_active', true)->update(['is_active' => false]);
+                }
+
+                $election = Election::create($validated);
+                
+                DB::commit();
+
+                \Log::info('Election created', ['election_id' => $election->id, 'title' => $election->title]);
+
+                return redirect()->route('admin.elections.index')
+                    ->with('success', 'Election created successfully!');
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return redirect()->back()
+                ->withErrors($e->errors())
+                ->withInput();
+        } catch (\Exception $e) {
+            \Log::error('Election creation error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return redirect()->back()
+                ->with('error', 'Failed to create election. Please try again.')
+                ->withInput();
         }
-
-        $election = Election::create($validated);
-
-        return redirect()->route('admin.elections.index')
-            ->with('success', 'Election created successfully!');
     }
 
     /**
@@ -84,27 +109,53 @@ class ElectionController extends Controller
      */
     public function update(Request $request, Election $election)
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after:start_date',
-            'is_active' => 'boolean',
-            'allow_abstain' => 'boolean',
-            'show_live_results' => 'boolean',
-        ]);
+        try {
+            $validated = $request->validate([
+                'title' => 'required|string|max:255',
+                'description' => 'nullable|string',
+                'start_date' => 'required|date',
+                'end_date' => 'required|date|after:start_date',
+                'is_active' => 'boolean',
+                'allow_abstain' => 'boolean',
+                'show_live_results' => 'boolean',
+            ]);
 
-        // If setting this election as active, deactivate others
-        if ($request->has('is_active') && $request->is_active) {
-            Election::where('id', '!=', $election->id)
-                ->where('is_active', true)
-                ->update(['is_active' => false]);
+            DB::beginTransaction();
+            
+            try {
+                // If setting this election as active, deactivate others
+                if ($request->has('is_active') && $request->is_active) {
+                    Election::where('id', '!=', $election->id)
+                        ->where('is_active', true)
+                        ->update(['is_active' => false]);
+                }
+
+                $election->update($validated);
+                
+                DB::commit();
+
+                \Log::info('Election updated', ['election_id' => $election->id, 'title' => $election->title]);
+
+                return redirect()->route('admin.elections.index')
+                    ->with('success', 'Election updated successfully!');
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return redirect()->back()
+                ->withErrors($e->errors())
+                ->withInput();
+        } catch (\Exception $e) {
+            \Log::error('Election update error: ' . $e->getMessage(), [
+                'election_id' => $election->id,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return redirect()->back()
+                ->with('error', 'Failed to update election. Please try again.')
+                ->withInput();
         }
-
-        $election->update($validated);
-
-        return redirect()->route('admin.elections.index')
-            ->with('success', 'Election updated successfully!');
     }
 
     /**
@@ -112,10 +163,39 @@ class ElectionController extends Controller
      */
     public function destroy(Election $election)
     {
-        $election->delete();
+        try {
+            DB::beginTransaction();
+            
+            try {
+                // Check if election has votes
+                $hasVotes = Vote::where('election_id', $election->id)->exists();
+                
+                if ($hasVotes) {
+                    return redirect()->route('admin.elections.index')
+                        ->with('error', 'Cannot delete election with existing votes!');
+                }
+                
+                $election->delete();
+                
+                DB::commit();
 
-        return redirect()->route('admin.elections.index')
-            ->with('success', 'Election deleted successfully!');
+                \Log::info('Election deleted', ['election_id' => $election->id]);
+
+                return redirect()->route('admin.elections.index')
+                    ->with('success', 'Election deleted successfully!');
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+        } catch (\Exception $e) {
+            \Log::error('Election deletion error: ' . $e->getMessage(), [
+                'election_id' => $election->id,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return redirect()->route('admin.elections.index')
+                ->with('error', 'Failed to delete election. Please try again.');
+        }
     }
 
     /**
@@ -140,11 +220,20 @@ class ElectionController extends Controller
             DB::commit();
             
             $status = $election->is_active ? 'activated' : 'deactivated';
+            
+            \Log::info("Election {$status}", ['election_id' => $election->id, 'title' => $election->title]);
+            
             return redirect()->back()->with('success', "Election {$status} successfully!");
             
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->with('error', 'Failed to toggle election status.');
+            
+            \Log::error('Election toggle error: ' . $e->getMessage(), [
+                'election_id' => $election->id,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return redirect()->back()->with('error', 'Failed to toggle election status. Please try again.');
         }
     }
 }

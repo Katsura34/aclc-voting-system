@@ -151,13 +151,24 @@ class CandidateController extends Controller
      */
     public function import(Request $request)
     {
-        $request->validate([
-            'csv_file' => 'required|file|mimes:csv,txt|max:2048',
-        ]);
-
         try {
+            $request->validate([
+                'csv_file' => 'required|file|mimes:csv,txt|max:2048',
+            ]);
+
             $file = $request->file('csv_file');
+            
+            if (!$file->isValid()) {
+                return redirect()->route('admin.candidates.index')
+                    ->with('error', 'The uploaded file is invalid. Please try again.');
+            }
+            
             $csvData = array_map('str_getcsv', file($file->getRealPath()));
+            
+            if (empty($csvData)) {
+                return redirect()->route('admin.candidates.index')
+                    ->with('error', 'The CSV file is empty.');
+            }
             
             // Get headers
             $headers = array_shift($csvData);
@@ -175,59 +186,79 @@ class CandidateController extends Controller
             $skippedCount = 0;
             $errors = [];
 
-            foreach ($csvData as $index => $row) {
-                $rowNumber = $index + 2; // +2 because of header and 0-based index
+            DB::beginTransaction();
+            
+            try {
+                foreach ($csvData as $index => $row) {
+                    $rowNumber = $index + 2; // +2 because of header and 0-based index
+                    
+                    // Skip empty rows
+                    if (empty(array_filter($row))) {
+                        continue;
+                    }
+
+                    // Create associative array
+                    $data = array_combine($headers, $row);
+                    
+                    // Validate row data
+                    $validator = Validator::make($data, [
+                        'first_name' => 'required|string|max:255',
+                        'last_name' => 'required|string|max:255',
+                        'middle_name' => 'nullable|string|max:255',
+                        'bio' => 'nullable|string',
+                        'position_id' => 'required|exists:positions,id',
+                        'party_id' => 'required|exists:parties,id',
+                    ]);
+
+                    if ($validator->fails()) {
+                        $skippedCount++;
+                        $errors[] = "Row {$rowNumber}: " . implode(', ', $validator->errors()->all());
+                        continue;
+                    }
+
+                    // Create candidate
+                    Candidate::create([
+                        'first_name' => $data['first_name'],
+                        'last_name' => $data['last_name'],
+                        'middle_name' => $data['middle_name'] ?? null,
+                        'bio' => $data['bio'] ?? null,
+                        'position_id' => $data['position_id'],
+                        'party_id' => $data['party_id'],
+                    ]);
+
+                    $importedCount++;
+                }
                 
-                // Skip empty rows
-                if (empty(array_filter($row))) {
-                    continue;
+                DB::commit();
+
+                $message = "Successfully imported {$importedCount} candidate(s).";
+                if ($skippedCount > 0) {
+                    $message .= " Skipped {$skippedCount} row(s) due to validation errors.";
                 }
 
-                // Create associative array
-                $data = array_combine($headers, $row);
-                
-                // Validate row data
-                $validator = Validator::make($data, [
-                    'first_name' => 'required|string|max:255',
-                    'last_name' => 'required|string|max:255',
-                    'middle_name' => 'nullable|string|max:255',
-                    'bio' => 'nullable|string',
-                    'position_id' => 'required|exists:positions,id',
-                    'party_id' => 'required|exists:parties,id',
-                ]);
-
-                if ($validator->fails()) {
-                    $skippedCount++;
-                    $errors[] = "Row {$rowNumber}: " . implode(', ', $validator->errors()->all());
-                    continue;
+                if (!empty($errors)) {
+                    session()->flash('import_errors', $errors);
                 }
 
-                // Create candidate
-                Candidate::create([
-                    'first_name' => $data['first_name'],
-                    'last_name' => $data['last_name'],
-                    'middle_name' => $data['middle_name'] ?? null,
-                    'bio' => $data['bio'] ?? null,
-                    'position_id' => $data['position_id'],
-                    'party_id' => $data['party_id'],
+                \Log::info('Candidates imported', [
+                    'imported' => $importedCount,
+                    'skipped' => $skippedCount
                 ]);
 
-                $importedCount++;
+                return redirect()->route('admin.candidates.index')
+                    ->with('success', $message);
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
             }
-
-            $message = "Successfully imported {$importedCount} candidate(s).";
-            if ($skippedCount > 0) {
-                $message .= " Skipped {$skippedCount} row(s) due to validation errors.";
-            }
-
-            if (!empty($errors)) {
-                session()->flash('import_errors', $errors);
-            }
-
+        } catch (\Illuminate\Validation\ValidationException $e) {
             return redirect()->route('admin.candidates.index')
-                ->with('success', $message);
-
+                ->withErrors($e->errors());
         } catch (\Exception $e) {
+            \Log::error('Candidate import error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             return redirect()->route('admin.candidates.index')
                 ->with('error', 'Error importing CSV: ' . $e->getMessage());
         }

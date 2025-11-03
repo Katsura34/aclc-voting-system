@@ -16,74 +16,93 @@ class ResultController extends Controller
      */
     public function index(Request $request)
     {
-        $elections = Election::all();
-        $selectedElection = null;
-        $results = [];
+        try {
+            $elections = Election::all();
+            $selectedElection = null;
+            $results = [];
 
-        if ($request->filled('election_id')) {
-            // Check if this is an AJAX request - fetch fresh data
-            if ($request->has('ajax') && $request->ajax == 1) {
-                return $this->getAjaxResults($request->election_id);
-            }
+            if ($request->filled('election_id')) {
+                // Check if this is an AJAX request - fetch fresh data
+                if ($request->has('ajax') && $request->ajax == 1) {
+                    return $this->getAjaxResults($request->election_id);
+                }
 
-            $selectedElection = Election::with(['positions.candidates.party', 'positions.candidates.votes'])
-                ->find($request->election_id);
+                // Optimized query with eager loading
+                $selectedElection = Election::with([
+                    'positions' => function ($query) {
+                        $query->orderBy('display_order');
+                    },
+                    'positions.candidates.party',
+                    'positions.candidates.votes' => function ($query) use ($request) {
+                        $query->where('election_id', $request->election_id);
+                    }
+                ])->find($request->election_id);
 
-            if ($selectedElection) {
-                foreach ($selectedElection->positions as $position) {
-                    $candidateResults = [];
-                    $totalVotes = 0;
-                    $abstainVotes = 0;
+                if ($selectedElection) {
+                    foreach ($selectedElection->positions as $position) {
+                        $candidateResults = [];
+                        $totalVotes = 0;
+                        $abstainVotes = 0;
 
-                    foreach ($position->candidates as $candidate) {
-                        $voteCount = $candidate->votes()->where('position_id', $position->id)->count();
-                        $totalVotes += $voteCount;
+                        foreach ($position->candidates as $candidate) {
+                            $voteCount = $candidate->votes()->where('position_id', $position->id)->count();
+                            $totalVotes += $voteCount;
+                            
+                            $candidateResults[] = [
+                                'candidate' => $candidate,
+                                'votes' => $voteCount,
+                            ];
+                        }
+
+                        // Get abstain votes for this position
+                        $abstainVotes = Vote::where('position_id', $position->id)
+                            ->where('election_id', $selectedElection->id)
+                            ->whereNull('candidate_id')
+                            ->count();
                         
-                        $candidateResults[] = [
-                            'candidate' => $candidate,
-                            'votes' => $voteCount,
+                        $totalVotes += $abstainVotes;
+
+                        // Sort candidates by votes (descending)
+                        usort($candidateResults, function($a, $b) {
+                            return $b['votes'] - $a['votes'];
+                        });
+
+                        $results[] = [
+                            'position' => $position,
+                            'candidates' => $candidateResults,
+                            'total_votes' => $totalVotes,
+                            'abstain_votes' => $abstainVotes,
                         ];
                     }
-
-                    // Get abstain votes for this position
-                    $abstainVotes = Vote::where('position_id', $position->id)
-                        ->whereNull('candidate_id')
-                        ->count();
-                    
-                    $totalVotes += $abstainVotes;
-
-                    // Sort candidates by votes (descending)
-                    usort($candidateResults, function($a, $b) {
-                        return $b['votes'] - $a['votes'];
-                    });
-
-                    $results[] = [
-                        'position' => $position,
-                        'candidates' => $candidateResults,
-                        'total_votes' => $totalVotes,
-                        'abstain_votes' => $abstainVotes,
-                    ];
                 }
             }
-        }
 
-        // Get total voters and votes cast
-        $totalVoters = \App\Models\User::where('user_type', 'student')->count();
-        $votedCount = 0;
-        
-        if ($selectedElection) {
-            $votedCount = \App\Models\User::where('user_type', 'student')
-                ->where('has_voted', true)
-                ->count();
-        }
+            // Get total voters and votes cast
+            $totalVoters = \App\Models\User::where('user_type', 'student')->count();
+            $votedCount = 0;
+            
+            if ($selectedElection) {
+                $votedCount = \App\Models\User::where('user_type', 'student')
+                    ->where('has_voted', true)
+                    ->count();
+            }
 
-        return view('admin.results.index', compact(
-            'elections',
-            'selectedElection',
-            'results',
-            'totalVoters',
-            'votedCount'
-        ));
+            return view('admin.results.index', compact(
+                'elections',
+                'selectedElection',
+                'results',
+                'totalVoters',
+                'votedCount'
+            ));
+        } catch (\Exception $e) {
+            \Log::error('Results display error: ' . $e->getMessage(), [
+                'election_id' => $request->election_id ?? null,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return redirect()->back()
+                ->with('error', 'Failed to load results. Please try again.');
+        }
     }
 
     /**
@@ -92,96 +111,112 @@ class ResultController extends Controller
      */
     private function getAjaxResults($electionId)
     {
-        // Fresh query from database - no caching
-        $selectedElection = Election::with(['positions.candidates.party'])
-            ->find($electionId);
+        try {
+            // Fresh query from database - no caching, optimized with eager loading
+            $selectedElection = Election::with([
+                'positions' => function ($query) {
+                    $query->orderBy('display_order');
+                },
+                'positions.candidates.party'
+            ])->find($electionId);
 
-        if (!$selectedElection) {
-            return response()->json(['error' => 'Election not found'], 404);
-        }
+            if (!$selectedElection) {
+                return response()->json(['error' => 'Election not found'], 404);
+            }
 
-        $formattedResults = [];
+            $formattedResults = [];
 
-        foreach ($selectedElection->positions as $position) {
-            $candidateResults = [];
-            $totalVotes = 0;
+            foreach ($selectedElection->positions as $position) {
+                $candidateResults = [];
+                $totalVotes = 0;
 
-            foreach ($position->candidates as $candidate) {
-                // Fresh vote count from database
-                $voteCount = Vote::where('position_id', $position->id)
-                    ->where('candidate_id', $candidate->id)
+                foreach ($position->candidates as $candidate) {
+                    // Fresh vote count from database
+                    $voteCount = Vote::where('position_id', $position->id)
+                        ->where('candidate_id', $candidate->id)
+                        ->count();
+                    
+                    $totalVotes += $voteCount;
+                    
+                    $candidateResults[] = [
+                        'candidate' => $candidate,
+                        'votes' => $voteCount,
+                    ];
+                }
+
+                // Fresh abstain votes count from database
+                $abstainVotes = Vote::where('position_id', $position->id)
+                    ->where('election_id', $electionId)
+                    ->whereNull('candidate_id')
                     ->count();
                 
-                $totalVotes += $voteCount;
-                
-                $candidateResults[] = [
-                    'candidate' => $candidate,
-                    'votes' => $voteCount,
-                ];
-            }
+                $totalVotes += $abstainVotes;
 
-            // Fresh abstain votes count from database
-            $abstainVotes = Vote::where('position_id', $position->id)
-                ->whereNull('candidate_id')
-                ->count();
-            
-            $totalVotes += $abstainVotes;
+                // Sort candidates by votes (descending)
+                usort($candidateResults, function($a, $b) {
+                    return $b['votes'] - $a['votes'];
+                });
 
-            // Sort candidates by votes (descending)
-            usort($candidateResults, function($a, $b) {
-                return $b['votes'] - $a['votes'];
-            });
+                // Format candidates with rankings
+                $candidates = [];
+                $rank = 1;
 
-            // Format candidates with rankings
-            $candidates = [];
-            $rank = 1;
+                foreach ($candidateResults as $candidateData) {
+                    $percentage = $totalVotes > 0 
+                        ? round(($candidateData['votes'] / $totalVotes) * 100, 2) 
+                        : 0;
 
-            foreach ($candidateResults as $candidateData) {
-                $percentage = $totalVotes > 0 
-                    ? round(($candidateData['votes'] / $totalVotes) * 100, 2) 
+                    $candidates[] = [
+                        'id' => $candidateData['candidate']->id,
+                        'name' => $candidateData['candidate']->full_name,
+                        'party' => $candidateData['candidate']->party->name ?? 'No Party',
+                        'votes' => $candidateData['votes'],
+                        'percentage' => $percentage,
+                        'rank' => $rank++,
+                    ];
+                }
+
+                $abstainPercentage = $totalVotes > 0 
+                    ? round(($abstainVotes / $totalVotes) * 100, 2) 
                     : 0;
 
-                $candidates[] = [
-                    'id' => $candidateData['candidate']->id,
-                    'name' => $candidateData['candidate']->full_name,
-                    'party' => $candidateData['candidate']->party->name ?? 'No Party',
-                    'votes' => $candidateData['votes'],
-                    'percentage' => $percentage,
-                    'rank' => $rank++,
+                $formattedResults[] = [
+                    'position_id' => $position->id,
+                    'position_name' => $position->name,
+                    'total_votes' => $totalVotes,
+                    'abstain_votes' => $abstainVotes,
+                    'abstain_percentage' => $abstainPercentage,
+                    'candidates' => $candidates,
                 ];
             }
 
-            $abstainPercentage = $totalVotes > 0 
-                ? round(($abstainVotes / $totalVotes) * 100, 2) 
-                : 0;
+            // Fresh statistics from database
+            $totalVoters = \App\Models\User::where('user_type', 'student')->count();
+            $votedCount = \App\Models\User::where('user_type', 'student')
+                ->where('has_voted', true)
+                ->count();
 
-            $formattedResults[] = [
-                'position_id' => $position->id,
-                'position_name' => $position->name,
-                'total_votes' => $totalVotes,
-                'abstain_votes' => $abstainVotes,
-                'abstain_percentage' => $abstainPercentage,
-                'candidates' => $candidates,
-            ];
+            $turnoutRate = $totalVoters > 0 ? round(($votedCount / $totalVoters) * 100, 2) : 0;
+
+            return response()->json([
+                'statistics' => [
+                    'totalVoters' => $totalVoters,
+                    'votedCount' => $votedCount,
+                    'turnoutRate' => $turnoutRate,
+                    'positionsCount' => count($formattedResults),
+                ],
+                'results' => $formattedResults,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('AJAX results error: ' . $e->getMessage(), [
+                'election_id' => $electionId,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'error' => 'Failed to load results. Please try again.'
+            ], 500);
         }
-
-        // Fresh statistics from database
-        $totalVoters = \App\Models\User::where('user_type', 'student')->count();
-        $votedCount = \App\Models\User::where('user_type', 'student')
-            ->where('has_voted', true)
-            ->count();
-
-        $turnoutRate = $totalVoters > 0 ? round(($votedCount / $totalVoters) * 100, 2) : 0;
-
-        return response()->json([
-            'statistics' => [
-                'totalVoters' => $totalVoters,
-                'votedCount' => $votedCount,
-                'turnoutRate' => $turnoutRate,
-                'positionsCount' => count($formattedResults),
-            ],
-            'results' => $formattedResults,
-        ]);
     }
 
     /**

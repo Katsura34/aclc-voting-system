@@ -14,5 +14,33 @@ return Application::configure(basePath: dirname(__DIR__))
         //
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // Log all exceptions for monitoring
+        $exceptions->reportable(function (Throwable $e) {
+            \Log::error('Application exception: ' . $e->getMessage(), [
+                'exception' => get_class($e),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+        });
+
+        // Customize error responses for better user experience
+        $exceptions->renderable(function (\Illuminate\Database\QueryException $e, $request) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'error' => 'A database error occurred. Please try again later.'
+                ], 500);
+            }
+            
+            return redirect()->back()
+                ->with('error', 'A database error occurred. Please try again or contact support.');
+        });
+
+        $exceptions->renderable(function (\Symfony\Component\HttpKernel\Exception\NotFoundHttpException $e, $request) {
+            if ($request->expectsJson()) {
+                return response()->json(['error' => 'Resource not found'], 404);
+            }
+            
+            return response()->view('errors.404', [], 404);
+        });
     })->create();

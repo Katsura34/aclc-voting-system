@@ -22,30 +22,43 @@ class LoginController extends Controller
      */
     public function login(Request $request)
     {
-        $request->validate([
-            'usn' => 'required|string',
-            'password' => 'required|string',
-        ]);
+        try {
+            $request->validate([
+                'usn' => 'required|string',
+                'password' => 'required|string',
+            ]);
 
-        $credentials = [
-            'usn' => $request->usn,
-            'password' => $request->password,
-        ];
+            $credentials = [
+                'usn' => $request->usn,
+                'password' => $request->password,
+            ];
 
-        if (Auth::attempt($credentials, $request->filled('remember'))) {
-            $request->session()->regenerate();
+            if (Auth::attempt($credentials, $request->filled('remember'))) {
+                $request->session()->regenerate();
 
-            // Redirect based on user type
-            if (Auth::user()->user_type === 'admin') {
-                return redirect()->intended('/admin/dashboard');
+                // Redirect based on user type
+                if (Auth::user()->user_type === 'admin') {
+                    return redirect()->intended('/admin/dashboard');
+                }
+
+                return redirect()->intended(route('voting.index'));
             }
 
-            return redirect()->intended(route('voting.index'));
+            throw ValidationException::withMessages([
+                'usn' => 'The provided credentials do not match our records.',
+            ]);
+        } catch (ValidationException $e) {
+            throw $e;
+        } catch (\Exception $e) {
+            \Log::error('Login error: ' . $e->getMessage(), [
+                'usn' => $request->usn,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return redirect()->back()
+                ->withInput($request->only('usn', 'remember'))
+                ->withErrors(['usn' => 'An error occurred during login. Please try again.']);
         }
-
-        throw ValidationException::withMessages([
-            'usn' => 'The provided credentials do not match our records.',
-        ]);
     }
 
     /**

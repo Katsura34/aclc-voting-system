@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Cache;
 
 class Election extends Model
 {
@@ -38,5 +39,46 @@ class Election extends Model
     public function candidates()
     {
         return $this->hasManyThrough(Candidate::class, Position::class);
+    }
+
+    /**
+     * Get the active election with caching for better performance.
+     * Cache is cleared when election status changes.
+     */
+    public static function getActiveElection()
+    {
+        return Cache::remember('active_election', 300, function () {
+            return self::where('is_active', true)
+                ->with([
+                    'positions' => function ($query) {
+                        $query->orderBy('display_order');
+                    },
+                    'positions.candidates.party'
+                ])
+                ->first();
+        });
+    }
+
+    /**
+     * Clear active election cache.
+     */
+    public static function clearActiveElectionCache()
+    {
+        Cache::forget('active_election');
+    }
+
+    /**
+     * The "booted" method of the model.
+     */
+    protected static function booted()
+    {
+        // Clear cache when election is updated or deleted
+        static::saved(function () {
+            self::clearActiveElectionCache();
+        });
+
+        static::deleted(function () {
+            self::clearActiveElectionCache();
+        });
     }
 }

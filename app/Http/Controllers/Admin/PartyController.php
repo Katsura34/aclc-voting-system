@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Party;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class PartyController extends Controller
@@ -31,22 +32,57 @@ class PartyController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:parties,name',
-            'acronym' => 'required|string|max:10|unique:parties,acronym',
-            'color' => 'required|string|max:7',
-            'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'description' => 'nullable|string'
-        ]);
+        try {
+            $validated = $request->validate([
+                'name' => 'required|string|max:255|unique:parties,name',
+                'acronym' => 'required|string|max:10|unique:parties,acronym',
+                'color' => 'required|string|max:7',
+                'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+                'description' => 'nullable|string'
+            ]);
 
-        if ($request->hasFile('logo')) {
-            $validated['logo'] = $request->file('logo')->store('logos', 'public');
+            DB::beginTransaction();
+            
+            try {
+                if ($request->hasFile('logo')) {
+                    $file = $request->file('logo');
+                    if (!$file->isValid()) {
+                        throw new \Exception('Invalid logo file uploaded.');
+                    }
+                    $validated['logo'] = $file->store('logos', 'public');
+                }
+
+                Party::create($validated);
+                
+                DB::commit();
+
+                \Log::info('Party created', ['name' => $validated['name']]);
+
+                return redirect()->route('admin.parties.index')
+                    ->with('success', 'Party created successfully!');
+            } catch (\Exception $e) {
+                DB::rollBack();
+                
+                // Clean up uploaded file if exists
+                if (isset($validated['logo'])) {
+                    Storage::disk('public')->delete($validated['logo']);
+                }
+                
+                throw $e;
+            }
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return redirect()->back()
+                ->withErrors($e->errors())
+                ->withInput();
+        } catch (\Exception $e) {
+            \Log::error('Party creation error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return redirect()->back()
+                ->with('error', 'Failed to create party. Please try again.')
+                ->withInput();
         }
-
-        Party::create($validated);
-
-        return redirect()->route('admin.parties.index')
-            ->with('success', 'Party created successfully!');
     }
 
     /**
@@ -71,26 +107,65 @@ class PartyController extends Controller
      */
     public function update(Request $request, Party $party)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:parties,name,' . $party->id,
-            'acronym' => 'required|string|max:10|unique:parties,acronym,' . $party->id,
-            'color' => 'required|string|max:7',
-            'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'description' => 'nullable|string'
-        ]);
+        try {
+            $validated = $request->validate([
+                'name' => 'required|string|max:255|unique:parties,name,' . $party->id,
+                'acronym' => 'required|string|max:10|unique:parties,acronym,' . $party->id,
+                'color' => 'required|string|max:7',
+                'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+                'description' => 'nullable|string'
+            ]);
 
-        if ($request->hasFile('logo')) {
-            // Delete old logo if exists
-            if ($party->logo) {
-                Storage::disk('public')->delete($party->logo);
+            DB::beginTransaction();
+            
+            try {
+                $oldLogo = $party->logo;
+                
+                if ($request->hasFile('logo')) {
+                    $file = $request->file('logo');
+                    if (!$file->isValid()) {
+                        throw new \Exception('Invalid logo file uploaded.');
+                    }
+                    $validated['logo'] = $file->store('logos', 'public');
+                }
+
+                $party->update($validated);
+                
+                // Delete old logo only after successful update
+                if ($request->hasFile('logo') && $oldLogo) {
+                    Storage::disk('public')->delete($oldLogo);
+                }
+                
+                DB::commit();
+
+                \Log::info('Party updated', ['party_id' => $party->id]);
+
+                return redirect()->route('admin.parties.index')
+                    ->with('success', 'Party updated successfully!');
+            } catch (\Exception $e) {
+                DB::rollBack();
+                
+                // Clean up newly uploaded file if exists
+                if (isset($validated['logo']) && $validated['logo'] !== $oldLogo) {
+                    Storage::disk('public')->delete($validated['logo']);
+                }
+                
+                throw $e;
             }
-            $validated['logo'] = $request->file('logo')->store('logos', 'public');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return redirect()->back()
+                ->withErrors($e->errors())
+                ->withInput();
+        } catch (\Exception $e) {
+            \Log::error('Party update error: ' . $e->getMessage(), [
+                'party_id' => $party->id,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return redirect()->back()
+                ->with('error', 'Failed to update party. Please try again.')
+                ->withInput();
         }
-
-        $party->update($validated);
-
-        return redirect()->route('admin.parties.index')
-            ->with('success', 'Party updated successfully!');
     }
 
     /**
@@ -98,20 +173,43 @@ class PartyController extends Controller
      */
     public function destroy(Party $party)
     {
-        // Check if party has candidates
-        if ($party->candidates()->count() > 0) {
+        try {
+            DB::beginTransaction();
+            
+            try {
+                // Check if party has candidates
+                if ($party->candidates()->count() > 0) {
+                    return redirect()->route('admin.parties.index')
+                        ->with('error', 'Cannot delete party with existing candidates!');
+                }
+
+                $logo = $party->logo;
+                
+                $party->delete();
+                
+                // Delete logo only after successful deletion
+                if ($logo) {
+                    Storage::disk('public')->delete($logo);
+                }
+                
+                DB::commit();
+
+                \Log::info('Party deleted', ['party_id' => $party->id]);
+
+                return redirect()->route('admin.parties.index')
+                    ->with('success', 'Party deleted successfully!');
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+        } catch (\Exception $e) {
+            \Log::error('Party deletion error: ' . $e->getMessage(), [
+                'party_id' => $party->id,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             return redirect()->route('admin.parties.index')
-                ->with('error', 'Cannot delete party with existing candidates!');
+                ->with('error', 'Failed to delete party. Please try again.');
         }
-
-        // Delete logo if exists
-        if ($party->logo) {
-            Storage::disk('public')->delete($party->logo);
-        }
-
-        $party->delete();
-
-        return redirect()->route('admin.parties.index')
-            ->with('success', 'Party deleted successfully!');
     }
 }

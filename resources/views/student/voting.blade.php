@@ -285,7 +285,7 @@
         @endif
 
         <!-- Voting Form -->
-        <form method="POST" action="{{ route('voting.submit') }}" id="votingForm">
+        <form method="POST" action="{{ route('voting.submit') }}" id="votingForm" autocomplete="off">
             @csrf
 
             @foreach($election->positions as $position)

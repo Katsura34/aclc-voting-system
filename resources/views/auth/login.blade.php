@@ -357,7 +357,7 @@
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('login') }}">
+            <form method="POST" action="{{ route('login') }}" autocomplete="on">
                 @csrf
 
                 <div class="form-group">
@@ -369,6 +369,7 @@
                         class="form-control @error('usn') is-invalid @enderror" 
                         value="{{ old('usn') }}" 
                         placeholder="Username (USN)"
+                        autocomplete="username"
                         required 
                         autofocus
                     >
@@ -385,6 +386,7 @@
                         name="password" 
                         class="form-control @error('password') is-invalid @enderror" 
                         placeholder="Password"
+                        autocomplete="current-password"
                         required
                     >
                     @error('password')

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Position;
 use App\Models\Election;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class PositionController extends Controller
@@ -47,18 +48,43 @@ class PositionController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'election_id' => 'required|exists:elections,id',
-            'max_votes' => 'required|integer|min:1',
-            'display_order' => 'nullable|integer|min:0',
-        ]);
+        try {
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'description' => 'nullable|string',
+                'election_id' => 'required|exists:elections,id',
+                'max_votes' => 'required|integer|min:1',
+                'display_order' => 'nullable|integer|min:0',
+            ]);
 
-        Position::create($validated);
+            DB::beginTransaction();
+            
+            try {
+                Position::create($validated);
+                
+                DB::commit();
 
-        return redirect()->route('admin.positions.index')
-            ->with('success', 'Position created successfully!');
+                \Log::info('Position created', ['name' => $validated['name']]);
+
+                return redirect()->route('admin.positions.index')
+                    ->with('success', 'Position created successfully!');
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return redirect()->back()
+                ->withErrors($e->errors())
+                ->withInput();
+        } catch (\Exception $e) {
+            \Log::error('Position creation error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return redirect()->back()
+                ->with('error', 'Failed to create position. Please try again.')
+                ->withInput();
+        }
     }
 
     /**
@@ -84,18 +110,44 @@ class PositionController extends Controller
      */
     public function update(Request $request, Position $position)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'election_id' => 'required|exists:elections,id',
-            'max_votes' => 'required|integer|min:1',
-            'display_order' => 'nullable|integer|min:0',
-        ]);
+        try {
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'description' => 'nullable|string',
+                'election_id' => 'required|exists:elections,id',
+                'max_votes' => 'required|integer|min:1',
+                'display_order' => 'nullable|integer|min:0',
+            ]);
 
-        $position->update($validated);
+            DB::beginTransaction();
+            
+            try {
+                $position->update($validated);
+                
+                DB::commit();
 
-        return redirect()->route('admin.positions.index')
-            ->with('success', 'Position updated successfully!');
+                \Log::info('Position updated', ['position_id' => $position->id]);
+
+                return redirect()->route('admin.positions.index')
+                    ->with('success', 'Position updated successfully!');
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return redirect()->back()
+                ->withErrors($e->errors())
+                ->withInput();
+        } catch (\Exception $e) {
+            \Log::error('Position update error: ' . $e->getMessage(), [
+                'position_id' => $position->id,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return redirect()->back()
+                ->with('error', 'Failed to update position. Please try again.')
+                ->withInput();
+        }
     }
 
     /**
@@ -103,16 +155,37 @@ class PositionController extends Controller
      */
     public function destroy(Position $position)
     {
-        // Check if position has candidates
-        if ($position->candidates()->count() > 0) {
+        try {
+            DB::beginTransaction();
+            
+            try {
+                // Check if position has candidates
+                if ($position->candidates()->count() > 0) {
+                    return redirect()->route('admin.positions.index')
+                        ->with('error', 'Cannot delete position with existing candidates!');
+                }
+
+                $position->delete();
+                
+                DB::commit();
+
+                \Log::info('Position deleted', ['position_id' => $position->id]);
+
+                return redirect()->route('admin.positions.index')
+                    ->with('success', 'Position deleted successfully!');
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+        } catch (\Exception $e) {
+            \Log::error('Position deletion error: ' . $e->getMessage(), [
+                'position_id' => $position->id,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             return redirect()->route('admin.positions.index')
-                ->with('error', 'Cannot delete position with existing candidates!');
+                ->with('error', 'Failed to delete position. Please try again.');
         }
-
-        $position->delete();
-
-        return redirect()->route('admin.positions.index')
-            ->with('success', 'Position deleted successfully!');
     }
 
     /**
@@ -120,13 +193,24 @@ class PositionController extends Controller
      */
     public function import(Request $request)
     {
-        $request->validate([
-            'csv_file' => 'required|file|mimes:csv,txt|max:2048',
-        ]);
-
         try {
+            $request->validate([
+                'csv_file' => 'required|file|mimes:csv,txt|max:2048',
+            ]);
+
             $file = $request->file('csv_file');
+            
+            if (!$file->isValid()) {
+                return redirect()->route('admin.positions.index')
+                    ->with('error', 'The uploaded file is invalid. Please try again.');
+            }
+            
             $csvData = array_map('str_getcsv', file($file->getRealPath()));
+            
+            if (empty($csvData)) {
+                return redirect()->route('admin.positions.index')
+                    ->with('error', 'The CSV file is empty.');
+            }
             
             // Get headers
             $headers = array_shift($csvData);
@@ -144,57 +228,77 @@ class PositionController extends Controller
             $skippedCount = 0;
             $errors = [];
 
-            foreach ($csvData as $index => $row) {
-                $rowNumber = $index + 2; // +2 because of header and 0-based index
+            DB::beginTransaction();
+            
+            try {
+                foreach ($csvData as $index => $row) {
+                    $rowNumber = $index + 2; // +2 because of header and 0-based index
+                    
+                    // Skip empty rows
+                    if (empty(array_filter($row))) {
+                        continue;
+                    }
+
+                    // Create associative array
+                    $data = array_combine($headers, $row);
+                    
+                    // Validate row data
+                    $validator = Validator::make($data, [
+                        'name' => 'required|string|max:255',
+                        'description' => 'nullable|string',
+                        'election_id' => 'required|exists:elections,id',
+                        'max_votes' => 'required|integer|min:1',
+                        'display_order' => 'nullable|integer|min:0',
+                    ]);
+
+                    if ($validator->fails()) {
+                        $skippedCount++;
+                        $errors[] = "Row {$rowNumber}: " . implode(', ', $validator->errors()->all());
+                        continue;
+                    }
+
+                    // Create position
+                    Position::create([
+                        'name' => $data['name'],
+                        'description' => $data['description'] ?? null,
+                        'election_id' => $data['election_id'],
+                        'max_votes' => $data['max_votes'],
+                        'display_order' => $data['display_order'] ?? 0,
+                    ]);
+
+                    $importedCount++;
+                }
                 
-                // Skip empty rows
-                if (empty(array_filter($row))) {
-                    continue;
+                DB::commit();
+
+                $message = "Successfully imported {$importedCount} position(s).";
+                if ($skippedCount > 0) {
+                    $message .= " Skipped {$skippedCount} row(s) due to validation errors.";
                 }
 
-                // Create associative array
-                $data = array_combine($headers, $row);
-                
-                // Validate row data
-                $validator = Validator::make($data, [
-                    'name' => 'required|string|max:255',
-                    'description' => 'nullable|string',
-                    'election_id' => 'required|exists:elections,id',
-                    'max_votes' => 'required|integer|min:1',
-                    'display_order' => 'nullable|integer|min:0',
-                ]);
-
-                if ($validator->fails()) {
-                    $skippedCount++;
-                    $errors[] = "Row {$rowNumber}: " . implode(', ', $validator->errors()->all());
-                    continue;
+                if (!empty($errors)) {
+                    session()->flash('import_errors', $errors);
                 }
 
-                // Create position
-                Position::create([
-                    'name' => $data['name'],
-                    'description' => $data['description'] ?? null,
-                    'election_id' => $data['election_id'],
-                    'max_votes' => $data['max_votes'],
-                    'display_order' => $data['display_order'] ?? 0,
+                \Log::info('Positions imported', [
+                    'imported' => $importedCount,
+                    'skipped' => $skippedCount
                 ]);
 
-                $importedCount++;
+                return redirect()->route('admin.positions.index')
+                    ->with('success', $message);
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
             }
-
-            $message = "Successfully imported {$importedCount} position(s).";
-            if ($skippedCount > 0) {
-                $message .= " Skipped {$skippedCount} row(s) due to validation errors.";
-            }
-
-            if (!empty($errors)) {
-                session()->flash('import_errors', $errors);
-            }
-
+        } catch (\Illuminate\Validation\ValidationException $e) {
             return redirect()->route('admin.positions.index')
-                ->with('success', $message);
-
+                ->withErrors($e->errors());
         } catch (\Exception $e) {
+            \Log::error('Position import error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             return redirect()->route('admin.positions.index')
                 ->with('error', 'Error importing CSV: ' . $e->getMessage());
         }

@@ -8,6 +8,7 @@ use App\Models\Election;
 use App\Models\Position;
 use App\Models\Party;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class CandidateController extends Controller
@@ -72,19 +73,44 @@ class CandidateController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
-            'position_id' => 'required|exists:positions,id',
-            'party_id' => 'required|exists:parties,id',
-            'bio' => 'nullable|string',
-            'platform' => 'nullable|string',
-        ]);
+        try {
+            $validated = $request->validate([
+                'first_name' => 'required|string|max:255',
+                'last_name' => 'required|string|max:255',
+                'position_id' => 'required|exists:positions,id',
+                'party_id' => 'required|exists:parties,id',
+                'bio' => 'nullable|string',
+                'platform' => 'nullable|string',
+            ]);
 
-        Candidate::create($validated);
+            DB::beginTransaction();
+            
+            try {
+                Candidate::create($validated);
+                
+                DB::commit();
 
-        return redirect()->route('admin.candidates.index')
-            ->with('success', 'Candidate created successfully!');
+                \Log::info('Candidate created', ['name' => $validated['first_name'] . ' ' . $validated['last_name']]);
+
+                return redirect()->route('admin.candidates.index')
+                    ->with('success', 'Candidate created successfully!');
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return redirect()->back()
+                ->withErrors($e->errors())
+                ->withInput();
+        } catch (\Exception $e) {
+            \Log::error('Candidate creation error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return redirect()->back()
+                ->with('error', 'Failed to create candidate. Please try again.')
+                ->withInput();
+        }
     }
 
     /**
@@ -114,19 +140,45 @@ class CandidateController extends Controller
      */
     public function update(Request $request, Candidate $candidate)
     {
-        $validated = $request->validate([
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
-            'position_id' => 'required|exists:positions,id',
-            'party_id' => 'required|exists:parties,id',
-            'bio' => 'nullable|string',
-            'platform' => 'nullable|string',
-        ]);
+        try {
+            $validated = $request->validate([
+                'first_name' => 'required|string|max:255',
+                'last_name' => 'required|string|max:255',
+                'position_id' => 'required|exists:positions,id',
+                'party_id' => 'required|exists:parties,id',
+                'bio' => 'nullable|string',
+                'platform' => 'nullable|string',
+            ]);
 
-        $candidate->update($validated);
+            DB::beginTransaction();
+            
+            try {
+                $candidate->update($validated);
+                
+                DB::commit();
 
-        return redirect()->route('admin.candidates.index')
-            ->with('success', 'Candidate updated successfully!');
+                \Log::info('Candidate updated', ['candidate_id' => $candidate->id]);
+
+                return redirect()->route('admin.candidates.index')
+                    ->with('success', 'Candidate updated successfully!');
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return redirect()->back()
+                ->withErrors($e->errors())
+                ->withInput();
+        } catch (\Exception $e) {
+            \Log::error('Candidate update error: ' . $e->getMessage(), [
+                'candidate_id' => $candidate->id,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return redirect()->back()
+                ->with('error', 'Failed to update candidate. Please try again.')
+                ->withInput();
+        }
     }
 
     /**
@@ -134,16 +186,37 @@ class CandidateController extends Controller
      */
     public function destroy(Candidate $candidate)
     {
-        // Check if candidate has votes
-        if ($candidate->votes()->count() > 0) {
+        try {
+            DB::beginTransaction();
+            
+            try {
+                // Check if candidate has votes
+                if ($candidate->votes()->count() > 0) {
+                    return redirect()->route('admin.candidates.index')
+                        ->with('error', 'Cannot delete candidate with existing votes!');
+                }
+
+                $candidate->delete();
+                
+                DB::commit();
+
+                \Log::info('Candidate deleted', ['candidate_id' => $candidate->id]);
+
+                return redirect()->route('admin.candidates.index')
+                    ->with('success', 'Candidate deleted successfully!');
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+        } catch (\Exception $e) {
+            \Log::error('Candidate deletion error: ' . $e->getMessage(), [
+                'candidate_id' => $candidate->id,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             return redirect()->route('admin.candidates.index')
-                ->with('error', 'Cannot delete candidate with existing votes!');
+                ->with('error', 'Failed to delete candidate. Please try again.');
         }
-
-        $candidate->delete();
-
-        return redirect()->route('admin.candidates.index')
-            ->with('success', 'Candidate deleted successfully!');
     }
 
     /**

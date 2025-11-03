@@ -11,7 +11,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // Add session validation middleware to web group
+        $middleware->appendToGroup('web', \App\Http\Middleware\ValidateSession::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // Log all exceptions for monitoring

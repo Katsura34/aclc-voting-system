@@ -2,6 +2,23 @@
 
 This document outlines the comprehensive error handling and performance optimizations implemented in the ACLC Voting System.
 
+## Security Enhancements
+
+### Single Session Per Account
+- **Location:** `app/Http/Controllers/Auth/LoginController.php` and `app/Http/Middleware/ValidateSession.php`
+- **Features:**
+  - When a user logs in, all previous sessions are automatically invalidated
+  - Only one active session per account at any time
+  - Prevents concurrent logins from multiple devices/browsers
+  - Previous sessions are notified with a clear message when terminated
+  - Sessions table tracks user_id for session management
+
+**How it Works:**
+1. User logs in from Device A - Session created
+2. Same user logs in from Device B - Device A session is invalidated
+3. Device A user gets logged out with message: "Your session has been terminated because you logged in from another device or browser."
+4. Only Device B session remains active
+
 ## Error Handling Improvements
 
 ### 1. Global Exception Handling
@@ -21,7 +38,7 @@ All admin controllers now include:
 - Proper validation error handling
 
 **Controllers Enhanced:**
-- `LoginController` - Enhanced login error handling
+- `LoginController` - Enhanced login error handling + single session enforcement
 - `VotingController` - Voting submission error handling with transaction safety
 - `ElectionController` - Full CRUD error handling
 - `CandidateController` - CSV import error handling

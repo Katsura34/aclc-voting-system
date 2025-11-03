@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class LoginController extends Controller
@@ -34,10 +35,25 @@ class LoginController extends Controller
             ];
 
             if (Auth::attempt($credentials, $request->filled('remember'))) {
+                // Invalidate all other sessions for this user (single session per account)
+                $user = Auth::user();
+                $currentSessionId = $request->session()->getId();
+                
+                // Delete all other sessions for this user
+                DB::table('sessions')
+                    ->where('user_id', $user->id)
+                    ->where('id', '!=', $currentSessionId)
+                    ->delete();
+                
                 $request->session()->regenerate();
 
+                \Log::info('User logged in (previous sessions invalidated)', [
+                    'user_id' => $user->id,
+                    'usn' => $user->usn
+                ]);
+
                 // Redirect based on user type
-                if (Auth::user()->user_type === 'admin') {
+                if ($user->user_type === 'admin') {
                     return redirect()->intended('/admin/dashboard');
                 }
 

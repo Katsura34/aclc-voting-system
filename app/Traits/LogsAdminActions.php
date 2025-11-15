@@ -18,7 +18,7 @@ trait LogsAdminActions
         ?array $newValues = null
     ): void {
         AdminAuditLog::create([
-            'user_id' => auth()->id(),
+            'user_id' => auth()->user()->id, // Use the actual numeric ID, not the auth identifier
             'action' => $action,
             'model_type' => $modelType,
             'model_id' => $modelId,

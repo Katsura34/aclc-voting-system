@@ -26,15 +26,15 @@ class CheckElectionEnded
 
         // Get the election being viewed
         $electionId = $request->input('election_id') ?? $request->route('election');
-        
+
         if ($electionId) {
             $election = Election::find($electionId);
-            
+
             if ($election) {
                 // Check if election has ended and if live results are disabled
-                if (!$election->show_live_results && $election->end_date && now()->lt($election->end_date)) {
+                if (! $election->show_live_results && $election->end_date && now()->lt($election->end_date)) {
                     return redirect()->back()
-                        ->with('error', 'Results will be available after the election ends on ' . $election->end_date->format('F d, Y h:i A'));
+                        ->with('error', 'Results will be available after the election ends on '.$election->end_date->format('F d, Y h:i A'));
                 }
             }
         }

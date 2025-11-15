@@ -1,15 +1,15 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Admin\CandidateController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ElectionController;
 use App\Http\Controllers\Admin\PartyController;
 use App\Http\Controllers\Admin\PositionController;
-use App\Http\Controllers\Admin\CandidateController;
 use App\Http\Controllers\Admin\ResultController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Student\VotingController;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return redirect('/login');
@@ -26,7 +26,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/voting', [VotingController::class, 'index'])->name('voting.index');
     Route::post('/voting/submit', [VotingController::class, 'submit'])->name('voting.submit');
     Route::get('/voting/success', [VotingController::class, 'success'])->name('voting.success');
-    
+
     // Legacy dashboard route (redirect to voting)
     Route::get('/dashboard', function () {
         return redirect()->route('voting.index');
@@ -36,7 +36,7 @@ Route::middleware(['auth'])->group(function () {
 // Admin Routes
 Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
-    
+
     // Election Management
     Route::resource('elections', ElectionController::class)->names([
         'index' => 'admin.elections.index',
@@ -49,7 +49,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     ]);
     Route::post('/elections/{election}/toggle-active', [ElectionController::class, 'toggleActive'])
         ->name('admin.elections.toggle-active');
-    
+
     // Party Management
     Route::resource('parties', PartyController::class)->names([
         'index' => 'admin.parties.index',
@@ -60,7 +60,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
         'update' => 'admin.parties.update',
         'destroy' => 'admin.parties.destroy',
     ]);
-    
+
     // Position Management
     Route::get('positions/download-template', [PositionController::class, 'downloadTemplate'])
         ->name('admin.positions.download-template');
@@ -75,7 +75,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
         'update' => 'admin.positions.update',
         'destroy' => 'admin.positions.destroy',
     ]);
-    
+
     // Candidate Management
     Route::get('candidates/download-template', [CandidateController::class, 'downloadTemplate'])
         ->name('admin.candidates.download-template');
@@ -90,12 +90,12 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
         'update' => 'admin.candidates.update',
         'destroy' => 'admin.candidates.destroy',
     ]);
-    
+
     // Results
     Route::get('results', [ResultController::class, 'index'])->name('admin.results.index');
     Route::get('results/export', [ResultController::class, 'export'])->name('admin.results.export');
     Route::get('results/print', [ResultController::class, 'print'])->name('admin.results.print');
-    
+
     // User Management
     Route::patch('users/{user}/reset-vote', [UserController::class, 'resetVote'])
         ->name('admin.users.reset-vote');

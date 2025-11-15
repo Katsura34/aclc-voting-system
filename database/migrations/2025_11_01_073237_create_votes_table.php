@@ -20,7 +20,7 @@ return new class extends Migration
             $table->boolean('is_abstain')->default(false);
             $table->timestamp('voted_at')->useCurrent();
             $table->timestamps();
-            
+
             // Ensure one vote per user per position per election
             $table->unique(['election_id', 'user_id', 'position_id']);
         });

@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Position;
 use App\Models\Election;
+use App\Models\Position;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -19,7 +19,7 @@ class PositionController extends Controller
 
         // Search by position name
         if ($request->filled('search')) {
-            $query->where('name', 'like', '%' . $request->search . '%');
+            $query->where('name', 'like', '%'.$request->search.'%');
         }
 
         // Filter by election
@@ -39,6 +39,7 @@ class PositionController extends Controller
     public function create()
     {
         $elections = Election::all();
+
         return view('admin.positions.create', compact('elections'));
     }
 
@@ -67,6 +68,7 @@ class PositionController extends Controller
     public function show(Position $position)
     {
         $position->load(['election', 'candidates.party']);
+
         return view('admin.positions.show', compact('position'));
     }
 
@@ -76,6 +78,7 @@ class PositionController extends Controller
     public function edit(Position $position)
     {
         $elections = Election::all();
+
         return view('admin.positions.edit', compact('position', 'elections'));
     }
 
@@ -127,17 +130,17 @@ class PositionController extends Controller
         try {
             $file = $request->file('csv_file');
             $csvData = array_map('str_getcsv', file($file->getRealPath()));
-            
+
             // Get headers
             $headers = array_shift($csvData);
-            
+
             // Validate headers
             $requiredHeaders = ['name', 'election_id', 'max_votes'];
             $missingHeaders = array_diff($requiredHeaders, $headers);
-            
-            if (!empty($missingHeaders)) {
+
+            if (! empty($missingHeaders)) {
                 return redirect()->route('admin.positions.index')
-                    ->with('error', 'CSV file is missing required columns: ' . implode(', ', $missingHeaders));
+                    ->with('error', 'CSV file is missing required columns: '.implode(', ', $missingHeaders));
             }
 
             $importedCount = 0;
@@ -146,7 +149,7 @@ class PositionController extends Controller
 
             foreach ($csvData as $index => $row) {
                 $rowNumber = $index + 2; // +2 because of header and 0-based index
-                
+
                 // Skip empty rows
                 if (empty(array_filter($row))) {
                     continue;
@@ -154,7 +157,7 @@ class PositionController extends Controller
 
                 // Create associative array
                 $data = array_combine($headers, $row);
-                
+
                 // Validate row data
                 $validator = Validator::make($data, [
                     'name' => 'required|string|max:255',
@@ -166,7 +169,8 @@ class PositionController extends Controller
 
                 if ($validator->fails()) {
                     $skippedCount++;
-                    $errors[] = "Row {$rowNumber}: " . implode(', ', $validator->errors()->all());
+                    $errors[] = "Row {$rowNumber}: ".implode(', ', $validator->errors()->all());
+
                     continue;
                 }
 
@@ -187,7 +191,7 @@ class PositionController extends Controller
                 $message .= " Skipped {$skippedCount} row(s) due to validation errors.";
             }
 
-            if (!empty($errors)) {
+            if (! empty($errors)) {
                 session()->flash('import_errors', $errors);
             }
 
@@ -196,7 +200,7 @@ class PositionController extends Controller
 
         } catch (\Exception $e) {
             return redirect()->route('admin.positions.index')
-                ->with('error', 'Error importing CSV: ' . $e->getMessage());
+                ->with('error', 'Error importing CSV: '.$e->getMessage());
         }
     }
 
@@ -211,36 +215,36 @@ class PositionController extends Controller
         ];
 
         $columns = ['name', 'description', 'election_id', 'max_votes', 'display_order'];
-        
-        $callback = function() use ($columns) {
+
+        $callback = function () use ($columns) {
             $file = fopen('php://output', 'w');
-            
+
             // Add headers
             fputcsv($file, $columns);
-            
+
             // Add sample data
             fputcsv($file, [
                 'President',
                 'Chief executive officer of the student council',
                 '1',
                 '1',
-                '1'
+                '1',
             ]);
             fputcsv($file, [
                 'Vice President',
                 'Second in command of the student council',
                 '1',
                 '1',
-                '2'
+                '2',
             ]);
             fputcsv($file, [
                 'Secretary',
                 'Handles documentation and records',
                 '1',
                 '1',
-                '3'
+                '3',
             ]);
-            
+
             fclose($file);
         };
 

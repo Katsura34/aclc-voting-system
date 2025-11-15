@@ -22,7 +22,7 @@ return new class extends Migration
             $table->text('user_agent')->nullable();
             $table->timestamp('voted_at');
             $table->timestamps();
-            
+
             $table->index(['user_id', 'election_id']);
             $table->index('voted_at');
         });

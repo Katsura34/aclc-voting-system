@@ -2,9 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
 use App\Models\User;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
 class UserSeeder extends Seeder
@@ -46,7 +45,7 @@ class UserSeeder extends Seeder
         foreach ($students as $student) {
             User::create([
                 'name' => $student['name'],
-                'email' => strtolower(str_replace(' ', '.', $student['name'])) . '@student.aclc.edu.ph',
+                'email' => strtolower(str_replace(' ', '.', $student['name'])).'@student.aclc.edu.ph',
                 'usn' => $student['usn'],
                 'user_type' => 'student',
                 'has_voted' => false,

@@ -31,10 +31,10 @@ class LoginController extends Controller
 
         // Rate limiting: max 5 attempts per minute
         $key = Str::lower($request->input('usn')).'|'.$request->ip();
-        
+
         if (RateLimiter::tooManyAttempts($key, 5)) {
             $seconds = RateLimiter::availableIn($key);
-            
+
             throw ValidationException::withMessages([
                 'usn' => "Too many login attempts. Please try again in {$seconds} seconds.",
             ]);
@@ -47,7 +47,7 @@ class LoginController extends Controller
 
         if (Auth::attempt($credentials, $request->filled('remember'))) {
             $request->session()->regenerate();
-            
+
             // Clear rate limiter on successful login
             RateLimiter::clear($key);
 

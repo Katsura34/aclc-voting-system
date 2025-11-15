@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Candidate;
 use App\Models\Election;
-use App\Models\Position;
 use App\Models\Party;
+use App\Models\Position;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -22,15 +22,15 @@ class CandidateController extends Controller
         // Search by name
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('first_name', 'like', "%{$search}%")
-                  ->orWhere('last_name', 'like', "%{$search}%");
+                    ->orWhere('last_name', 'like', "%{$search}%");
             });
         }
 
         // Filter by election
         if ($request->filled('election_id')) {
-            $query->whereHas('position', function($q) use ($request) {
+            $query->whereHas('position', function ($q) use ($request) {
                 $q->where('election_id', $request->election_id);
             });
         }
@@ -46,12 +46,12 @@ class CandidateController extends Controller
         }
 
         $candidates = $query->latest()->get();
-        
+
         // Get filter options
         $elections = Election::all();
         $positions = Position::with('election')->get();
         $parties = Party::all();
-        
+
         return view('admin.candidates.index', compact('candidates', 'elections', 'positions', 'parties'));
     }
 
@@ -63,7 +63,7 @@ class CandidateController extends Controller
         $elections = Election::all();
         $positions = Position::with('election')->get();
         $parties = Party::all();
-        
+
         return view('admin.candidates.create', compact('elections', 'positions', 'parties'));
     }
 
@@ -93,7 +93,7 @@ class CandidateController extends Controller
     public function show(Candidate $candidate)
     {
         $candidate->load(['position.election', 'party']);
-        
+
         return view('admin.candidates.show', compact('candidate'));
     }
 
@@ -105,7 +105,7 @@ class CandidateController extends Controller
         $elections = Election::all();
         $positions = Position::with('election')->get();
         $parties = Party::all();
-        
+
         return view('admin.candidates.edit', compact('candidate', 'elections', 'positions', 'parties'));
     }
 
@@ -158,17 +158,17 @@ class CandidateController extends Controller
         try {
             $file = $request->file('csv_file');
             $csvData = array_map('str_getcsv', file($file->getRealPath()));
-            
+
             // Get headers
             $headers = array_shift($csvData);
-            
+
             // Validate headers
             $requiredHeaders = ['first_name', 'last_name', 'position_id', 'party_id'];
             $missingHeaders = array_diff($requiredHeaders, $headers);
-            
-            if (!empty($missingHeaders)) {
+
+            if (! empty($missingHeaders)) {
                 return redirect()->route('admin.candidates.index')
-                    ->with('error', 'CSV file is missing required columns: ' . implode(', ', $missingHeaders));
+                    ->with('error', 'CSV file is missing required columns: '.implode(', ', $missingHeaders));
             }
 
             $importedCount = 0;
@@ -177,7 +177,7 @@ class CandidateController extends Controller
 
             foreach ($csvData as $index => $row) {
                 $rowNumber = $index + 2; // +2 because of header and 0-based index
-                
+
                 // Skip empty rows
                 if (empty(array_filter($row))) {
                     continue;
@@ -185,7 +185,7 @@ class CandidateController extends Controller
 
                 // Create associative array
                 $data = array_combine($headers, $row);
-                
+
                 // Validate row data
                 $validator = Validator::make($data, [
                     'first_name' => 'required|string|max:255',
@@ -198,7 +198,8 @@ class CandidateController extends Controller
 
                 if ($validator->fails()) {
                     $skippedCount++;
-                    $errors[] = "Row {$rowNumber}: " . implode(', ', $validator->errors()->all());
+                    $errors[] = "Row {$rowNumber}: ".implode(', ', $validator->errors()->all());
+
                     continue;
                 }
 
@@ -220,7 +221,7 @@ class CandidateController extends Controller
                 $message .= " Skipped {$skippedCount} row(s) due to validation errors.";
             }
 
-            if (!empty($errors)) {
+            if (! empty($errors)) {
                 session()->flash('import_errors', $errors);
             }
 
@@ -229,7 +230,7 @@ class CandidateController extends Controller
 
         } catch (\Exception $e) {
             return redirect()->route('admin.candidates.index')
-                ->with('error', 'Error importing CSV: ' . $e->getMessage());
+                ->with('error', 'Error importing CSV: '.$e->getMessage());
         }
     }
 
@@ -244,13 +245,13 @@ class CandidateController extends Controller
         ];
 
         $columns = ['first_name', 'last_name', 'middle_name', 'bio', 'position_id', 'party_id'];
-        
-        $callback = function() use ($columns) {
+
+        $callback = function () use ($columns) {
             $file = fopen('php://output', 'w');
-            
+
             // Add headers
             fputcsv($file, $columns);
-            
+
             // Add sample data
             fputcsv($file, [
                 'Juan',
@@ -258,7 +259,7 @@ class CandidateController extends Controller
                 'Santos',
                 'Experienced leader with a vision for change',
                 '1',
-                '1'
+                '1',
             ]);
             fputcsv($file, [
                 'Maria',
@@ -266,7 +267,7 @@ class CandidateController extends Controller
                 'Lopez',
                 'Dedicated to serving the student body',
                 '1',
-                '2'
+                '2',
             ]);
             fputcsv($file, [
                 'Jose',
@@ -274,9 +275,9 @@ class CandidateController extends Controller
                 '',
                 'Committed to transparency and accountability',
                 '2',
-                '1'
+                '1',
             ]);
-            
+
             fclose($file);
         };
 

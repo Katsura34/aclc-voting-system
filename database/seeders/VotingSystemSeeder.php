@@ -2,13 +2,12 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
-use App\Models\Election;
-use App\Models\Position;
-use App\Models\Party;
 use App\Models\Candidate;
+use App\Models\Election;
+use App\Models\Party;
+use App\Models\Position;
 use Carbon\Carbon;
+use Illuminate\Database\Seeder;
 
 class VotingSystemSeeder extends Seeder
 {

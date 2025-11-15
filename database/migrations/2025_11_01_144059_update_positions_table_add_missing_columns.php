@@ -14,10 +14,10 @@ return new class extends Migration
         Schema::table('positions', function (Blueprint $table) {
             // Add description column
             $table->text('description')->nullable()->after('name');
-            
+
             // Rename max_winners to max_votes
             $table->renameColumn('max_winners', 'max_votes');
-            
+
             // Rename order to display_order
             $table->renameColumn('order', 'display_order');
         });
@@ -31,10 +31,10 @@ return new class extends Migration
         Schema::table('positions', function (Blueprint $table) {
             // Drop description column
             $table->dropColumn('description');
-            
+
             // Rename back max_votes to max_winners
             $table->renameColumn('max_votes', 'max_winners');
-            
+
             // Rename back display_order to order
             $table->renameColumn('display_order', 'order');
         });

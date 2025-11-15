@@ -28,7 +28,7 @@ class VotingController extends Controller
             ->with(['positions.candidates.party'])
             ->first();
 
-        if (!$election) {
+        if (! $election) {
             return view('student.no-election');
         }
 
@@ -51,14 +51,14 @@ class VotingController extends Controller
         // Get active election
         $election = Election::where('is_active', true)->first();
 
-        if (!$election) {
+        if (! $election) {
             return redirect()->back()
                 ->with('error', 'No active election found.');
         }
 
         // Validate votes
         $positions = Position::where('election_id', $election->id)->get();
-        
+
         $rules = [];
         foreach ($positions as $position) {
             if ($election->allow_abstain) {
@@ -77,7 +77,7 @@ class VotingController extends Controller
             // Save votes
             foreach ($positions as $position) {
                 $candidateId = $request->input("position_{$position->id}");
-                
+
                 if ($candidateId) {
                     Vote::create([
                         'user_id' => $user->id,
@@ -85,7 +85,7 @@ class VotingController extends Controller
                         'position_id' => $position->id,
                         'candidate_id' => $candidateId,
                     ]);
-                    
+
                     // Create audit log for vote
                     VoteAuditLog::create([
                         'user_id' => $user->id,
@@ -123,7 +123,7 @@ class VotingController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             return redirect()->back()
                 ->with('error', 'An error occurred while submitting your vote. Please try again.');
         }
@@ -134,7 +134,7 @@ class VotingController extends Controller
      */
     public function success()
     {
-        if (!Auth::user()->has_voted) {
+        if (! Auth::user()->has_voted) {
             return redirect()->route('voting.index');
         }
 

@@ -15,6 +15,7 @@ class PartyController extends Controller
     public function index()
     {
         $parties = Party::withCount('candidates')->latest()->get();
+
         return view('admin.parties.index', compact('parties'));
     }
 
@@ -36,7 +37,7 @@ class PartyController extends Controller
             'acronym' => 'required|string|max:10|unique:parties,acronym',
             'color' => 'required|string|max:7',
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'description' => 'nullable|string'
+            'description' => 'nullable|string',
         ]);
 
         if ($request->hasFile('logo')) {
@@ -55,6 +56,7 @@ class PartyController extends Controller
     public function show(Party $party)
     {
         $party->load('candidates.position');
+
         return view('admin.parties.show', compact('party'));
     }
 
@@ -72,11 +74,11 @@ class PartyController extends Controller
     public function update(Request $request, Party $party)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:parties,name,' . $party->id,
-            'acronym' => 'required|string|max:10|unique:parties,acronym,' . $party->id,
+            'name' => 'required|string|max:255|unique:parties,name,'.$party->id,
+            'acronym' => 'required|string|max:10|unique:parties,acronym,'.$party->id,
             'color' => 'required|string|max:7',
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'description' => 'nullable|string'
+            'description' => 'nullable|string',
         ]);
 
         if ($request->hasFile('logo')) {

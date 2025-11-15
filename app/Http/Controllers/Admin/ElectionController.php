@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 class ElectionController extends Controller
 {
     use LogsAdminActions;
+
     /**
      * Display a listing of elections.
      */
@@ -63,7 +64,7 @@ class ElectionController extends Controller
     public function show(Election $election)
     {
         $election->load(['positions.candidates.party']);
-        
+
         // Get vote statistics
         $totalVoters = \App\Models\User::where('user_type', 'student')->count();
         $votedCount = \App\Models\User::where('user_type', 'student')
@@ -126,7 +127,7 @@ class ElectionController extends Controller
     public function toggleActive(Election $election)
     {
         DB::beginTransaction();
-        
+
         try {
             if ($election->is_active) {
                 // Deactivate
@@ -136,16 +137,18 @@ class ElectionController extends Controller
                 Election::where('is_active', true)->update(['is_active' => false]);
                 $election->is_active = true;
             }
-            
+
             $election->save();
-            
+
             DB::commit();
-            
+
             $status = $election->is_active ? 'activated' : 'deactivated';
+
             return redirect()->back()->with('success', "Election {$status} successfully!");
-            
+
         } catch (\Exception $e) {
             DB::rollBack();
+
             return redirect()->back()->with('error', 'Failed to toggle election status.');
         }
     }

@@ -89,7 +89,7 @@ class VotingFunctionalityTest extends TestCase
         $response = $this->post(route('voting.submit'), []);
 
         $response->assertRedirect(route('voting.success'));
-        
+
         // Verify audit log for abstain
         $this->assertDatabaseHas('vote_audit_logs', [
             'user_id' => $user->id,
@@ -198,7 +198,7 @@ class VotingFunctionalityTest extends TestCase
     public function test_reset_all_votes(): void
     {
         $admin = User::factory()->create(['user_type' => 'admin']);
-        
+
         $students = User::factory()->count(3)->create([
             'user_type' => 'student',
             'has_voted' => true,
@@ -226,7 +226,7 @@ class VotingFunctionalityTest extends TestCase
         $response = $this->post(route('admin.users.reset-all-votes'));
 
         $response->assertRedirect(route('admin.users.index'));
-        
+
         foreach ($students as $student) {
             $this->assertFalse($student->fresh()->has_voted);
         }

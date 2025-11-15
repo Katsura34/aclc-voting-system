@@ -14,6 +14,7 @@ use Illuminate\Validation\Rule;
 class UserController extends Controller
 {
     use LogsAdminActions;
+
     /**
      * Display a listing of users.
      */
@@ -24,11 +25,11 @@ class UserController extends Controller
         // Search functionality
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('student_id', 'like', "%{$search}%")
-                  ->orWhere('first_name', 'like', "%{$search}%")
-                  ->orWhere('last_name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhere('first_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
             });
         }
 
@@ -109,7 +110,7 @@ class UserController extends Controller
                 'required',
                 'string',
                 'max:50',
-                Rule::unique('users', 'student_id')->ignore($user->id)
+                Rule::unique('users', 'student_id')->ignore($user->id),
             ],
             'first_name' => 'required|string|max:100',
             'last_name' => 'required|string|max:100',
@@ -117,7 +118,7 @@ class UserController extends Controller
                 'required',
                 'email',
                 'max:255',
-                Rule::unique('users', 'email')->ignore($user->id)
+                Rule::unique('users', 'email')->ignore($user->id),
             ],
             'password' => 'nullable|string|min:8|confirmed',
             'user_type' => 'required|in:student,admin',
@@ -182,7 +183,7 @@ class UserController extends Controller
     {
         // Get user's votes before resetting
         $votes = Vote::where('user_id', $user->id)->get();
-        
+
         // Log each vote reset
         foreach ($votes as $vote) {
             VoteAuditLog::create([
@@ -196,10 +197,10 @@ class UserController extends Controller
                 'voted_at' => now(),
             ]);
         }
-        
+
         // Delete votes
         Vote::where('user_id', $user->id)->delete();
-        
+
         $user->update(['has_voted' => false]);
 
         $this->logAdminAction(
@@ -220,7 +221,7 @@ class UserController extends Controller
     {
         // Get all votes before resetting
         $votes = Vote::all();
-        
+
         // Log each vote reset
         foreach ($votes as $vote) {
             VoteAuditLog::create([
@@ -234,12 +235,12 @@ class UserController extends Controller
                 'voted_at' => now(),
             ]);
         }
-        
+
         $voteCount = $votes->count();
-        
+
         // Delete all votes
         Vote::truncate();
-        
+
         User::where('user_type', 'student')->update(['has_voted' => false]);
 
         $this->logAdminAction(

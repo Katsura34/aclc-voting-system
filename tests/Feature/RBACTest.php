@@ -163,7 +163,7 @@ class RBACTest extends TestCase
 
         $response->assertRedirect();
         $this->assertAuthenticated();
-        
+
         // Verify session has been regenerated
         $this->assertNotNull(session()->getId());
     }

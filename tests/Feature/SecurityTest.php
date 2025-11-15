@@ -39,7 +39,7 @@ class SecurityTest extends TestCase
             'usn' => 'test123',
             'password' => 'wrongpassword',
         ]);
-        
+
         $response->assertSessionHasErrors('usn');
         $this->assertStringContainsString('Too many login attempts', session('errors')->first('usn'));
     }
@@ -102,10 +102,10 @@ class SecurityTest extends TestCase
 
         // Verify password is hashed (not stored as plain text)
         $this->assertNotEquals($password, $user->password);
-        
+
         // Verify password hash starts with bcrypt identifier
         $this->assertStringStartsWith('$2y$', $user->password);
-        
+
         // Verify password can be verified
         $this->assertTrue(Hash::check($password, $user->password));
     }
@@ -116,7 +116,7 @@ class SecurityTest extends TestCase
     public function test_xss_protection_in_user_data(): void
     {
         $xssPayload = '<script>alert("XSS")</script>';
-        
+
         $user = User::factory()->create([
             'name' => $xssPayload,
             'email' => 'test@example.com',
@@ -126,9 +126,9 @@ class SecurityTest extends TestCase
         ]);
 
         $this->actingAs($user);
-        
+
         $response = $this->get('/admin/dashboard');
-        
+
         // The response should escape the script tag
         $response->assertStatus(200);
         // Verify the raw script tag is not present in the output

@@ -17,27 +17,32 @@ class ValidateSession
      */
     public function handle(Request $request, Closure $next): Response
     {
+        // Skip validation in testing environment with array session driver
+        if (app()->environment('testing') && config('session.driver') === 'array') {
+            return $next($request);
+        }
+
         // Only check for authenticated users
         if (Auth::check()) {
             $user = Auth::user();
             $currentSessionId = $request->session()->getId();
-            
+
             // Check if current session exists in database for this user
             $sessionExists = DB::table('sessions')
                 ->where('id', $currentSessionId)
                 ->where('user_id', $user->id)
                 ->exists();
-            
+
             // If session doesn't exist or belongs to different user, logout
-            if (!$sessionExists) {
+            if (! $sessionExists) {
                 Auth::logout();
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
-                
+
                 return redirect('/login')->with('error', 'Your session has been terminated because you logged in from another device or browser.');
             }
         }
-        
+
         return $next($request);
     }
 }

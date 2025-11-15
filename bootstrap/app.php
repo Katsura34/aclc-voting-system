@@ -13,15 +13,20 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         // Add session validation middleware to web group
         $middleware->appendToGroup('web', \App\Http\Middleware\ValidateSession::class);
+
+        // Register custom middleware aliases
+        $middleware->alias([
+            'admin' => \App\Http\Middleware\IsAdmin::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // Log all exceptions for monitoring
         $exceptions->reportable(function (Throwable $e) {
-            \Log::error('Application exception: ' . $e->getMessage(), [
+            \Log::error('Application exception: '.$e->getMessage(), [
                 'exception' => get_class($e),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
         });
 
@@ -29,10 +34,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->renderable(function (\Illuminate\Database\QueryException $e, $request) {
             if ($request->expectsJson()) {
                 return response()->json([
-                    'error' => 'A database error occurred. Please try again later.'
+                    'error' => 'A database error occurred. Please try again later.',
                 ], 500);
             }
-            
+
             return redirect()->back()
                 ->with('error', 'A database error occurred. Please try again or contact support.');
         });
@@ -41,7 +46,7 @@ return Application::configure(basePath: dirname(__DIR__))
             if ($request->expectsJson()) {
                 return response()->json(['error' => 'Resource not found'], 404);
             }
-            
+
             return response()->view('errors.404', [], 404);
         });
     })->create();

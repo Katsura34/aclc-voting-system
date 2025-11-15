@@ -20,7 +20,7 @@ class PositionFactory extends Factory
             'election_id' => \App\Models\Election::factory(),
             'name' => fake()->randomElement(['President', 'Vice President', 'Secretary', 'Treasurer']),
             'description' => fake()->sentence(),
-            'max_winners' => 1,
+            'max_votes' => 1,
             'display_order' => fake()->numberBetween(1, 10),
         ];
     }

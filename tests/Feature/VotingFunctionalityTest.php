@@ -249,10 +249,10 @@ class VotingFunctionalityTest extends TestCase
 
         $this->actingAs($student);
 
+        // Students cannot access admin results page at all
         $response = $this->get(route('admin.results.index', ['election_id' => $election->id]));
 
-        $response->assertRedirect();
-        $response->assertSessionHas('error');
+        $response->assertStatus(403);
     }
 
     /**

@@ -16,8 +16,10 @@ class PartyFactory extends Factory
      */
     public function definition(): array
     {
+        $name = fake()->company();
         return [
-            'name' => fake()->company(),
+            'name' => $name,
+            'slug' => \Illuminate\Support\Str::slug($name),
             'acronym' => fake()->lexify('???'),
             'description' => fake()->sentence(),
         ];

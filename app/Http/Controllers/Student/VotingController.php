@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Election;
 use App\Models\Position;
 use App\Models\Vote;
+use App\Models\VoteAuditLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -83,6 +84,30 @@ class VotingController extends Controller
                         'election_id' => $election->id,
                         'position_id' => $position->id,
                         'candidate_id' => $candidateId,
+                    ]);
+                    
+                    // Create audit log for vote
+                    VoteAuditLog::create([
+                        'user_id' => $user->id,
+                        'election_id' => $election->id,
+                        'position_id' => $position->id,
+                        'candidate_id' => $candidateId,
+                        'action' => 'vote_cast',
+                        'ip_address' => $request->ip(),
+                        'user_agent' => $request->userAgent(),
+                        'voted_at' => now(),
+                    ]);
+                } else {
+                    // Log abstain vote
+                    VoteAuditLog::create([
+                        'user_id' => $user->id,
+                        'election_id' => $election->id,
+                        'position_id' => $position->id,
+                        'candidate_id' => null,
+                        'action' => 'vote_abstain',
+                        'ip_address' => $request->ip(),
+                        'user_agent' => $request->userAgent(),
+                        'voted_at' => now(),
                     ]);
                 }
             }

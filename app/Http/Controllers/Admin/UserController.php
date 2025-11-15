@@ -4,12 +4,16 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Vote;
+use App\Models\VoteAuditLog;
+use App\Traits\LogsAdminActions;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
+    use LogsAdminActions;
     /**
      * Display a listing of users.
      */
@@ -70,7 +74,16 @@ class UserController extends Controller
         $validated['password'] = Hash::make($validated['password']);
         $validated['has_voted'] = false;
 
-        User::create($validated);
+        $user = User::create($validated);
+
+        $this->logAdminAction(
+            'create',
+            "Created user: {$user->name} ({$user->usn})",
+            User::class,
+            $user->id,
+            null,
+            $validated
+        );
 
         return redirect()->route('admin.users.index')
             ->with('success', 'User created successfully!');
@@ -89,6 +102,8 @@ class UserController extends Controller
      */
     public function update(Request $request, User $user)
     {
+        $oldValues = $user->only(['student_id', 'first_name', 'last_name', 'email', 'user_type', 'year_level', 'course', 'has_voted']);
+
         $validated = $request->validate([
             'student_id' => [
                 'required',
@@ -120,6 +135,15 @@ class UserController extends Controller
 
         $user->update($validated);
 
+        $this->logAdminAction(
+            'update',
+            "Updated user: {$user->name} ({$user->usn})",
+            User::class,
+            $user->id,
+            $oldValues,
+            $user->only(['student_id', 'first_name', 'last_name', 'email', 'user_type', 'year_level', 'course', 'has_voted'])
+        );
+
         return redirect()->route('admin.users.index')
             ->with('success', 'User updated successfully!');
     }
@@ -135,7 +159,17 @@ class UserController extends Controller
                 ->with('error', 'You cannot delete your own account!');
         }
 
+        $userName = $user->name;
+        $userUsn = $user->usn;
+
         $user->delete();
+
+        $this->logAdminAction(
+            'delete',
+            "Deleted user: {$userName} ({$userUsn})",
+            User::class,
+            $user->id
+        );
 
         return redirect()->route('admin.users.index')
             ->with('success', 'User deleted successfully!');
@@ -146,7 +180,34 @@ class UserController extends Controller
      */
     public function resetVote(User $user)
     {
+        // Get user's votes before resetting
+        $votes = Vote::where('user_id', $user->id)->get();
+        
+        // Log each vote reset
+        foreach ($votes as $vote) {
+            VoteAuditLog::create([
+                'user_id' => $user->id,
+                'election_id' => $vote->election_id,
+                'position_id' => $vote->position_id,
+                'candidate_id' => $vote->candidate_id,
+                'action' => 'vote_reset_by_admin',
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+                'voted_at' => now(),
+            ]);
+        }
+        
+        // Delete votes
+        Vote::where('user_id', $user->id)->delete();
+        
         $user->update(['has_voted' => false]);
+
+        $this->logAdminAction(
+            'reset_vote',
+            "Reset votes for user: {$user->name} ({$user->usn})",
+            User::class,
+            $user->id
+        );
 
         return redirect()->route('admin.users.index')
             ->with('success', 'Voting status reset successfully!');
@@ -157,7 +218,34 @@ class UserController extends Controller
      */
     public function resetAllVotes()
     {
+        // Get all votes before resetting
+        $votes = Vote::all();
+        
+        // Log each vote reset
+        foreach ($votes as $vote) {
+            VoteAuditLog::create([
+                'user_id' => $vote->user_id,
+                'election_id' => $vote->election_id,
+                'position_id' => $vote->position_id,
+                'candidate_id' => $vote->candidate_id,
+                'action' => 'vote_reset_all_by_admin',
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+                'voted_at' => now(),
+            ]);
+        }
+        
+        $voteCount = $votes->count();
+        
+        // Delete all votes
+        Vote::truncate();
+        
         User::where('user_type', 'student')->update(['has_voted' => false]);
+
+        $this->logAdminAction(
+            'reset_all_votes',
+            "Reset all votes ({$voteCount} total votes reset)"
+        );
 
         return redirect()->route('admin.users.index')
             ->with('success', 'All voting statuses have been reset!');

@@ -4,11 +4,13 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Election;
+use App\Traits\LogsAdminActions;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class ElectionController extends Controller
 {
+    use LogsAdminActions;
     /**
      * Display a listing of elections.
      */

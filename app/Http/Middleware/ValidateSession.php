@@ -17,6 +17,11 @@ class ValidateSession
      */
     public function handle(Request $request, Closure $next): Response
     {
+        // Skip validation for login/logout routes
+        if ($request->is('login') || $request->is('logout')) {
+            return $next($request);
+        }
+
         // Skip validation in testing environment with array session driver
         if (app()->environment('testing') && config('session.driver') === 'array') {
             return $next($request);

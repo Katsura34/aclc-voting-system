@@ -35,6 +35,9 @@ class LoginController extends Controller
             ];
 
             if (Auth::attempt($credentials, $request->filled('remember'))) {
+                // Regenerate session first to prevent fixation attacks
+                $request->session()->regenerate();
+                
                 // Invalidate all other sessions for this user (single session per account)
                 $user = Auth::user();
                 $currentSessionId = $request->session()->getId();
@@ -44,8 +47,6 @@ class LoginController extends Controller
                     ->where('user_id', $user->id)
                     ->where('id', '!=', $currentSessionId)
                     ->delete();
-                
-                $request->session()->regenerate();
 
                 \Log::info('User logged in (previous sessions invalidated)', [
                     'user_id' => $user->id,

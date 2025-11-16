@@ -64,7 +64,7 @@ class AdminAccessTest extends TestCase
     {
         $response = $this->get('/admin/dashboard');
 
-        $response->assertRedirect('/login');
+        $response->assertRedirect(route('login'));
     }
 
     /**

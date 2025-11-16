@@ -16,13 +16,8 @@ class IsAdmin
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Check if user is authenticated
-        if (! Auth::check()) {
-            return redirect()->route('login')
-                ->with('error', 'Please log in to access this page.');
-        }
-
-        // Check if user is an admin
+        // The 'auth' middleware already ensures the user is authenticated
+        // so we only need to check if they are an admin
         if (Auth::user()->user_type !== 'admin') {
             // Redirect non-admin users to their appropriate page
             return redirect()->route('voting.index')

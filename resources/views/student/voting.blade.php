@@ -615,8 +615,8 @@
                             {{ $position->name }}
                         </h3>
                         <div class="position-info">
-                            @if($position->max_winners > 1)
-                                <span>Select up to {{ $position->max_winners }} candidates</span>
+                            @if($position->max_votes > 1)
+                                <span>Select up to {{ $position->max_votes }} candidates</span>
                             @else
                                 <span>Select one candidate</span>
                             @endif

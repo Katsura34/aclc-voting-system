@@ -221,7 +221,7 @@
                 <div class="position-card">
                     <div class="position-title">
                         {{ $position->name }}
-                        <small class="text-muted">(Max Winners: {{ $position->max_winners }})</small>
+                        <small class="text-muted">(Max Winners: {{ $position->max_votes }})</small>
                     </div>
                     
                     @if($position->candidates->count() > 0)

@@ -44,8 +44,8 @@ class VotingSystemSeeder extends Seeder
             $createdPositions[$position['name']] = Position::create([
                 'election_id' => $election->id,
                 'name' => $position['name'],
-                'max_winners' => $position['max_winners'],
-                'order' => $position['order'],
+                'max_votes' => $position['max_winners'],
+                'display_order' => $position['order'],
             ]);
         }
 

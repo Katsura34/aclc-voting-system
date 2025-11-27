@@ -47,7 +47,7 @@ class DashboardController extends Controller
                     $positionStats[] = [
                         'name' => $position->name,
                         'candidates' => $position->candidates_count,
-                        'max_winners' => $position->max_winners,
+                        'max_votes' => $position->max_votes,
                     ];
                 }
             }

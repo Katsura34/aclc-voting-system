@@ -3,12 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Voting System</title>
+    <title>Login - ACLC Voting System</title>
+    
+    <!-- Google Fonts - Inter for better readability -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    
     <style>
+        :root {
+            --primary-blue: #1e3a5f;
+            --primary-blue-light: #2d5a87;
+            --primary-blue-dark: #0f2744;
+            --accent-red: #dc3545;
+            --accent-gold: #f59e0b;
+            --gray-50: #f8fafc;
+            --gray-100: #f1f5f9;
+            --gray-200: #e2e8f0;
+            --gray-300: #cbd5e1;
+            --gray-400: #94a3b8;
+            --gray-500: #64748b;
+            --gray-600: #475569;
+            --gray-700: #334155;
+            --gray-800: #1e293b;
+            --radius-md: 10px;
+            --radius-lg: 16px;
+            --radius-xl: 24px;
+            --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.15);
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -16,389 +44,484 @@
         }
 
         body {
-            background: linear-gradient(135deg, #003366 0%, #002147 100%);
             min-height: 100vh;
             display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            padding: 20px;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-blue-dark) 100%);
+            -webkit-font-smoothing: antialiased;
         }
 
-        .login-container {
-            display: flex;
-            max-width: 900px;
-            width: 100%;
-            background: white;
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.3);
-        }
-
-        /* Left Panel - Blue and Red Side */
-        .left-panel {
-            background: linear-gradient(135deg, #003366 0%, #00509E 50%, #CC0000 100%);
+        /* ===== LEFT BRANDING PANEL ===== */
+        .brand-panel {
             flex: 1;
-            padding: 60px 40px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            padding: 3rem;
             position: relative;
             overflow: hidden;
         }
 
-        .left-panel::before {
+        .brand-panel::before {
             content: '';
             position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 60%;
-            background: linear-gradient(180deg, transparent 0%, rgba(204, 0, 0, 0.2) 100%);
-            border-radius: 50% 50% 0 0 / 30% 30% 0 0;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at center, rgba(255,255,255,0.05) 0%, transparent 50%);
+            animation: rotate 30s linear infinite;
         }
 
-        .logo-container {
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .brand-content {
             position: relative;
             z-index: 1;
             text-align: center;
-            width: 100%;
+            max-width: 400px;
         }
 
-        .main-logo {
-            width: 180px;
-            height: 180px;
-            margin-bottom: 30px;
+        .brand-logo {
+            width: 140px;
+            height: 140px;
+            margin: 0 auto 2rem;
             background: white;
             border-radius: 50%;
-            padding: 15px;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            padding: 1rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-left: auto;
-            margin-right: auto;
         }
 
-        .main-logo img {
+        .brand-logo img {
             width: 100%;
             height: 100%;
             object-fit: contain;
         }
 
-        .company-name {
+        .brand-name {
             color: white;
-            font-size: 24px;
+            font-size: 1.75rem;
             font-weight: 700;
-            text-transform: uppercase;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.025em;
         }
 
-        .company-tagline {
-            color: rgba(255, 255, 255, 0.95);
-            font-size: 14px;
-            margin-bottom: 30px;
+        .brand-tagline {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1rem;
+            margin-bottom: 2.5rem;
         }
 
-        .sparkles {
-            position: absolute;
+        .brand-features {
+            text-align: left;
             color: white;
-            font-size: 24px;
-            animation: sparkle 2s infinite;
         }
 
-        .sparkle-1 { top: 15%; left: 15%; animation-delay: 0s; }
-        .sparkle-2 { top: 25%; right: 20%; animation-delay: 0.5s; }
-        .sparkle-3 { bottom: 30%; left: 10%; animation-delay: 1s; }
-        .sparkle-4 { bottom: 20%; right: 15%; animation-delay: 1.5s; }
-
-        @keyframes sparkle {
-            0%, 100% { opacity: 0.3; transform: scale(1); }
-            50% { opacity: 1; transform: scale(1.2); }
+        .feature-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            margin-bottom: 1.25rem;
         }
 
-        .org-logo {
-            width: 80px;
-            height: 80px;
-            background: white;
-            border-radius: 50%;
-            padding: 10px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        .feature-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: var(--radius-md);
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 10px;
+            flex-shrink: 0;
         }
 
-        .org-logo img {
+        .feature-icon i {
+            font-size: 1.25rem;
+            color: white;
+        }
+
+        .feature-text h4 {
+            font-size: 0.9375rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .feature-text p {
+            font-size: 0.8125rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin: 0;
+        }
+
+        /* ===== RIGHT LOGIN PANEL ===== */
+        .login-panel {
             width: 100%;
-            height: 100%;
-            object-fit: contain;
-        }
-
-        .org-logos {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 20px;
-            margin-top: 30px;
-            position: relative;
-            z-index: 1;
-        }
-
-        /* Right Panel - Login Form */
-        .right-panel {
-            flex: 1;
-            padding: 60px 50px;
+            max-width: 480px;
             display: flex;
             flex-direction: column;
             justify-content: center;
+            background: white;
+            padding: 3rem;
         }
 
         .login-header {
             text-align: center;
-            margin-bottom: 40px;
+            margin-bottom: 2.5rem;
         }
 
-        .login-header h2 {
-            color: #333;
-            font-size: 28px;
-            font-weight: 600;
-            margin-bottom: 10px;
+        .login-header h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--gray-800);
+            margin-bottom: 0.5rem;
         }
 
         .login-header p {
-            color: #888;
-            font-size: 14px;
+            color: var(--gray-500);
+            font-size: 0.9375rem;
+        }
+
+        /* ===== FORM STYLES ===== */
+        .login-form {
+            width: 100%;
+            max-width: 360px;
+            margin: 0 auto;
         }
 
         .form-group {
-            margin-bottom: 25px;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--gray-700);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-label .required {
+            color: var(--accent-red);
+            margin-left: 2px;
+        }
+
+        .input-wrapper {
             position: relative;
         }
 
-        .form-group i {
+        .input-wrapper i {
             position: absolute;
-            left: 15px;
+            left: 1rem;
             top: 50%;
             transform: translateY(-50%);
-            color: #888;
-            font-size: 18px;
+            color: var(--gray-400);
+            font-size: 1.125rem;
+            pointer-events: none;
+            transition: color 0.2s;
+        }
+
+        .input-wrapper:focus-within i {
+            color: var(--primary-blue);
         }
 
         .form-control {
             width: 100%;
-            padding: 14px 15px 14px 45px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 15px;
-            transition: all 0.3s ease;
+            padding: 0.875rem 1rem 0.875rem 3rem;
+            border: 1.5px solid var(--gray-300);
+            border-radius: var(--radius-md);
+            font-size: 0.9375rem;
+            color: var(--gray-700);
+            background: white;
+            transition: all 0.2s;
+        }
+
+        .form-control:hover {
+            border-color: var(--gray-400);
         }
 
         .form-control:focus {
             outline: none;
-            border-color: #003366;
-            box-shadow: 0 0 0 3px rgba(0, 51, 102, 0.1);
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.15);
         }
 
         .form-control::placeholder {
-            color: #aaa;
+            color: var(--gray-400);
         }
 
-        .remember-me {
+        .form-control.is-invalid {
+            border-color: var(--accent-red);
+        }
+
+        .form-control.is-invalid:focus {
+            box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.15);
+        }
+
+        .invalid-feedback {
+            display: block;
+            font-size: 0.8125rem;
+            color: var(--accent-red);
+            margin-top: 0.375rem;
+        }
+
+        /* ===== ALERT ===== */
+        .alert {
+            padding: 1rem 1.25rem;
+            border-radius: var(--radius-md);
+            margin-bottom: 1.5rem;
             display: flex;
-            align-items: center;
-            margin-bottom: 25px;
+            align-items: flex-start;
+            gap: 0.75rem;
+            font-size: 0.9375rem;
         }
 
-        .remember-me input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            margin-right: 8px;
-            cursor: pointer;
-            accent-color: #CC0000;
+        .alert-danger {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
         }
 
-        .remember-me label {
-            font-size: 14px;
-            color: #666;
-            cursor: pointer;
-            user-select: none;
+        .alert-danger i {
+            color: #ef4444;
+            font-size: 1.25rem;
+            flex-shrink: 0;
         }
 
+        /* ===== BUTTON ===== */
         .btn-login {
             width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, #CC0000 0%, #990000 100%);
+            padding: 0.875rem 1.5rem;
+            background: var(--primary-blue);
             border: none;
-            border-radius: 8px;
+            border-radius: var(--radius-md);
             color: white;
-            font-size: 16px;
+            font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
         }
 
         .btn-login:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(204, 0, 0, 0.4);
-            background: linear-gradient(135deg, #003366 0%, #00509E 100%);
+            background: var(--primary-blue-dark);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(30, 58, 95, 0.3);
         }
 
         .btn-login:active {
             transform: translateY(0);
         }
 
+        .btn-login:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.3);
+        }
+
+        .btn-login i {
+            font-size: 1.125rem;
+        }
+
+        /* ===== FOOTER ===== */
         .login-footer {
             text-align: center;
-            margin-top: 25px;
-            font-size: 14px;
-            color: #888;
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--gray-200);
         }
 
-        .login-footer a {
-            color: #CC0000;
-            text-decoration: none;
-            font-weight: 600;
+        .login-footer p {
+            font-size: 0.8125rem;
+            color: var(--gray-500);
         }
 
-        .login-footer a:hover {
-            text-decoration: underline;
-            color: #003366;
-        }
-        }
-
-        .alert {
-            border-radius: 8px;
-            margin-bottom: 20px;
-            padding: 12px 15px;
+        .login-footer .version {
+            color: var(--gray-400);
+            margin-top: 0.5rem;
         }
 
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            .login-container {
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 991.98px) {
+            body {
                 flex-direction: column;
             }
 
-            .left-panel {
-                padding: 40px 30px;
+            .brand-panel {
+                padding: 2rem;
             }
 
-            .right-panel {
-                padding: 40px 30px;
+            .brand-features {
+                display: none;
             }
 
-            .main-logo {
-                width: 120px;
-                height: 120px;
+            .login-panel {
+                max-width: 100%;
+                padding: 2rem;
+            }
+        }
+
+        @media (max-width: 575.98px) {
+            .brand-panel {
+                padding: 1.5rem;
             }
 
-            .company-name {
-                font-size: 20px;
+            .brand-logo {
+                width: 100px;
+                height: 100px;
             }
 
-            .org-logos {
-                flex-wrap: wrap;
+            .brand-name {
+                font-size: 1.5rem;
             }
 
-            .org-logo {
-                width: 60px;
-                height: 60px;
+            .login-panel {
+                padding: 1.5rem;
             }
+
+            .login-header h1 {
+                font-size: 1.5rem;
+            }
+        }
+
+        /* ===== ANIMATIONS ===== */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .login-form {
+            animation: fadeIn 0.4s ease-out;
         }
     </style>
 </head>
 <body>
-    <div class="login-container">
-        <!-- Left Panel with Logos -->
-        <div class="left-panel">
-            <div class="sparkles sparkle-1">✦</div>
-            <div class="sparkles sparkle-2">✦</div>
-            <div class="sparkles sparkle-3">✦</div>
-            <div class="sparkles sparkle-4">✦</div>
-
-            <div class="logo-container">
-                <div class="main-logo">
-                    <!-- ACLC Logo -->
-                    <img src="/storage/logos/aclc-logo.png" alt="ACLC College of Ormoc City" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 200 200%27%3E%3Ccircle cx=%27100%27 cy=%27100%27 r=%2780%27 fill=%27%23003366%27/%3E%3Ctext x=%27100%27 y=%27110%27 text-anchor=%27middle%27 fill=%27white%27 font-size=%2724%27 font-weight=%27bold%27%3EACLC%3C/text%3E%3C/svg%3E'">
+    <!-- Left Branding Panel -->
+    <div class="brand-panel">
+        <div class="brand-content">
+            <div class="brand-logo">
+                <img src="/storage/logos/aclc-logo.png" alt="ACLC College" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 200 200%27%3E%3Ccircle cx=%27100%27 cy=%27100%27 r=%2780%27 fill=%27%231e3a5f%27/%3E%3Ctext x=%27100%27 y=%27115%27 text-anchor=%27middle%27 fill=%27white%27 font-size=%2736%27 font-weight=%27bold%27 font-family=%27Inter, sans-serif%27%3EACLC%3C/text%3E%3C/svg%3E'">
+            </div>
+            
+            <h1 class="brand-name">ACLC Voting System</h1>
+            <p class="brand-tagline">Secure • Simple • Transparent</p>
+            
+            <div class="brand-features">
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="bi bi-shield-check"></i>
+                    </div>
+                    <div class="feature-text">
+                        <h4>Secure Voting</h4>
+                        <p>Your vote is encrypted and anonymous</p>
+                    </div>
                 </div>
                 
-                <div class="company-name">ACLC COLLEGE</div>
-                <div class="company-tagline">Student Voting System</div>
-                
-                <div class="org-logos">
-                    <!-- Programmers Guild Logo -->
-                    <div class="org-logo">
-                        <img src="/storage/logos/programmers-guild-logo.png" alt="Programmers Guild" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 200 200%27%3E%3Ccircle cx=%27100%27 cy=%27100%27 r=%2790%27 fill=%27black%27/%3E%3Ctext x=%27100%27 y=%27110%27 text-anchor=%27middle%27 fill=%27white%27 font-size=%2748%27 font-weight=%27bold%27%3EPG%3C/text%3E%3C/svg%3E'">
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="bi bi-lightning"></i>
                     </div>
-                    
-                    <!-- ACLC Ormoc City Logo -->
-                    <div class="org-logo">
-                        <img src="/storage/logos/aclc-ormoc-logo.png" alt="ACLC Ormoc City" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 200 200%27%3E%3Ccircle cx=%27100%27 cy=%27100%27 r=%2790%27 fill=%27%23003366%27/%3E%3Ctext x=%27100%27 y=%27110%27 text-anchor=%27middle%27 fill=%27white%27 font-size=%2748%27 font-weight=%27bold%27%3E🗳️%3C/text%3E%3C/svg%3E'">
+                    <div class="feature-text">
+                        <h4>Easy to Use</h4>
+                        <p>Simple interface, quick voting process</p>
+                    </div>
+                </div>
+                
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="bi bi-graph-up"></i>
+                    </div>
+                    <div class="feature-text">
+                        <h4>Real-time Results</h4>
+                        <p>View live election results instantly</p>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Right Panel with Login Form -->
-        <div class="right-panel">
-            <div class="login-header">
-                <h2>Log in</h2>
-                <p>Enter your credentials to access your account</p>
-            </div>
+    <!-- Right Login Panel -->
+    <div class="login-panel">
+        <div class="login-header">
+            <h1>Welcome Back</h1>
+            <p>Sign in to access the voting system</p>
+        </div>
 
-            @if ($errors->any())
-                <div class="alert alert-danger" role="alert">
-                    <strong>Error!</strong> {{ $errors->first() }}
+        @if ($errors->any())
+            <div class="alert alert-danger" role="alert">
+                <i class="bi bi-exclamation-circle"></i>
+                <div>
+                    <strong>Login Failed</strong><br>
+                    {{ $errors->first() }}
                 </div>
-            @endif
+            </div>
+        @endif
 
-            <form method="POST" action="{{ route('login') }}" autocomplete="on">
-                @csrf
+        <form method="POST" action="{{ route('login') }}" class="login-form" autocomplete="on">
+            @csrf
 
-                <div class="form-group">
-                    <i class="bi bi-person-circle"></i>
+            <div class="form-group">
+                <label class="form-label" for="usn">
+                    Student ID / Username <span class="required">*</span>
+                </label>
+                <div class="input-wrapper">
+                    <i class="bi bi-person"></i>
                     <input 
                         type="text" 
                         id="usn" 
                         name="usn" 
                         class="form-control @error('usn') is-invalid @enderror" 
                         value="{{ old('usn') }}" 
-                        placeholder="Username (USN)"
+                        placeholder="Enter your Student ID"
                         autocomplete="username"
                         required 
                         autofocus
+                        aria-describedby="usnHelp"
                     >
-                    @error('usn')
-                        <div class="invalid-feedback d-block">{{ $message }}</div>
-                    @enderror
                 </div>
+                @error('usn')
+                    <span class="invalid-feedback">{{ $message }}</span>
+                @enderror
+            </div>
 
-                <div class="form-group">
-                    <i class="bi bi-lock-fill"></i>
+            <div class="form-group">
+                <label class="form-label" for="password">
+                    Password <span class="required">*</span>
+                </label>
+                <div class="input-wrapper">
+                    <i class="bi bi-lock"></i>
                     <input 
                         type="password" 
                         id="password" 
                         name="password" 
                         class="form-control @error('password') is-invalid @enderror" 
-                        placeholder="Password"
+                        placeholder="Enter your password"
                         autocomplete="current-password"
                         required
+                        aria-describedby="passwordHelp"
                     >
-                    @error('password')
-                        <div class="invalid-feedback d-block">{{ $message }}</div>
-                    @enderror
                 </div>
+                @error('password')
+                    <span class="invalid-feedback">{{ $message }}</span>
+                @enderror
+            </div>
 
+            <button type="submit" class="btn-login">
+                <i class="bi bi-box-arrow-in-right"></i>
+                Sign In
+            </button>
+        </form>
 
-                <button type="submit" class="btn-login">Log In</button>
-            </form>
-
-
+        <div class="login-footer">
+            <p>Having trouble signing in? Contact your administrator.</p>
+            <p class="version">Version 2.0</p>
         </div>
     </div>
 

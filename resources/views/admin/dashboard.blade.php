@@ -1,288 +1,626 @@
 <x-admin-layout title="Admin Dashboard">
     <x-slot name="styles">
-        .stats-card {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-            transition: all 0.3s ease;
-            text-align: center;
-            height: 100%;
-        }
+        <style>
+            /* ===== DASHBOARD SPECIFIC STYLES ===== */
+            .dashboard-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 1rem;
+            }
 
-        .stats-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
-        }
+            .dashboard-time {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                color: var(--gray-500);
+                font-size: 0.875rem;
+            }
 
-        .stats-card.red {
-            border-top: 4px solid var(--aclc-red);
-        }
+            /* Stats Grid */
+            .stats-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+                gap: 1.5rem;
+                margin-bottom: 2rem;
+            }
 
-        .stats-card.green {
-            border-top: 4px solid #28a745;
-        }
+            .stat-card {
+                background: white;
+                border-radius: var(--radius-lg);
+                padding: 1.5rem;
+                border: 1px solid var(--gray-200);
+                display: flex;
+                align-items: flex-start;
+                gap: 1rem;
+                transition: all 0.2s ease;
+            }
 
-        .stats-card.orange {
-            border-top: 4px solid #fd7e14;
-        }
+            .stat-card:hover {
+                border-color: var(--gray-300);
+                box-shadow: var(--shadow-md);
+            }
 
-        .stats-icon {
-            width: 60px;
-            height: 60px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 28px;
-            margin: 0 auto 15px;
-        }
+            .stat-icon {
+                width: 52px;
+                height: 52px;
+                border-radius: var(--radius-md);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.5rem;
+                flex-shrink: 0;
+            }
 
-        .stats-icon.blue {
-            background: rgba(0, 51, 102, 0.1);
-            color: var(--aclc-blue);
-        }
+            .stat-icon.blue {
+                background: #dbeafe;
+                color: #2563eb;
+            }
 
-        .stats-icon.red {
-            background: rgba(204, 0, 0, 0.1);
-            color: var(--aclc-red);
-        }
+            .stat-icon.green {
+                background: #d1fae5;
+                color: #059669;
+            }
 
-        .stats-icon.green {
-            background: rgba(40, 167, 69, 0.1);
-            color: #28a745;
-        }
+            .stat-icon.orange {
+                background: #fef3c7;
+                color: #d97706;
+            }
 
-        .stats-icon.orange {
-            background: rgba(253, 126, 20, 0.1);
-            color: #fd7e14;
-        }
+            .stat-icon.red {
+                background: #fee2e2;
+                color: #dc2626;
+            }
 
-        .stats-card h3 {
-            font-size: 32px;
-            font-weight: 700;
-            margin: 10px 0 5px 0;
-            color: #333;
-        }
+            .stat-content {
+                flex: 1;
+                min-width: 0;
+            }
 
-        .stats-card p {
-            color: #6c757d;
-            margin: 0;
-            font-size: 14px;
-        }
+            .stat-label {
+                font-size: 0.8125rem;
+                font-weight: 500;
+                color: var(--gray-500);
+                margin-bottom: 0.25rem;
+            }
 
-        .card-header {
-            background: linear-gradient(135deg, var(--aclc-blue) 0%, var(--aclc-light-blue) 100%);
-            color: white;
-            font-weight: 600;
-            padding: 15px 20px;
-            border-radius: 15px 15px 0 0;
-        }
+            .stat-value {
+                font-size: 1.75rem;
+                font-weight: 700;
+                color: var(--gray-800);
+                line-height: 1.2;
+            }
 
-        .card-body {
-            padding: 20px;
-        }
+            .stat-trend {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.25rem;
+                font-size: 0.75rem;
+                font-weight: 600;
+                margin-top: 0.5rem;
+                padding: 0.125rem 0.5rem;
+                border-radius: 9999px;
+            }
 
-        .progress {
-            height: 25px;
-            border-radius: 10px;
-            background: #e9ecef;
-        }
+            .stat-trend.up {
+                background: #d1fae5;
+                color: #059669;
+            }
 
-        .progress-bar {
-            background: linear-gradient(135deg, var(--aclc-red) 0%, #990000 100%);
-            border-radius: 10px;
-            font-weight: 600;
-        }
+            .stat-trend.neutral {
+                background: var(--gray-100);
+                color: var(--gray-600);
+            }
 
-        .user-avatar {
-            width: 35px;
-            height: 35px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--aclc-blue) 0%, var(--aclc-light-blue) 100%);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 14px;
-        }
+            /* Progress Section */
+            .progress-card {
+                background: white;
+                border-radius: var(--radius-lg);
+                padding: 1.5rem;
+                border: 1px solid var(--gray-200);
+                margin-bottom: 1.5rem;
+            }
 
-        .list-group-item {
-            border: none;
-            border-bottom: 1px solid #f0f0f0;
-            padding: 12px 0;
-        }
+            .progress-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 1rem;
+            }
 
-        .list-group-item:last-child {
-            border-bottom: none;
-        }
+            .progress-title {
+                font-size: 1rem;
+                font-weight: 600;
+                color: var(--gray-800);
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
 
-        .table-responsive {
-            margin-top: 15px;
-        }
+            .progress-title i {
+                color: var(--gray-400);
+            }
 
-        .table th {
-            background: #f8f9fa;
-            font-weight: 600;
-            color: var(--aclc-blue);
-        }
+            .progress-percentage {
+                font-size: 1.5rem;
+                font-weight: 700;
+                color: var(--aclc-blue);
+            }
+
+            .progress-bar-wrapper {
+                background: var(--gray-100);
+                border-radius: 9999px;
+                height: 12px;
+                overflow: hidden;
+                margin-bottom: 0.75rem;
+            }
+
+            .progress-bar-fill {
+                height: 100%;
+                background: linear-gradient(90deg, var(--aclc-blue) 0%, var(--aclc-light-blue) 100%);
+                border-radius: 9999px;
+                transition: width 0.5s ease;
+            }
+
+            .progress-info {
+                display: flex;
+                justify-content: space-between;
+                font-size: 0.8125rem;
+                color: var(--gray-500);
+            }
+
+            /* Content Grid */
+            .content-grid {
+                display: grid;
+                grid-template-columns: 1fr 380px;
+                gap: 1.5rem;
+            }
+
+            @media (max-width: 1199.98px) {
+                .content-grid {
+                    grid-template-columns: 1fr;
+                }
+            }
+
+            /* Election Card */
+            .election-info-card {
+                background: white;
+                border-radius: var(--radius-lg);
+                border: 1px solid var(--gray-200);
+                overflow: hidden;
+            }
+
+            .election-info-header {
+                background: linear-gradient(135deg, var(--aclc-blue) 0%, var(--aclc-light-blue) 100%);
+                color: white;
+                padding: 1.25rem 1.5rem;
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+            }
+
+            .election-info-header i {
+                font-size: 1.25rem;
+            }
+
+            .election-info-header h3 {
+                font-size: 1rem;
+                font-weight: 600;
+                margin: 0;
+            }
+
+            .election-info-body {
+                padding: 1.5rem;
+            }
+
+            .election-title-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                margin-bottom: 1rem;
+            }
+
+            .election-name {
+                font-size: 1.125rem;
+                font-weight: 700;
+                color: var(--gray-800);
+                margin-bottom: 0.25rem;
+            }
+
+            .election-desc {
+                font-size: 0.875rem;
+                color: var(--gray-500);
+                margin-bottom: 1rem;
+            }
+
+            .election-dates {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 1rem;
+                padding: 1rem;
+                background: var(--gray-50);
+                border-radius: var(--radius-md);
+                margin-bottom: 1.5rem;
+            }
+
+            .date-item {
+                display: flex;
+                flex-direction: column;
+            }
+
+            .date-label {
+                font-size: 0.75rem;
+                font-weight: 600;
+                color: var(--gray-500);
+                text-transform: uppercase;
+                letter-spacing: 0.025em;
+                margin-bottom: 0.25rem;
+            }
+
+            .date-value {
+                font-size: 0.875rem;
+                font-weight: 600;
+                color: var(--gray-700);
+            }
+
+            /* Position Table */
+            .position-table {
+                width: 100%;
+            }
+
+            .position-table th {
+                background: var(--gray-50);
+                font-size: 0.75rem;
+                font-weight: 600;
+                color: var(--gray-600);
+                text-transform: uppercase;
+                letter-spacing: 0.025em;
+                padding: 0.75rem 1rem;
+                text-align: left;
+            }
+
+            .position-table td {
+                padding: 0.75rem 1rem;
+                font-size: 0.875rem;
+                color: var(--gray-700);
+                border-top: 1px solid var(--gray-100);
+            }
+
+            .position-table tr:hover td {
+                background: var(--gray-50);
+            }
+
+            /* Recent Voters */
+            .voters-card {
+                background: white;
+                border-radius: var(--radius-lg);
+                border: 1px solid var(--gray-200);
+                overflow: hidden;
+            }
+
+            .voters-header {
+                background: var(--gray-50);
+                padding: 1rem 1.25rem;
+                border-bottom: 1px solid var(--gray-200);
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+
+            .voters-header i {
+                color: var(--gray-400);
+            }
+
+            .voters-header h3 {
+                font-size: 0.9375rem;
+                font-weight: 600;
+                color: var(--gray-800);
+                margin: 0;
+            }
+
+            .voters-list {
+                max-height: 400px;
+                overflow-y: auto;
+            }
+
+            .voter-item {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                padding: 0.875rem 1.25rem;
+                border-bottom: 1px solid var(--gray-100);
+                transition: background 0.15s ease;
+            }
+
+            .voter-item:last-child {
+                border-bottom: none;
+            }
+
+            .voter-item:hover {
+                background: var(--gray-50);
+            }
+
+            .voter-avatar {
+                width: 36px;
+                height: 36px;
+                border-radius: 50%;
+                background: linear-gradient(135deg, var(--aclc-blue) 0%, var(--aclc-light-blue) 100%);
+                color: white;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 600;
+                font-size: 0.8125rem;
+                flex-shrink: 0;
+            }
+
+            .voter-info {
+                flex: 1;
+                min-width: 0;
+            }
+
+            .voter-name {
+                font-size: 0.875rem;
+                font-weight: 600;
+                color: var(--gray-800);
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .voter-id {
+                font-size: 0.75rem;
+                color: var(--gray-500);
+            }
+
+            .empty-voters {
+                padding: 2rem;
+                text-align: center;
+                color: var(--gray-400);
+            }
+
+            .empty-voters i {
+                font-size: 2rem;
+                margin-bottom: 0.5rem;
+            }
+
+            .empty-voters p {
+                font-size: 0.875rem;
+                margin: 0;
+            }
+
+            /* Status Badge */
+            .status-active {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.375rem;
+                padding: 0.25rem 0.75rem;
+                background: #d1fae5;
+                color: #059669;
+                border-radius: 9999px;
+                font-size: 0.75rem;
+                font-weight: 600;
+            }
+
+            .status-active::before {
+                content: '';
+                width: 6px;
+                height: 6px;
+                background: currentColor;
+                border-radius: 50%;
+                animation: pulse 2s infinite;
+            }
+
+            @keyframes pulse {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0.5; }
+            }
+
+            /* No Election Alert */
+            .no-election-alert {
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+                padding: 1.25rem 1.5rem;
+                background: var(--info-light);
+                border-radius: var(--radius-md);
+                color: #1e40af;
+            }
+
+            .no-election-alert i {
+                font-size: 1.5rem;
+                color: var(--info);
+            }
+
+            .no-election-alert p {
+                margin: 0;
+                font-size: 0.9375rem;
+            }
+        </style>
     </x-slot>
 
     <!-- Page Header -->
     <div class="page-header">
-        <h1 class="page-title">
-            <i class="bi bi-speedometer2"></i> Admin Dashboard
-        </h1>
+        <div class="dashboard-header">
+            <div>
+                <h1 class="page-title">
+                    <i class="bi bi-grid-1x2-fill"></i>
+                    Dashboard Overview
+                </h1>
+                <p class="page-subtitle">Welcome back! Here's what's happening with your election.</p>
+            </div>
+            <div class="dashboard-time">
+                <i class="bi bi-clock"></i>
+                <span id="currentTime">{{ now()->format('l, F d, Y') }}</span>
+            </div>
+        </div>
     </div>
 
-    <!-- Stats Cards Row -->
-    <div class="row mb-4">
-        <div class="col-md-3 mb-3">
-            <div class="stats-card">
-                <div class="stats-icon blue">
-                    <i class="bi bi-people"></i>
-                </div>
-                <h3>{{ $totalStudents }}</h3>
-                <p>Total Students</p>
+    <!-- Statistics Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon blue">
+                <i class="bi bi-people-fill"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Total Students</div>
+                <div class="stat-value">{{ number_format($totalStudents) }}</div>
+                <span class="stat-trend neutral">
+                    <i class="bi bi-dash"></i> Registered voters
+                </span>
             </div>
         </div>
         
-        <div class="col-md-3 mb-3">
-            <div class="stats-card green">
-                <div class="stats-icon green">
-                    <i class="bi bi-check-circle"></i>
-                </div>
-                <h3>{{ $totalVoted }}</h3>
-                <p>Students Voted</p>
+        <div class="stat-card">
+            <div class="stat-icon green">
+                <i class="bi bi-check-circle-fill"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Students Voted</div>
+                <div class="stat-value">{{ number_format($totalVoted) }}</div>
+                <span class="stat-trend {{ $totalVoted > 0 ? 'up' : 'neutral' }}">
+                    @if($totalVoted > 0)
+                        <i class="bi bi-arrow-up"></i> Active participation
+                    @else
+                        <i class="bi bi-dash"></i> No votes yet
+                    @endif
+                </span>
             </div>
         </div>
         
-        <div class="col-md-3 mb-3">
-            <div class="stats-card orange">
-                <div class="stats-icon orange">
-                    <i class="bi bi-person-badge"></i>
-                </div>
-                <h3>{{ $totalCandidates }}</h3>
-                <p>Total Candidates</p>
+        <div class="stat-card">
+            <div class="stat-icon orange">
+                <i class="bi bi-person-badge-fill"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Total Candidates</div>
+                <div class="stat-value">{{ number_format($totalCandidates) }}</div>
+                <span class="stat-trend neutral">
+                    <i class="bi bi-dash"></i> Running for positions
+                </span>
             </div>
         </div>
         
-        <div class="col-md-3 mb-3">
-            <div class="stats-card red">
-                <div class="stats-icon red">
-                    <i class="bi bi-flag"></i>
-                </div>
-                <h3>{{ $totalParties }}</h3>
-                <p>Political Parties</p>
+        <div class="stat-card">
+            <div class="stat-icon red">
+                <i class="bi bi-flag-fill"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Political Parties</div>
+                <div class="stat-value">{{ number_format($totalParties) }}</div>
+                <span class="stat-trend neutral">
+                    <i class="bi bi-dash"></i> Registered parties
+                </span>
             </div>
         </div>
     </div>
 
     <!-- Voting Progress -->
-    <div class="row mb-4">
-        <div class="col-md-12">
-            <div class="card">
-                <div class="card-header">
-                    <i class="bi bi-graph-up"></i> Voting Progress
-                </div>
-                <div class="card-body">
-                    <h5>Overall Turnout: <strong>{{ $votingPercentage }}%</strong></h5>
-                    <div class="progress mb-3">
-                        <div class="progress-bar" role="progressbar" style="width: {{ $votingPercentage }}%;" 
-                             aria-valuenow="{{ $votingPercentage }}" aria-valuemin="0" aria-valuemax="100">
-                            {{ $votingPercentage }}%
-                        </div>
-                    </div>
-                    <p class="text-muted mb-0">
-                        <i class="bi bi-info-circle"></i> 
-                        {{ $totalVoted }} out of {{ $totalStudents }} students have voted
-                    </p>
-                </div>
+    <div class="progress-card">
+        <div class="progress-header">
+            <div class="progress-title">
+                <i class="bi bi-graph-up-arrow"></i>
+                Voting Progress
             </div>
+            <div class="progress-percentage">{{ $votingPercentage }}%</div>
+        </div>
+        <div class="progress-bar-wrapper">
+            <div class="progress-bar-fill" style="width: {{ $votingPercentage }}%;"></div>
+        </div>
+        <div class="progress-info">
+            <span>{{ number_format($totalVoted) }} votes cast</span>
+            <span>{{ number_format($totalStudents) }} total students</span>
         </div>
     </div>
 
-    <div class="row">
-        <!-- Active Election -->
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">
-                    <i class="bi bi-calendar-event"></i> Active Election
-                </div>
-                <div class="card-body">
-                    @if($activeElection)
-                        <h5>{{ $activeElection->title }}</h5>
-                        <p class="text-muted">{{ $activeElection->description }}</p>
-                        
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <strong><i class="bi bi-calendar-check"></i> Start Date:</strong><br>
-                                {{ $activeElection->start_date->format('F d, Y h:i A') }}
-                            </div>
-                            <div class="col-md-6">
-                                <strong><i class="bi bi-calendar-x"></i> End Date:</strong><br>
-                                {{ $activeElection->end_date->format('F d, Y h:i A') }}
-                            </div>
+    <!-- Main Content Grid -->
+    <div class="content-grid">
+        <!-- Active Election Details -->
+        <div class="election-info-card">
+            <div class="election-info-header">
+                <i class="bi bi-calendar-event"></i>
+                <h3>Active Election</h3>
+            </div>
+            <div class="election-info-body">
+                @if($activeElection)
+                    <div class="election-title-row">
+                        <div>
+                            <div class="election-name">{{ $activeElection->title }}</div>
+                            <p class="election-desc">{{ $activeElection->description ?? 'No description provided' }}</p>
                         </div>
+                        <span class="status-active">Active</span>
+                    </div>
 
-                        <h6 class="mt-4">Positions & Candidates:</h6>
-                        <div class="table-responsive">
-                            <table class="table table-sm">
-                                <thead>
+                    <div class="election-dates">
+                        <div class="date-item">
+                            <span class="date-label">Start Date</span>
+                            <span class="date-value">{{ $activeElection->start_date->format('M d, Y h:i A') }}</span>
+                        </div>
+                        <div class="date-item">
+                            <span class="date-label">End Date</span>
+                            <span class="date-value">{{ $activeElection->end_date->format('M d, Y h:i A') }}</span>
+                        </div>
+                    </div>
+
+                    <h4 class="section-title" style="font-size: 0.875rem; margin-bottom: 0.75rem;">
+                        <i class="bi bi-award"></i> Positions & Candidates
+                    </h4>
+                    
+                    <div class="table-responsive">
+                        <table class="position-table">
+                            <thead>
+                                <tr>
+                                    <th>Position</th>
+                                    <th>Candidates</th>
+                                    <th>Winners</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($positionStats as $stat)
                                     <tr>
-                                        <th>Position</th>
-                                        <th>Candidates</th>
-                                        <th>Winners</th>
+                                        <td><strong>{{ $stat['name'] }}</strong></td>
+                                        <td>{{ $stat['candidates'] }}</td>
+                                        <td>{{ $stat['max_winners'] }}</td>
                                     </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($positionStats as $stat)
-                                        <tr>
-                                            <td><strong>{{ $stat['name'] }}</strong></td>
-                                            <td>{{ $stat['candidates'] }}</td>
-                                            <td>{{ $stat['max_winners'] }}</td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    @else
-                        <div class="alert alert-info">
-                            <i class="bi bi-info-circle"></i> No active election at the moment.
-                        </div>
-                    @endif
-                </div>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @else
+                    <div class="no-election-alert">
+                        <i class="bi bi-info-circle"></i>
+                        <p>No active election at the moment. Create a new election to get started.</p>
+                    </div>
+                @endif
             </div>
         </div>
 
         <!-- Recent Voters -->
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-header">
-                    <i class="bi bi-clock-history"></i> Recent Voters
-                </div>
-                <div class="card-body">
-                    @if($recentVoters->count() > 0)
-                        <div class="list-group list-group-flush">
-                            @foreach($recentVoters as $voter)
-                                <div class="list-group-item">
-                                    <div class="d-flex align-items-center">
-                                        <div class="user-avatar me-3">
-                                            {{ substr($voter->name, 0, 1) }}
-                                        </div>
-                                        <div>
-                                            <div style="font-size: 14px; font-weight: 500;">{{ $voter->name }}</div>
-                                            <small class="text-muted">{{ $voter->usn }}</small>
-                                        </div>
-                                    </div>
-                                </div>
-                            @endforeach
+        <div class="voters-card">
+            <div class="voters-header">
+                <i class="bi bi-clock-history"></i>
+                <h3>Recent Voters</h3>
+            </div>
+            <div class="voters-list">
+                @if($recentVoters->count() > 0)
+                    @foreach($recentVoters as $voter)
+                        <div class="voter-item">
+                            <div class="voter-avatar">
+                                {{ strtoupper(substr($voter->name, 0, 1)) }}
+                            </div>
+                            <div class="voter-info">
+                                <div class="voter-name">{{ $voter->name }}</div>
+                                <div class="voter-id">{{ $voter->usn }}</div>
+                            </div>
                         </div>
-                    @else
-                        <p class="text-muted text-center">No votes cast yet</p>
-                    @endif
-                </div>
+                    @endforeach
+                @else
+                    <div class="empty-voters">
+                        <i class="bi bi-inbox"></i>
+                        <p>No votes cast yet</p>
+                    </div>
+                @endif
             </div>
         </div>
     </div>

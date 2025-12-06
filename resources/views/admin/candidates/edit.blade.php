@@ -333,7 +333,7 @@
                     reader.readAsDataURL(file);
                 } else {
                     @if($candidate->photo_path)
-                        previewImage.src = "{{ asset('storage/' . $candidate->photo_path) }}";
+                        previewImage.src = {!! json_encode(asset('storage/' . $candidate->photo_path)) !!};
                         previewImage.style.display = 'block';
                         previewAvatar.style.display = 'none';
                     @else

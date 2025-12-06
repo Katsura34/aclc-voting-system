@@ -9,6 +9,7 @@ use App\Models\Position;
 use App\Models\Party;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class CandidateController extends Controller
@@ -106,8 +107,8 @@ class CandidateController extends Controller
                 DB::rollBack();
                 
                 // Delete uploaded photo if candidate creation failed
-                if (isset($photoPath) && \Storage::disk('public')->exists($photoPath)) {
-                    \Storage::disk('public')->delete($photoPath);
+                if (isset($photoPath) && Storage::disk('public')->exists($photoPath)) {
+                    Storage::disk('public')->delete($photoPath);
                 }
                 
                 throw $e;
@@ -169,12 +170,10 @@ class CandidateController extends Controller
             DB::beginTransaction();
             
             try {
-                $oldPhotoPath = $candidate->photo_path;
-                
                 // Handle photo removal
                 if ($request->input('remove_photo')) {
-                    if ($oldPhotoPath && \Storage::disk('public')->exists($oldPhotoPath)) {
-                        \Storage::disk('public')->delete($oldPhotoPath);
+                    if ($candidate->photo_path && Storage::disk('public')->exists($candidate->photo_path)) {
+                        Storage::disk('public')->delete($candidate->photo_path);
                     }
                     $validated['photo_path'] = null;
                 }
@@ -185,15 +184,15 @@ class CandidateController extends Controller
                     $validated['photo_path'] = $photoPath;
                     
                     // Delete old photo
-                    if ($oldPhotoPath && \Storage::disk('public')->exists($oldPhotoPath)) {
-                        \Storage::disk('public')->delete($oldPhotoPath);
+                    if ($candidate->photo_path && Storage::disk('public')->exists($candidate->photo_path)) {
+                        Storage::disk('public')->delete($candidate->photo_path);
                     }
                 }
                 
                 // Remove the remove_photo flag before updating
-                unset($validated['remove_photo']);
+                $updateData = collect($validated)->except('remove_photo')->toArray();
                 
-                $candidate->update($validated);
+                $candidate->update($updateData);
                 
                 DB::commit();
 
@@ -205,8 +204,8 @@ class CandidateController extends Controller
                 DB::rollBack();
                 
                 // Delete uploaded photo if update failed
-                if (isset($photoPath) && \Storage::disk('public')->exists($photoPath)) {
-                    \Storage::disk('public')->delete($photoPath);
+                if (isset($photoPath) && Storage::disk('public')->exists($photoPath)) {
+                    Storage::disk('public')->delete($photoPath);
                 }
                 
                 throw $e;
@@ -243,8 +242,8 @@ class CandidateController extends Controller
                 }
 
                 // Delete candidate photo if exists
-                if ($candidate->photo_path && \Storage::disk('public')->exists($candidate->photo_path)) {
-                    \Storage::disk('public')->delete($candidate->photo_path);
+                if ($candidate->photo_path && Storage::disk('public')->exists($candidate->photo_path)) {
+                    Storage::disk('public')->delete($candidate->photo_path);
                 }
 
                 $candidate->delete();

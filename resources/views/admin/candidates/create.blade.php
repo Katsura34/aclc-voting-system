@@ -49,7 +49,7 @@
         <div class="row">
             <div class="col-lg-8">
                 <div class="form-section">
-                    <form action="{{ route('admin.candidates.store') }}" method="POST">
+                    <form action="{{ route('admin.candidates.store') }}" method="POST" enctype="multipart/form-data">
                         @csrf
 
                         <h5 class="mb-3"><i class="bi bi-person"></i> Personal Information</h5>
@@ -88,6 +88,22 @@
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
+                        </div>
+
+                        <!-- Photo Upload -->
+                        <div class="mb-4">
+                            <label for="photo" class="form-label fw-bold">
+                                Candidate Photo
+                            </label>
+                            <input type="file" 
+                                   class="form-control @error('photo') is-invalid @enderror" 
+                                   id="photo" 
+                                   name="photo" 
+                                   accept="image/jpeg,image/jpg,image/png">
+                            <small class="text-muted">Accepted formats: JPG, JPEG, PNG (Max: 2MB)</small>
+                            @error('photo')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
 
                         <hr class="my-4">
@@ -216,6 +232,7 @@
                                 <div class="preview-avatar" id="previewAvatar">
                                     <i class="bi bi-person"></i>
                                 </div>
+                                <img id="previewImage" src="" alt="Preview" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; margin: 0 auto 15px; display: none;">
                                 <h4 id="previewName" class="mb-2">Candidate Name</h4>
                                 <span class="badge mb-2" id="previewPosition" style="background: var(--aclc-light-blue);">
                                     Position
@@ -248,6 +265,7 @@
             const previewBio = document.getElementById('previewBio');
             const previewPlatform = document.getElementById('previewPlatform');
             const previewAvatar = document.getElementById('previewAvatar');
+            const previewImage = document.getElementById('previewImage');
 
             // Form elements
             const firstNameInput = document.getElementById('first_name');
@@ -257,6 +275,24 @@
             const bioInput = document.getElementById('bio');
             const platformInput = document.getElementById('platform');
             const electionFilter = document.getElementById('election_filter');
+            const photoInput = document.getElementById('photo');
+
+            // Handle photo upload preview
+            photoInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        previewImage.src = e.target.result;
+                        previewImage.style.display = 'block';
+                        previewAvatar.style.display = 'none';
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    previewImage.style.display = 'none';
+                    previewAvatar.style.display = 'flex';
+                }
+            });
 
             // Update name preview
             function updateNamePreview() {

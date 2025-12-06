@@ -283,7 +283,13 @@
                                     <tr class="candidate-card">
                                         <td>
                                             <div class="d-flex align-items-center gap-2">
-                                                <i class="bi bi-person-circle" style="font-size: 2rem; color: var(--aclc-blue);"></i>
+                                                @if($candidate->photo_path)
+                                                    <img src="{{ asset('storage/' . $candidate->photo_path) }}" 
+                                                         alt="{{ $candidate->full_name }}"
+                                                         style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                                                @else
+                                                    <i class="bi bi-person-circle" style="font-size: 2rem; color: var(--aclc-blue);"></i>
+                                                @endif
                                                 <div>
                                                     <strong class="d-block">{{ $candidate->full_name }}</strong>
                                                     <small class="text-muted">

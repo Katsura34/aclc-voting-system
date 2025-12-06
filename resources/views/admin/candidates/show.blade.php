@@ -62,9 +62,15 @@
         <div class="candidate-header">
             <div class="row align-items-center">
                 <div class="col-auto">
-                    <div class="candidate-avatar">
-                        {{ substr($candidate->first_name, 0, 1) }}{{ substr($candidate->last_name, 0, 1) }}
-                    </div>
+                    @if($candidate->photo_path)
+                        <img src="{{ asset('storage/' . $candidate->photo_path) }}" 
+                             alt="{{ $candidate->full_name }}"
+                             style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);">
+                    @else
+                        <div class="candidate-avatar">
+                            {{ substr($candidate->first_name, 0, 1) }}{{ substr($candidate->last_name, 0, 1) }}
+                        </div>
+                    @endif
                 </div>
                 <div class="col">
                     <h1 class="mb-2">{{ $candidate->full_name }}</h1>

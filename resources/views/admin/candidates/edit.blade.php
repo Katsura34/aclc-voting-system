@@ -49,7 +49,7 @@
         <div class="row">
             <div class="col-lg-8">
                 <div class="form-section">
-                    <form action="{{ route('admin.candidates.update', $candidate) }}" method="POST">
+                    <form action="{{ route('admin.candidates.update', $candidate) }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         @method('PUT')
 
@@ -89,6 +89,45 @@
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
+                        </div>
+
+                        <!-- Current Photo and Upload -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">
+                                Candidate Photo
+                            </label>
+                            
+                            @if($candidate->photo_path)
+                                <div class="mb-3">
+                                    <img src="{{ asset('storage/' . $candidate->photo_path) }}" 
+                                         alt="{{ $candidate->full_name }}"
+                                         id="currentPhoto"
+                                         style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; display: block; margin-bottom: 10px;">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="remove_photo" id="remove_photo" value="1">
+                                        <label class="form-check-label" for="remove_photo">
+                                            Remove current photo
+                                        </label>
+                                    </div>
+                                </div>
+                            @endif
+                            
+                            <input type="file" 
+                                   class="form-control @error('photo') is-invalid @enderror" 
+                                   id="photo" 
+                                   name="photo" 
+                                   accept="image/jpeg,image/jpg,image/png">
+                            <small class="text-muted">
+                                @if($candidate->photo_path)
+                                    Upload a new photo to replace the current one, or check the box above to remove it
+                                @else
+                                    Upload a photo for this candidate
+                                @endif
+                                (Accepted formats: JPG, JPEG, PNG, Max: 2MB)
+                            </small>
+                            @error('photo')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
 
                         <hr class="my-4">
@@ -217,9 +256,20 @@
                         </div>
                         <div class="card-body">
                             <div class="candidate-preview">
-                                <div class="preview-avatar" id="previewAvatar">
-                                    {{ substr($candidate->first_name, 0, 1) }}
-                                </div>
+                                @if($candidate->photo_path)
+                                    <img src="{{ asset('storage/' . $candidate->photo_path) }}" 
+                                         alt="{{ $candidate->full_name }}"
+                                         id="previewImage"
+                                         style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; margin: 0 auto 15px; display: block;">
+                                    <div class="preview-avatar" id="previewAvatar" style="display: none;">
+                                        {{ substr($candidate->first_name, 0, 1) }}
+                                    </div>
+                                @else
+                                    <div class="preview-avatar" id="previewAvatar">
+                                        {{ substr($candidate->first_name, 0, 1) }}
+                                    </div>
+                                    <img id="previewImage" src="" alt="Preview" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; margin: 0 auto 15px; display: none;">
+                                @endif
                                 <h4 id="previewName" class="mb-2">{{ $candidate->full_name }}</h4>
                                 <span class="badge mb-2" id="previewPosition" style="background: var(--aclc-light-blue);">
                                     {{ $candidate->position->name ?? 'Position' }}
@@ -252,6 +302,7 @@
             const previewBio = document.getElementById('previewBio');
             const previewPlatform = document.getElementById('previewPlatform');
             const previewAvatar = document.getElementById('previewAvatar');
+            const previewImage = document.getElementById('previewImage');
 
             // Form elements
             const firstNameInput = document.getElementById('first_name');
@@ -261,6 +312,60 @@
             const bioInput = document.getElementById('bio');
             const platformInput = document.getElementById('platform');
             const electionFilter = document.getElementById('election_filter');
+            const photoInput = document.getElementById('photo');
+            const removePhotoCheckbox = document.getElementById('remove_photo');
+            const currentPhoto = document.getElementById('currentPhoto');
+
+            // Handle photo upload preview
+            photoInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        previewImage.src = e.target.result;
+                        previewImage.style.display = 'block';
+                        previewAvatar.style.display = 'none';
+                        if (removePhotoCheckbox) {
+                            removePhotoCheckbox.checked = false;
+                            removePhotoCheckbox.disabled = true;
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    @if($candidate->photo_path)
+                        previewImage.src = {!! json_encode(asset('storage/' . $candidate->photo_path)) !!};
+                        previewImage.style.display = 'block';
+                        previewAvatar.style.display = 'none';
+                    @else
+                        previewImage.style.display = 'none';
+                        previewAvatar.style.display = 'flex';
+                    @endif
+                    if (removePhotoCheckbox) {
+                        removePhotoCheckbox.disabled = false;
+                    }
+                }
+            });
+
+            // Handle remove photo checkbox
+            if (removePhotoCheckbox) {
+                removePhotoCheckbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        previewImage.style.display = 'none';
+                        previewAvatar.style.display = 'flex';
+                        if (currentPhoto) {
+                            currentPhoto.style.opacity = '0.3';
+                        }
+                    } else {
+                        @if($candidate->photo_path)
+                            previewImage.style.display = 'block';
+                            previewAvatar.style.display = 'none';
+                        @endif
+                        if (currentPhoto) {
+                            currentPhoto.style.opacity = '1';
+                        }
+                    }
+                });
+            }
 
             // Update name preview
             function updateNamePreview() {

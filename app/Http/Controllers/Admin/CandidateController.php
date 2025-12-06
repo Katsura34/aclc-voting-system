@@ -9,6 +9,7 @@ use App\Models\Position;
 use App\Models\Party;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class CandidateController extends Controller
@@ -81,11 +82,19 @@ class CandidateController extends Controller
                 'party_id' => 'required|exists:parties,id',
                 'bio' => 'nullable|string',
                 'platform' => 'nullable|string',
+                'photo' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
             ]);
 
             DB::beginTransaction();
             
             try {
+                // Handle photo upload
+                if ($request->hasFile('photo')) {
+                    $photo = $request->file('photo');
+                    $photoPath = $photo->store('candidates', 'public');
+                    $validated['photo_path'] = $photoPath;
+                }
+
                 Candidate::create($validated);
                 
                 DB::commit();
@@ -96,6 +105,12 @@ class CandidateController extends Controller
                     ->with('success', 'Candidate created successfully!');
             } catch (\Exception $e) {
                 DB::rollBack();
+                
+                // Delete uploaded photo if candidate creation failed
+                if (isset($photoPath) && Storage::disk('public')->exists($photoPath)) {
+                    Storage::disk('public')->delete($photoPath);
+                }
+                
                 throw $e;
             }
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -148,12 +163,36 @@ class CandidateController extends Controller
                 'party_id' => 'required|exists:parties,id',
                 'bio' => 'nullable|string',
                 'platform' => 'nullable|string',
+                'photo' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
+                'remove_photo' => 'nullable|boolean',
             ]);
 
             DB::beginTransaction();
             
             try {
-                $candidate->update($validated);
+                // Handle photo removal
+                if ($request->input('remove_photo')) {
+                    if ($candidate->photo_path && Storage::disk('public')->exists($candidate->photo_path)) {
+                        Storage::disk('public')->delete($candidate->photo_path);
+                    }
+                    $validated['photo_path'] = null;
+                }
+                // Handle photo upload
+                elseif ($request->hasFile('photo')) {
+                    $photo = $request->file('photo');
+                    $photoPath = $photo->store('candidates', 'public');
+                    $validated['photo_path'] = $photoPath;
+                    
+                    // Delete old photo
+                    if ($candidate->photo_path && Storage::disk('public')->exists($candidate->photo_path)) {
+                        Storage::disk('public')->delete($candidate->photo_path);
+                    }
+                }
+                
+                // Remove the remove_photo flag before updating
+                $updateData = collect($validated)->except('remove_photo')->toArray();
+                
+                $candidate->update($updateData);
                 
                 DB::commit();
 
@@ -163,6 +202,12 @@ class CandidateController extends Controller
                     ->with('success', 'Candidate updated successfully!');
             } catch (\Exception $e) {
                 DB::rollBack();
+                
+                // Delete uploaded photo if update failed
+                if (isset($photoPath) && Storage::disk('public')->exists($photoPath)) {
+                    Storage::disk('public')->delete($photoPath);
+                }
+                
                 throw $e;
             }
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -194,6 +239,11 @@ class CandidateController extends Controller
                 if ($candidate->votes()->count() > 0) {
                     return redirect()->route('admin.candidates.index')
                         ->with('error', 'Cannot delete candidate with existing votes!');
+                }
+
+                // Delete candidate photo if exists
+                if ($candidate->photo_path && Storage::disk('public')->exists($candidate->photo_path)) {
+                    Storage::disk('public')->delete($candidate->photo_path);
                 }
 
                 $candidate->delete();

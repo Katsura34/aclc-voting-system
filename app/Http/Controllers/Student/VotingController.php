@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Election;
 use App\Models\Position;
 use App\Models\Vote;
+use App\Models\VotingRecord;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -18,10 +19,10 @@ class VotingController extends Controller
     public function index()
     {
         try {
-            $user = Auth::user();
+            $student = Auth::guard('student')->user();
             
-            // Check if user has already voted
-            if ($user->has_voted) {
+            // Check if student has already voted
+            if ($student->has_voted) {
                 return redirect()->route('voting.success');
             }
 
@@ -49,11 +50,11 @@ class VotingController extends Controller
      */
     public function submit(Request $request)
     {
-        $user = Auth::user();
+        $student = Auth::guard('student')->user();
 
         try {
-            // Check if user has already voted
-            if ($user->has_voted) {
+            // Check if student has already voted
+            if ($student->has_voted) {
                 return redirect()->route('voting.success')
                     ->with('error', 'You have already voted!');
             }
@@ -85,21 +86,29 @@ class VotingController extends Controller
                     $candidateId = $request->input("position_{$position->id}");
                     
                     Vote::create([
-                        'user_id' => $user->id,
+                        'student_id' => $student->id,
                         'election_id' => $election->id,
                         'position_id' => $position->id,
                         'candidate_id' => $candidateId,
                     ]);
                 }
 
-                // Mark user as voted
-                $user->has_voted = true;
-                $user->save();
+                // Create voting record for manual counting backup
+                VotingRecord::create([
+                    'election_id' => $election->id,
+                    'student_id' => $student->id,
+                    'voted_at' => now(),
+                    'ip_address' => $request->ip(),
+                ]);
+
+                // Mark student as voted
+                $student->has_voted = true;
+                $student->save();
 
                 DB::commit();
 
                 \Log::info('Vote submitted successfully', [
-                    'user_id' => $user->id,
+                    'student_id' => $student->id,
                     'election_id' => $election->id,
                 ]);
 
@@ -110,7 +119,7 @@ class VotingController extends Controller
                 DB::rollBack();
                 
                 \Log::error('Vote submission error (database): ' . $e->getMessage(), [
-                    'user_id' => $user->id,
+                    'student_id' => $student->id,
                     'election_id' => $election->id,
                     'trace' => $e->getTraceAsString()
                 ]);
@@ -125,7 +134,7 @@ class VotingController extends Controller
                 ->withInput();
         } catch (\Exception $e) {
             \Log::error('Vote submission error (general): ' . $e->getMessage(), [
-                'user_id' => $user->id,
+                'student_id' => $student->id,
                 'trace' => $e->getTraceAsString()
             ]);
             
@@ -140,7 +149,7 @@ class VotingController extends Controller
      */
     public function success()
     {
-        if (!Auth::user()->has_voted) {
+        if (!Auth::guard('student')->user()->has_voted) {
             return redirect()->route('voting.index');
         }
 

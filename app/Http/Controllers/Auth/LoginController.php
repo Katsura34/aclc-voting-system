@@ -3,9 +3,12 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Admin;
+use App\Models\Student;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
 class LoginController extends Controller
@@ -29,34 +32,57 @@ class LoginController extends Controller
                 'password' => 'required|string',
             ]);
 
-            $credentials = [
-                'usn' => $request->usn,
-                'password' => $request->password,
-            ];
+            $usn = $request->usn;
+            $password = $request->password;
 
-            if (Auth::attempt($credentials, $request->filled('remember'))) {
+            // Try to authenticate as admin first
+            $admin = Admin::where('username', $usn)->first();
+            
+            if ($admin && Hash::check($password, $admin->password)) {
+                // Log in as admin
+                Auth::guard('admin')->login($admin, $request->filled('remember'));
+                
                 // Regenerate session first to prevent fixation attacks
                 $request->session()->regenerate();
                 
-                // Invalidate all other sessions for this user (single session per account)
-                $user = Auth::user();
+                // Invalidate all other sessions for this admin
                 $currentSessionId = $request->session()->getId();
                 
-                // Delete all other sessions for this user
                 DB::table('sessions')
-                    ->where('user_id', $user->id)
+                    ->where('user_id', $admin->id)
                     ->where('id', '!=', $currentSessionId)
                     ->delete();
 
-                \Log::info('User logged in (previous sessions invalidated)', [
-                    'user_id' => $user->id,
-                    'usn' => $user->usn
+                \Log::info('Admin logged in (previous sessions invalidated)', [
+                    'admin_id' => $admin->id,
+                    'username' => $admin->username
                 ]);
 
-                // Redirect based on user type
-                if ($user->user_type === 'admin') {
-                    return redirect()->intended('/admin/dashboard');
-                }
+                return redirect()->intended('/admin/dashboard');
+            }
+
+            // Try to authenticate as student
+            $student = Student::where('usn', $usn)->first();
+            
+            if ($student && Hash::check($password, $student->password)) {
+                // Log in as student
+                Auth::guard('student')->login($student, $request->filled('remember'));
+                
+                // Regenerate session first to prevent fixation attacks
+                $request->session()->regenerate();
+                
+                // Invalidate all other sessions for this student
+                $currentSessionId = $request->session()->getId();
+                
+                DB::table('sessions')
+                    ->where('user_id', $student->id)
+                    ->where('id', '!=', $currentSessionId)
+                    ->delete();
+
+                \Log::info('Student logged in (previous sessions invalidated)', [
+                    'student_id' => $student->id,
+                    'usn' => $student->usn
+                ]);
 
                 return redirect()->intended(route('voting.index'));
             }
@@ -83,7 +109,8 @@ class LoginController extends Controller
      */
     public function logout(Request $request)
     {
-        Auth::logout();
+        Auth::guard('admin')->logout();
+        Auth::guard('student')->logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();

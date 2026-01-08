@@ -13,14 +13,12 @@ class Election extends Model
         'start_date',
         'end_date',
         'is_active',
-        'show_live_results',
     ];
 
     protected $casts = [
         'start_date' => 'datetime',
         'end_date' => 'datetime',
         'is_active' => 'boolean',
-        'show_live_results' => 'boolean',
     ];
 
     /**

@@ -159,13 +159,7 @@
                 <li><strong>Your vote is confidential</strong> - No one can see who you voted for</li>
                 <li><strong>One-time voting</strong> - You cannot vote again or change your choices</li>
                 <li><strong>Secure system</strong> - Your vote is encrypted and stored safely</li>
-                @if($election = \App\Models\Election::where('is_active', true)->first())
-                    @if($election->show_live_results)
-                        <li><strong>Results</strong> - Live results are available after voting</li>
-                    @else
-                        <li><strong>Results</strong> - Will be announced after the election period ends</li>
-                    @endif
-                @endif
+                <li><strong>Results</strong> - Will be announced after the election period ends</li>
             </ul>
         </div>
 

@@ -173,12 +173,6 @@
                         <i class="bi bi-calendar-x"></i>
                         <span>End: {{ $election->end_date->format('M d, Y') }}</span>
                     </div>
-                    @if($election->show_live_results)
-                        <div class="meta-item">
-                            <i class="bi bi-eye"></i>
-                            <span>Live Results</span>
-                        </div>
-                    @endif
                 </div>
 
                 <div class="election-stats">

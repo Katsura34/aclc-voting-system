@@ -95,21 +95,6 @@
                 </div>
             </div>
 
-            <div class="mb-4">
-                <div class="form-check form-switch">
-                    <input class="form-check-input" 
-                           type="checkbox" 
-                           id="show_live_results" 
-                           name="show_live_results" 
-                           value="1"
-                           {{ old('show_live_results') ? 'checked' : '' }}>
-                    <label class="form-check-label" for="show_live_results">
-                        <strong>Show Live Results</strong>
-                        <div class="help-text">Display real-time voting results during the election period.</div>
-                    </label>
-                </div>
-            </div>
-
             <!-- Action Buttons -->
             <div class="d-flex gap-2 mt-4">
                 <button type="submit" class="btn btn-primary">

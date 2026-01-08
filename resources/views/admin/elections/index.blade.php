@@ -173,12 +173,6 @@
                         <i class="bi bi-calendar-x"></i>
                         <span>End: {{ $election->end_date->format('M d, Y') }}</span>
                     </div>
-                    @if($election->allow_abstain)
-                        <div class="meta-item">
-                            <i class="bi bi-dash-circle"></i>
-                            <span>Abstain Allowed</span>
-                        </div>
-                    @endif
                     @if($election->show_live_results)
                         <div class="meta-item">
                             <i class="bi bi-eye"></i>

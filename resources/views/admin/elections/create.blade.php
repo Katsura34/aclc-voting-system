@@ -95,21 +95,6 @@
                 </div>
             </div>
 
-            <div class="mb-3">
-                <div class="form-check form-switch">
-                    <input class="form-check-input" 
-                           type="checkbox" 
-                           id="allow_abstain" 
-                           name="allow_abstain" 
-                           value="1"
-                           {{ old('allow_abstain') ? 'checked' : '' }}>
-                    <label class="form-check-label" for="allow_abstain">
-                        <strong>Allow Abstain</strong>
-                        <div class="help-text">Voters can choose to skip voting for specific positions.</div>
-                    </label>
-                </div>
-            </div>
-
             <div class="mb-4">
                 <div class="form-check form-switch">
                     <input class="form-check-input" 

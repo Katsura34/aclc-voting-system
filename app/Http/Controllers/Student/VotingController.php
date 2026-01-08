@@ -66,16 +66,12 @@ class VotingController extends Controller
                     ->with('error', 'No active election found.');
             }
 
-            // Validate votes
+            // Validate votes - all positions are required
             $positions = Position::where('election_id', $election->id)->get();
             
             $rules = [];
             foreach ($positions as $position) {
-                if ($election->allow_abstain) {
-                    $rules["position_{$position->id}"] = 'nullable|exists:candidates,id';
-                } else {
-                    $rules["position_{$position->id}"] = 'required|exists:candidates,id';
-                }
+                $rules["position_{$position->id}"] = 'required|exists:candidates,id';
             }
 
             $validated = $request->validate($rules);
@@ -88,14 +84,12 @@ class VotingController extends Controller
                 foreach ($positions as $position) {
                     $candidateId = $request->input("position_{$position->id}");
                     
-                    if ($candidateId) {
-                        Vote::create([
-                            'user_id' => $user->id,
-                            'election_id' => $election->id,
-                            'position_id' => $position->id,
-                            'candidate_id' => $candidateId,
-                        ]);
-                    }
+                    Vote::create([
+                        'user_id' => $user->id,
+                        'election_id' => $election->id,
+                        'position_id' => $position->id,
+                        'candidate_id' => $candidateId,
+                    ]);
                 }
 
                 // Mark user as voted

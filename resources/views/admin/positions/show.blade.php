@@ -212,16 +212,6 @@
                                     </p>
                                 </div>
                                 <div class="col-md-4">
-                                    <small class="text-muted">Allow Abstain</small>
-                                    <p>
-                                        @if($position->election->allow_abstain)
-                                            <span class="badge bg-info">Yes</span>
-                                        @else
-                                            <span class="badge bg-secondary">No</span>
-                                        @endif
-                                    </p>
-                                </div>
-                                <div class="col-md-4">
                                     <small class="text-muted">Live Results</small>
                                     <p>
                                         @if($position->election->show_live_results)

@@ -13,7 +13,6 @@ class Election extends Model
         'start_date',
         'end_date',
         'is_active',
-        'allow_abstain',
         'show_live_results',
     ];
 
@@ -21,7 +20,6 @@ class Election extends Model
         'start_date' => 'datetime',
         'end_date' => 'datetime',
         'is_active' => 'boolean',
-        'allow_abstain' => 'boolean',
         'show_live_results' => 'boolean',
     ];
 

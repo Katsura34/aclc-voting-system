@@ -7,18 +7,18 @@ use Illuminate\Database\Eloquent\Model;
 class Vote extends Model
 {
     protected $fillable = [
-        'user_id',
+        'student_id',
         'election_id',
         'position_id',
         'candidate_id',
     ];
 
     /**
-     * Get the user who cast the vote.
+     * Get the student who cast the vote.
      */
-    public function user()
+    public function student()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(Student::class);
     }
 
     /**

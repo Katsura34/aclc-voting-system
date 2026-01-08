@@ -188,28 +188,6 @@
             <div class="info-label">End Date</div>
             <div class="info-value">{{ $election->end_date->format('F d, Y - h:i A') }}</div>
         </div>
-        
-        <div class="info-row">
-            <div class="info-label">Allow Abstain</div>
-            <div class="info-value">
-                @if($election->allow_abstain)
-                    <span class="badge bg-success">Yes</span>
-                @else
-                    <span class="badge bg-secondary">No</span>
-                @endif
-            </div>
-        </div>
-        
-        <div class="info-row">
-            <div class="info-label">Show Live Results</div>
-            <div class="info-value">
-                @if($election->show_live_results)
-                    <span class="badge bg-success">Yes</span>
-                @else
-                    <span class="badge bg-secondary">No</span>
-                @endif
-            </div>
-        </div>
     </div>
 
     <!-- Positions and Candidates -->

@@ -41,8 +41,6 @@ class ElectionController extends Controller
                 'start_date' => 'required|date',
                 'end_date' => 'required|date|after:start_date',
                 'is_active' => 'boolean',
-                'allow_abstain' => 'boolean',
-                'show_live_results' => 'boolean',
             ]);
 
             DB::beginTransaction();
@@ -87,11 +85,9 @@ class ElectionController extends Controller
     {
         $election->load(['positions.candidates.party']);
         
-        // Get vote statistics
-        $totalVoters = \App\Models\User::where('user_type', 'student')->count();
-        $votedCount = \App\Models\User::where('user_type', 'student')
-            ->where('has_voted', true)
-            ->count();
+        // Get vote statistics using Student model
+        $totalVoters = \App\Models\Student::count();
+        $votedCount = \App\Models\Student::where('has_voted', true)->count();
 
         return view('admin.elections.show', compact('election', 'totalVoters', 'votedCount'));
     }
@@ -116,8 +112,6 @@ class ElectionController extends Controller
                 'start_date' => 'required|date',
                 'end_date' => 'required|date|after:start_date',
                 'is_active' => 'boolean',
-                'allow_abstain' => 'boolean',
-                'show_live_results' => 'boolean',
             ]);
 
             DB::beginTransaction();

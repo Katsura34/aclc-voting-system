@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Election;
 use App\Models\VotingRecord;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class VotingRecordController extends Controller
 {
@@ -41,7 +42,7 @@ class VotingRecordController extends Controller
         if ($request->filled('election_id')) {
             $query->where('election_id', $request->election_id);
             $election = Election::find($request->election_id);
-            $filename = 'voting-records-' . ($election ? slug($election->title) : 'all') . '-' . date('Y-m-d') . '.csv';
+            $filename = 'voting-records-' . ($election ? Str::slug($election->title) : 'all') . '-' . date('Y-m-d') . '.csv';
         } else {
             $filename = 'voting-records-all-' . date('Y-m-d') . '.csv';
         }

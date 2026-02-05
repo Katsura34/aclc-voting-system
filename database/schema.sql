@@ -110,8 +110,11 @@ CREATE TABLE IF NOT EXISTS `admins` (
 CREATE TABLE IF NOT EXISTS `students` (
   `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
   `usn` varchar(255) NOT NULL COMMENT 'Student number (unique)',
-  `name` varchar(255) NOT NULL COMMENT 'Student full name',
-  `email` varchar(255) NOT NULL COMMENT 'Student email address',
+  `lastname` varchar(255) NOT NULL COMMENT 'Student last name',
+  `firstname` varchar(255) NOT NULL COMMENT 'Student first name',
+  `strand` varchar(255) DEFAULT NULL COMMENT 'Student strand/track',
+  `year` varchar(255) DEFAULT NULL COMMENT 'Student year level',
+  `gender` enum('Male','Female','Other') NOT NULL COMMENT 'Student gender',
   `password` varchar(255) NOT NULL COMMENT 'Hashed password',
   `has_voted` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Whether student has completed voting',
   `remember_token` varchar(100) DEFAULT NULL,
@@ -119,55 +122,167 @@ CREATE TABLE IF NOT EXISTS `students` (
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `students_usn_unique` (`usn`),
-  UNIQUE KEY `students_email_unique` (`email`),
-  KEY `idx_students_has_voted` (`has_voted`)
+  KEY `idx_students_has_voted` (`has_voted`),
+  KEY `idx_students_name` (`lastname`, `firstname`),
+  KEY `idx_students_year` (`year`),
+  KEY `idx_students_strand` (`strand`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================
 -- TABLE: votes
--- Purpose: Stores individual votes cast by students
+-- Purpose: Stores anonymous votes (SECURE - cannot trace to student)
 -- =====================================================
 CREATE TABLE IF NOT EXISTS `votes` (
   `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
   `election_id` bigint(20) UNSIGNED NOT NULL COMMENT 'Election reference',
-  `student_id` bigint(20) UNSIGNED NOT NULL COMMENT 'Student who voted',
   `position_id` bigint(20) UNSIGNED NOT NULL COMMENT 'Position voted for',
   `candidate_id` bigint(20) UNSIGNED NOT NULL COMMENT 'Candidate selected',
+  `vote_hash` varchar(64) NOT NULL COMMENT 'SHA256 hash for vote verification',
+  `encrypted_voter_id` varchar(255) NOT NULL COMMENT 'Encrypted student ID (admin key required)',
   `voted_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'When vote was cast',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `votes_election_student_position_unique` (`election_id`, `student_id`, `position_id`),
-  KEY `votes_student_id_foreign` (`student_id`),
-  KEY `votes_position_id_foreign` (`position_id`),
-  KEY `votes_candidate_id_foreign` (`candidate_id`),
-  KEY `idx_votes_election` (`election_id`),
-  KEY `idx_votes_candidate` (`candidate_id`),
-  KEY `idx_votes_position` (`position_id`),
+  UNIQUE KEY `votes_vote_hash_unique` (`vote_hash`),
+  KEY `idx_votes_election_position_candidate` (`election_id`, `position_id`, `candidate_id`),
+  KEY `idx_votes_voted_at` (`voted_at`),
   CONSTRAINT `votes_election_id_foreign` FOREIGN KEY (`election_id`) REFERENCES `elections` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `votes_student_id_foreign` FOREIGN KEY (`student_id`) REFERENCES `students` (`id`) ON DELETE CASCADE,
   CONSTRAINT `votes_position_id_foreign` FOREIGN KEY (`position_id`) REFERENCES `positions` (`id`) ON DELETE CASCADE,
   CONSTRAINT `votes_candidate_id_foreign` FOREIGN KEY (`candidate_id`) REFERENCES `candidates` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================
--- TABLE: voting_records
--- Purpose: Audit trail of who voted (not who they voted for)
+-- TABLE: voting_sessions
+-- Purpose: Track voting sessions (prevents double voting, enables manual count)
 -- =====================================================
-CREATE TABLE IF NOT EXISTS `voting_records` (
+CREATE TABLE IF NOT EXISTS `voting_sessions` (
   `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
   `election_id` bigint(20) UNSIGNED NOT NULL COMMENT 'Election reference',
   `student_id` bigint(20) UNSIGNED NOT NULL COMMENT 'Student who voted',
-  `voted_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'When student completed voting',
-  `ip_address` varchar(45) DEFAULT NULL COMMENT 'IP address of voter',
+  `session_token` varchar(64) NOT NULL COMMENT 'Unique session token',
+  `started_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'When session started',
+  `completed_at` timestamp NULL DEFAULT NULL COMMENT 'When voting completed',
+  `ip_address` varchar(45) DEFAULT NULL COMMENT 'IP address',
+  `user_agent` text DEFAULT NULL COMMENT 'Browser user agent',
+  `status` enum('started','completed','abandoned','invalid') NOT NULL DEFAULT 'started',
+  `ballot_number` varchar(20) DEFAULT NULL COMMENT 'Physical ballot number for manual counting',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `voting_records_election_student_unique` (`election_id`, `student_id`),
-  KEY `voting_records_student_id_foreign` (`student_id`),
-  KEY `idx_voting_records_voted_at` (`voted_at`),
-  CONSTRAINT `voting_records_election_id_foreign` FOREIGN KEY (`election_id`) REFERENCES `elections` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `voting_records_student_id_foreign` FOREIGN KEY (`student_id`) REFERENCES `students` (`id`) ON DELETE CASCADE
+  UNIQUE KEY `voting_sessions_session_token_unique` (`session_token`),
+  UNIQUE KEY `voting_sessions_ballot_number_unique` (`ballot_number`),
+  UNIQUE KEY `voting_sessions_unique` (`election_id`, `student_id`),
+  KEY `voting_sessions_student_id_foreign` (`student_id`),
+  KEY `idx_voting_sessions_status` (`status`),
+  KEY `idx_voting_sessions_completed_at` (`completed_at`),
+  CONSTRAINT `voting_sessions_election_id_foreign` FOREIGN KEY (`election_id`) REFERENCES `elections` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `voting_sessions_student_id_foreign` FOREIGN KEY (`student_id`) REFERENCES `students` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================
+-- TABLE: vote_audit_log
+-- Purpose: Immutable audit trail for all voting activities
+-- =====================================================
+CREATE TABLE IF NOT EXISTS `vote_audit_log` (
+  `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `election_id` bigint(20) UNSIGNED NOT NULL COMMENT 'Election reference',
+  `action` enum('vote_cast','vote_verified','session_started','session_completed','session_abandoned','suspicious_activity','admin_access','results_viewed') NOT NULL,
+  `actor_type` varchar(20) NOT NULL COMMENT 'student or admin',
+  `actor_id` bigint(20) UNSIGNED DEFAULT NULL COMMENT 'ID of actor',
+  `details` text DEFAULT NULL COMMENT 'JSON data about the action',
+  `ip_address` varchar(45) DEFAULT NULL COMMENT 'IP address',
+  `user_agent` text DEFAULT NULL COMMENT 'Browser user agent',
+  `previous_hash` varchar(64) DEFAULT NULL COMMENT 'Hash of previous log entry',
+  `entry_hash` varchar(64) NOT NULL COMMENT 'Hash of this entry',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_audit_election_action` (`election_id`, `action`),
+  KEY `idx_audit_created_at` (`created_at`),
+  KEY `idx_audit_actor` (`actor_type`, `actor_id`),
+  CONSTRAINT `vote_audit_log_election_id_foreign` FOREIGN KEY (`election_id`) REFERENCES `elections` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================
+-- TABLE: manual_count_records
+-- Purpose: Manual counting backup and verification
+-- =====================================================
+CREATE TABLE IF NOT EXISTS `manual_count_records` (
+  `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `election_id` bigint(20) UNSIGNED NOT NULL COMMENT 'Election reference',
+  `position_id` bigint(20) UNSIGNED NOT NULL COMMENT 'Position reference',
+  `candidate_id` bigint(20) UNSIGNED NOT NULL COMMENT 'Candidate reference',
+  `manual_votes` int(11) NOT NULL DEFAULT 0 COMMENT 'Manually counted votes',
+  `system_votes` int(11) NOT NULL DEFAULT 0 COMMENT 'System counted votes',
+  `discrepancy` int(11) NOT NULL DEFAULT 0 COMMENT 'Difference between counts',
+  `counted_by_admin_id` bigint(20) UNSIGNED DEFAULT NULL COMMENT 'Admin who counted',
+  `counted_at` timestamp NULL DEFAULT NULL COMMENT 'When manual count was done',
+  `verified` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Whether verified',
+  `verified_by_admin_id` bigint(20) UNSIGNED DEFAULT NULL COMMENT 'Admin who verified',
+  `verified_at` timestamp NULL DEFAULT NULL COMMENT 'When verified',
+  `notes` text DEFAULT NULL COMMENT 'Notes about discrepancies',
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `manual_count_unique` (`election_id`, `position_id`, `candidate_id`),
+  KEY `manual_count_records_position_id_foreign` (`position_id`),
+  KEY `manual_count_records_candidate_id_foreign` (`candidate_id`),
+  KEY `manual_count_records_counted_by_admin_id_foreign` (`counted_by_admin_id`),
+  KEY `manual_count_records_verified_by_admin_id_foreign` (`verified_by_admin_id`),
+  CONSTRAINT `manual_count_records_election_id_foreign` FOREIGN KEY (`election_id`) REFERENCES `elections` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `manual_count_records_position_id_foreign` FOREIGN KEY (`position_id`) REFERENCES `positions` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `manual_count_records_candidate_id_foreign` FOREIGN KEY (`candidate_id`) REFERENCES `candidates` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `manual_count_records_counted_by_admin_id_foreign` FOREIGN KEY (`counted_by_admin_id`) REFERENCES `admins` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `manual_count_records_verified_by_admin_id_foreign` FOREIGN KEY (`verified_by_admin_id`) REFERENCES `admins` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================
+-- TABLE: vote_verification_codes
+-- Purpose: Voter receipt system for verification
+-- =====================================================
+CREATE TABLE IF NOT EXISTS `vote_verification_codes` (
+  `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `election_id` bigint(20) UNSIGNED NOT NULL COMMENT 'Election reference',
+  `voting_session_id` bigint(20) UNSIGNED NOT NULL COMMENT 'Voting session reference',
+  `verification_code` varchar(20) NOT NULL COMMENT 'Code given to voter as receipt',
+  `total_votes_cast` int(11) NOT NULL COMMENT 'Number of votes cast',
+  `voted_timestamp` timestamp NOT NULL COMMENT 'When they voted',
+  `verified_by_voter` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Whether voter verified',
+  `verified_at` timestamp NULL DEFAULT NULL COMMENT 'When verified',
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `vote_verification_codes_verification_code_unique` (`verification_code`),
+  KEY `vote_verification_codes_election_id_foreign` (`election_id`),
+  KEY `vote_verification_codes_voting_session_id_foreign` (`voting_session_id`),
+  CONSTRAINT `vote_verification_codes_election_id_foreign` FOREIGN KEY (`election_id`) REFERENCES `elections` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `vote_verification_codes_voting_session_id_foreign` FOREIGN KEY (`voting_session_id`) REFERENCES `voting_sessions` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================
+-- TABLE: election_integrity_checks
+-- Purpose: Regular integrity checks to detect tampering
+-- =====================================================
+CREATE TABLE IF NOT EXISTS `election_integrity_checks` (
+  `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `election_id` bigint(20) UNSIGNED NOT NULL COMMENT 'Election reference',
+  `check_timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'When check was performed',
+  `total_votes_expected` int(11) NOT NULL COMMENT 'Based on voting sessions',
+  `total_votes_counted` int(11) NOT NULL COMMENT 'Actual votes in database',
+  `total_students_voted` int(11) NOT NULL COMMENT 'Unique students who voted',
+  `integrity_passed` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'Whether check passed',
+  `issues_found` text DEFAULT NULL COMMENT 'JSON array of issues',
+  `database_hash` varchar(64) NOT NULL COMMENT 'Hash of all votes',
+  `previous_check_hash` varchar(64) DEFAULT NULL COMMENT 'Hash of previous check',
+  `performed_by_admin_id` bigint(20) UNSIGNED DEFAULT NULL COMMENT 'Admin who performed check',
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `election_integrity_checks_election_id_foreign` (`election_id`),
+  KEY `election_integrity_checks_performed_by_admin_id_foreign` (`performed_by_admin_id`),
+  KEY `idx_integrity_check_timestamp` (`check_timestamp`),
+  KEY `idx_integrity_passed` (`integrity_passed`),
+  CONSTRAINT `election_integrity_checks_election_id_foreign` FOREIGN KEY (`election_id`) REFERENCES `elections` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `election_integrity_checks_performed_by_admin_id_foreign` FOREIGN KEY (`performed_by_admin_id`) REFERENCES `admins` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================

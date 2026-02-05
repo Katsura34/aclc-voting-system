@@ -53,9 +53,25 @@ class ValidateSession
                 ->where('user_id', $user->id)
                 ->exists();
 
-            // If session doesn't exist or belongs to different user, logout
+            // If session doesn't exist with user_id, check if it exists without user_id
+            // This handles the case where session was just created but user_id wasn't set yet
             if (! $sessionExists) {
-                // Logout from the appropriate guard
+                $sessionWithoutUser = DB::table('sessions')
+                    ->where('id', $currentSessionId)
+                    ->whereNull('user_id')
+                    ->exists();
+                
+                if ($sessionWithoutUser) {
+                    // Update the session with the user_id
+                    DB::table('sessions')
+                        ->where('id', $currentSessionId)
+                        ->update(['user_id' => $user->id]);
+                    
+                    // Now the session is valid, continue
+                    return $next($request);
+                }
+                
+                // Session doesn't exist at all or belongs to different user, logout
                 if ($guard === 'admin') {
                     Auth::guard('admin')->logout();
                 } elseif ($guard === 'student') {

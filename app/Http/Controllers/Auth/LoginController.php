@@ -42,13 +42,10 @@ class LoginController extends Controller
                 // Log in as admin
                 Auth::guard('admin')->login($admin, $request->filled('remember'));
                 
-                // Regenerate session first to prevent fixation attacks
+                // Regenerate session to prevent fixation attacks
                 $request->session()->regenerate();
                 
-                // Save the session to database immediately
-                $request->session()->save();
-                
-                // Invalidate all other sessions for this admin
+                // Invalidate all other sessions for this admin (single session enforcement)
                 $currentSessionId = $request->session()->getId();
                 
                 DB::table('sessions')
@@ -71,13 +68,10 @@ class LoginController extends Controller
                 // Log in as student
                 Auth::guard('student')->login($student, $request->filled('remember'));
                 
-                // Regenerate session first to prevent fixation attacks
+                // Regenerate session to prevent fixation attacks
                 $request->session()->regenerate();
                 
-                // Save the session to database immediately
-                $request->session()->save();
-                
-                // Invalidate all other sessions for this student
+                // Invalidate all other sessions for this student (single session enforcement)
                 $currentSessionId = $request->session()->getId();
                 
                 DB::table('sessions')

@@ -53,21 +53,17 @@ class ValidateSession
                 ->where('user_id', $user->id)
                 ->exists();
 
-            // If session doesn't exist with user_id, check if it exists without user_id
+            // If session doesn't exist with user_id, try to update it atomically
             // This handles the case where session was just created but user_id wasn't set yet
             if (! $sessionExists) {
-                $sessionWithoutUser = DB::table('sessions')
+                // Attempt to update session with user_id (atomic operation)
+                $updated = DB::table('sessions')
                     ->where('id', $currentSessionId)
                     ->whereNull('user_id')
-                    ->exists();
+                    ->update(['user_id' => $user->id]);
                 
-                if ($sessionWithoutUser) {
-                    // Update the session with the user_id
-                    DB::table('sessions')
-                        ->where('id', $currentSessionId)
-                        ->update(['user_id' => $user->id]);
-                    
-                    // Now the session is valid, continue
+                // If we successfully updated, the session is now valid
+                if ($updated > 0) {
                     return $next($request);
                 }
                 

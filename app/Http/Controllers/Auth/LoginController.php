@@ -45,6 +45,9 @@ class LoginController extends Controller
                 // Regenerate session first to prevent fixation attacks
                 $request->session()->regenerate();
                 
+                // Save the session to database immediately
+                $request->session()->save();
+                
                 // Invalidate all other sessions for this admin
                 $currentSessionId = $request->session()->getId();
                 
@@ -70,6 +73,9 @@ class LoginController extends Controller
                 
                 // Regenerate session first to prevent fixation attacks
                 $request->session()->regenerate();
+                
+                // Save the session to database immediately
+                $request->session()->save();
                 
                 // Invalidate all other sessions for this student
                 $currentSessionId = $request->session()->getId();

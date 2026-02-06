@@ -107,7 +107,7 @@
                             @foreach($elections as $election)
                                 <option value="{{ $election->id }}" 
                                         {{ request('election_id') == $election->id ? 'selected' : '' }}>
-                                    {{ $election->name }}
+                                    {{ $election->title }}
                                 </option>
                             @endforeach
                         </select>
@@ -172,7 +172,7 @@
                     @endif
                     @if(request('election_id'))
                         <span class="badge bg-info">
-                            Election: {{ $elections->find(request('election_id'))->name ?? 'N/A' }}
+                            Election: {{ $elections->find(request('election_id'))->title ?? 'N/A' }}
                             <a href="{{ request()->fullUrlWithQuery(['election_id' => null]) }}" 
                                class="text-white text-decoration-none ms-1">×</a>
                         </span>

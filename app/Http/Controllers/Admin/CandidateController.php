@@ -60,13 +60,17 @@ class CandidateController extends Controller
     /**
      * Show the form for creating a new candidate.
      */
-    public function create()
+    public function create(Request $request)
     {
         $elections = Election::all();
         $positions = Position::with('elections')->get();
         $parties = Party::all();
         
-        return view('admin.candidates.create', compact('elections', 'positions', 'parties'));
+        // Support pre-selection from election show page
+        $selectedElectionId = $request->query('election_id');
+        $selectedPositionId = $request->query('position_id');
+        
+        return view('admin.candidates.create', compact('elections', 'positions', 'parties', 'selectedElectionId', 'selectedPositionId'));
     }
 
     /**

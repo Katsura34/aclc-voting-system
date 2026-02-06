@@ -70,8 +70,8 @@ class ElectionUpdateTest extends TestCase
             [
                 'title' => 'Updated Election',
                 'description' => 'Updated description',
-                'start_date' => $newStart->toDateTimeLocalString(),
-                'end_date' => $newEnd->toDateTimeLocalString(),
+                'start_date' => $newStart->format('Y-m-d\TH:i'),
+                'end_date' => $newEnd->format('Y-m-d\TH:i'),
                 'is_active' => true,
                 'positions' => [$positionB->id, $positionA->id],
                 'parties' => [$partyB->id],

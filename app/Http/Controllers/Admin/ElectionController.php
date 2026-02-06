@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\DB;
 
 class ElectionController extends Controller
 {
-    private const DATETIME_LOCAL_FORMAT = 'Y-m-d\TH:i:s';
+    private const DATETIME_LOCAL_FORMAT = 'Y-m-d\TH:i';
 
     /**
      * Display a listing of elections.

@@ -118,8 +118,8 @@
                             @forelse($users as $user)
                                 <tr>
                                     <td><strong>{{ $user->usn }}</strong></td>
-                                    <td>{{ $user->last_name ?? '' }}</td>
-                                    <td>{{ $user->first_name ?? '' }}</td>
+                                    <td>{{ $user->lastname ?? '' }}</td>
+                                    <td>{{ $user->firstname ?? '' }}</td>
                                     <td>{{ $user->strand ?? 'N/A' }}</td>
                                     <td>{{ $user->year ?? 'N/A' }}</td>
                                     <td>{{ $user->gender ?? 'N/A' }}</td>

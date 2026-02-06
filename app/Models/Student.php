@@ -17,8 +17,8 @@ class Student extends Authenticatable
      */
     protected $fillable = [
         'usn',
-        'first_name',
-        'last_name',
+        'firstname',
+        'lastname',
         'name',
         'email',
         'strand',
@@ -33,8 +33,8 @@ class Student extends Authenticatable
      */
     public function getFullNameAttribute(): string
     {
-        if ($this->first_name || $this->last_name) {
-            return trim($this->first_name . ' ' . $this->last_name);
+        if ($this->firstname || $this->lastname) {
+            return trim($this->firstname . ' ' . $this->lastname);
         }
         return $this->name ?? '';
     }

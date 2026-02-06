@@ -192,6 +192,51 @@
     <!-- Bootstrap 5 JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     
+    <!-- Password Toggle Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Find all password input fields
+            const passwordFields = document.querySelectorAll('input[type="password"]');
+            
+            passwordFields.forEach(function(passwordInput) {
+                // Only add toggle if not already added
+                if (passwordInput.parentElement.querySelector('.password-toggle')) {
+                    return;
+                }
+                
+                // Wrap the input in a position relative div if not already wrapped
+                if (!passwordInput.parentElement.classList.contains('position-relative')) {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'position-relative';
+                    passwordInput.parentNode.insertBefore(wrapper, passwordInput);
+                    wrapper.appendChild(passwordInput);
+                }
+                
+                // Create toggle icon
+                const toggleIcon = document.createElement('i');
+                toggleIcon.className = 'bi bi-eye-slash password-toggle';
+                toggleIcon.style.cssText = 'position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #888; z-index: 10;';
+                
+                // Insert after the input
+                passwordInput.parentElement.appendChild(toggleIcon);
+                
+                // Add click handler
+                toggleIcon.addEventListener('click', function() {
+                    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                    passwordInput.setAttribute('type', type);
+                    
+                    if (type === 'password') {
+                        this.classList.remove('bi-eye');
+                        this.classList.add('bi-eye-slash');
+                    } else {
+                        this.classList.remove('bi-eye-slash');
+                        this.classList.add('bi-eye');
+                    }
+                });
+            });
+        });
+    </script>
+    
     {{ $scripts ?? '' }}
 </body>
 </html>

@@ -37,9 +37,15 @@
 
                         <div class="row text-start">
                             <div class="col-6 mb-3">
-                                <small class="text-muted">Election</small>
+                                <small class="text-muted">Elections</small>
                                 <p class="mb-0">
-                                    <span class="badge bg-success">{{ $position->election->title ?? 'N/A' }}</span>
+                                    @if($position->elections->isNotEmpty())
+                                        @foreach($position->elections as $election)
+                                            <span class="badge bg-success">{{ $election->title }}</span>
+                                        @endforeach
+                                    @else
+                                        <span class="badge bg-secondary">Not Assigned</span>
+                                    @endif
                                 </p>
                             </div>
                             <div class="col-6 mb-3">
@@ -178,40 +184,44 @@
                 @endif
 
                 <!-- Election Information -->
-                @if($position->election)
+                @if($position->elections->isNotEmpty())
                     <div class="card mt-4">
                         <div class="card-header bg-success text-white">
-                            <h5 class="mb-0"><i class="bi bi-calendar-event"></i> Election Information</h5>
+                            <h5 class="mb-0"><i class="bi bi-calendar-event"></i> Assigned Elections</h5>
                         </div>
                         <div class="card-body">
-                            <h5>{{ $position->election->title }}</h5>
-                            @if($position->election->description)
-                                <p class="text-muted">{{ $position->election->description }}</p>
-                            @endif
-                            
-                            <div class="row mt-3">
-                                <div class="col-md-6">
-                                    <small class="text-muted">Start Date</small>
-                                    <p>{{ \Carbon\Carbon::parse($position->election->start_date)->format('M d, Y h:i A') }}</p>
+                            @foreach($position->elections as $election)
+                            <div class="mb-3 {{ !$loop->last ? 'border-bottom pb-3' : '' }}">
+                                <h5>{{ $election->title }}</h5>
+                                @if($election->description)
+                                    <p class="text-muted">{{ $election->description }}</p>
+                                @endif
+                                
+                                <div class="row mt-2">
+                                    <div class="col-md-6">
+                                        <small class="text-muted">Start Date</small>
+                                        <p>{{ \Carbon\Carbon::parse($election->start_date)->format('M d, Y h:i A') }}</p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <small class="text-muted">End Date</small>
+                                        <p>{{ \Carbon\Carbon::parse($election->end_date)->format('M d, Y h:i A') }}</p>
+                                    </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <small class="text-muted">End Date</small>
-                                    <p>{{ \Carbon\Carbon::parse($position->election->end_date)->format('M d, Y h:i A') }}</p>
-                                </div>
-                            </div>
 
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <small class="text-muted">Status</small>
-                                    <p>
-                                        @if($position->election->is_active)
-                                            <span class="badge bg-success">Active</span>
-                                        @else
-                                            <span class="badge bg-secondary">Inactive</span>
-                                        @endif
-                                    </p>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <small class="text-muted">Status</small>
+                                        <p>
+                                            @if($election->is_active)
+                                                <span class="badge bg-success">Active</span>
+                                            @else
+                                                <span class="badge bg-secondary">Inactive</span>
+                                            @endif
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
+                            @endforeach
                         </div>
                     </div>
                 @endif

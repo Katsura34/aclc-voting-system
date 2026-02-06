@@ -19,7 +19,7 @@ class CandidateController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Candidate::with(['position.election', 'party']);
+        $query = Candidate::with(['position.elections', 'party']);
 
         // Search by name
         if ($request->filled('search')) {
@@ -32,8 +32,8 @@ class CandidateController extends Controller
 
         // Filter by election
         if ($request->filled('election_id')) {
-            $query->whereHas('position', function($q) use ($request) {
-                $q->where('election_id', $request->election_id);
+            $query->whereHas('position.elections', function($q) use ($request) {
+                $q->where('elections.id', $request->election_id);
             });
         }
 
@@ -133,7 +133,7 @@ class CandidateController extends Controller
      */
     public function show(Candidate $candidate)
     {
-        $candidate->load(['position.election', 'party']);
+        $candidate->load(['position.elections', 'party']);
         
         return view('admin.candidates.show', compact('candidate'));
     }

@@ -143,7 +143,7 @@
                                     <option value="">All Elections</option>
                                     @foreach($elections as $election)
                                         <option value="{{ $election->id }}" 
-                                                {{ $candidate->position->election_id == $election->id ? 'selected' : '' }}>
+                                                {{ $candidate->position->elections->contains('id', $election->id) ? 'selected' : '' }}>
                                             {{ $election->title }}
                                         </option>
                                     @endforeach
@@ -163,9 +163,9 @@
                                     <option value="">Select Position</option>
                                     @foreach($positions as $position)
                                         <option value="{{ $position->id }}" 
-                                                data-election="{{ $position->election_id }}"
+                                                data-elections="{{ $position->elections->pluck('id')->join(',') }}"
                                                 {{ old('position_id', $candidate->position_id) == $position->id ? 'selected' : '' }}>
-                                            {{ $position->name }} - {{ $position->election->title ?? 'N/A' }}
+                                            {{ $position->name }}
                                         </option>
                                     @endforeach
                                 </select>
@@ -421,7 +421,7 @@
                         return;
                     }
                     
-                    if (selectedElection === '' || option.dataset.election === selectedElection) {
+                    if (selectedElection === '' || (option.dataset.elections || '').split(',').includes(selectedElection)) {
                         option.style.display = 'block';
                     } else {
                         option.style.display = 'none';

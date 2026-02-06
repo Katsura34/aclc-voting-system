@@ -188,6 +188,9 @@
                     <a href="{{ route('admin.elections.show', $election) }}" class="btn btn-info btn-sm">
                         <i class="bi bi-eye"></i> View Details
                     </a>
+                    <a href="{{ route('admin.candidates.index', ['election_id' => $election->id]) }}" class="btn btn-success btn-sm">
+                        <i class="bi bi-people"></i> Candidates
+                    </a>
                     <a href="{{ route('admin.elections.edit', $election) }}" class="btn btn-warning btn-sm">
                         <i class="bi bi-pencil"></i> Edit
                     </a>

@@ -313,9 +313,22 @@ class CandidateController extends Controller
             $skippedCount = 0;
             $errors = [];
 
-            $positionMap = Position::pluck('id', 'name')
-                ->mapWithKeys(fn($id, $name) => [strtolower($name) => $id])
-                ->toArray();
+            $positionMap = [];
+            $duplicatePositionNames = [];
+
+            foreach (Position::all() as $position) {
+                $key = strtolower($position->name);
+                if (isset($positionMap[$key])) {
+                    $duplicatePositionNames[$key] = true;
+                    continue;
+                }
+                $positionMap[$key] = $position->id;
+            }
+
+            if (!empty($duplicatePositionNames)) {
+                return redirect()->route('admin.candidates.index')
+                    ->with('error', 'Multiple positions share the same name: ' . implode(', ', array_keys($duplicatePositionNames)) . '. Please ensure unique position names before importing.');
+            }
 
             if (empty($positionMap)) {
                 return redirect()->route('admin.candidates.index')
@@ -330,6 +343,12 @@ class CandidateController extends Controller
                     
                     // Skip empty rows
                     if (empty(array_filter($row))) {
+                        continue;
+                    }
+
+                    if (count($row) !== count($headers)) {
+                        $skippedCount++;
+                        $errors[] = "Row {$rowNumber}: Column count does not match headers.";
                         continue;
                     }
 

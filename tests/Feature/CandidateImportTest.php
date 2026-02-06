@@ -46,7 +46,7 @@ class CandidateImportTest extends TestCase
             'color' => '#000000',
         ]);
 
-        $csvPath = tempnam(sys_get_temp_dir(), 'candidates') . '.csv';
+        $csvPath = tempnam(sys_get_temp_dir(), 'candidates');
         $file = fopen($csvPath, 'w');
         fputcsv($file, ['first_name', 'last_name', 'position_name']);
         fputcsv($file, ['Jane', 'Doe', 'President']);

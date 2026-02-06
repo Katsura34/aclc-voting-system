@@ -68,7 +68,7 @@ class VotingController extends Controller
             }
 
             // Validate votes - all positions are required
-            $positions = Position::where('election_id', $election->id)->get();
+            $positions = $election->positions;
             
             $rules = [];
             foreach ($positions as $position) {

@@ -16,7 +16,7 @@ class PositionController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Position::with('election');
+        $query = Position::with('elections');
 
         // Search by position name
         if ($request->filled('search')) {
@@ -25,7 +25,9 @@ class PositionController extends Controller
 
         // Filter by election
         if ($request->filled('election_id')) {
-            $query->where('election_id', $request->election_id);
+            $query->whereHas('elections', function ($q) use ($request) {
+                $q->where('elections.id', $request->election_id);
+            });
         }
 
         $positions = $query->latest()->get();
@@ -52,7 +54,8 @@ class PositionController extends Controller
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
                 'description' => 'nullable|string',
-                'election_id' => 'required|exists:elections,id',
+                'election_ids' => 'nullable|array',
+                'election_ids.*' => 'exists:elections,id',
                 'max_votes' => 'required|integer|min:1',
                 'display_order' => 'nullable|integer|min:0',
             ]);
@@ -60,7 +63,21 @@ class PositionController extends Controller
             DB::beginTransaction();
             
             try {
-                Position::create($validated);
+                $position = Position::create([
+                    'name' => $validated['name'],
+                    'description' => $validated['description'] ?? null,
+                    'max_votes' => $validated['max_votes'],
+                    'display_order' => $validated['display_order'] ?? 0,
+                ]);
+
+                // Attach elections via pivot table
+                if (!empty($validated['election_ids'])) {
+                    $syncData = [];
+                    foreach ($validated['election_ids'] as $electionId) {
+                        $syncData[$electionId] = ['display_order' => $validated['display_order'] ?? 0];
+                    }
+                    $position->elections()->sync($syncData);
+                }
                 
                 DB::commit();
 
@@ -92,7 +109,7 @@ class PositionController extends Controller
      */
     public function show(Position $position)
     {
-        $position->load(['election', 'candidates.party']);
+        $position->load(['elections', 'candidates.party']);
         return view('admin.positions.show', compact('position'));
     }
 
@@ -114,7 +131,8 @@ class PositionController extends Controller
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
                 'description' => 'nullable|string',
-                'election_id' => 'required|exists:elections,id',
+                'election_ids' => 'nullable|array',
+                'election_ids.*' => 'exists:elections,id',
                 'max_votes' => 'required|integer|min:1',
                 'display_order' => 'nullable|integer|min:0',
             ]);
@@ -122,7 +140,21 @@ class PositionController extends Controller
             DB::beginTransaction();
             
             try {
-                $position->update($validated);
+                $position->update([
+                    'name' => $validated['name'],
+                    'description' => $validated['description'] ?? null,
+                    'max_votes' => $validated['max_votes'],
+                    'display_order' => $validated['display_order'] ?? 0,
+                ]);
+
+                // Sync elections via pivot table
+                $syncData = [];
+                if (!empty($validated['election_ids'])) {
+                    foreach ($validated['election_ids'] as $electionId) {
+                        $syncData[$electionId] = ['display_order' => $validated['display_order'] ?? 0];
+                    }
+                }
+                $position->elections()->sync($syncData);
                 
                 DB::commit();
 
@@ -196,6 +228,7 @@ class PositionController extends Controller
         try {
             $request->validate([
                 'csv_file' => 'required|file|mimes:csv,txt|max:2048',
+                'election_id' => 'nullable|exists:elections,id',
             ]);
 
             $file = $request->file('csv_file');
@@ -216,7 +249,7 @@ class PositionController extends Controller
             $headers = array_shift($csvData);
             
             // Validate headers
-            $requiredHeaders = ['name', 'election_id', 'max_votes'];
+            $requiredHeaders = ['name', 'max_votes'];
             $missingHeaders = array_diff($requiredHeaders, $headers);
             
             if (!empty($missingHeaders)) {
@@ -227,6 +260,7 @@ class PositionController extends Controller
             $importedCount = 0;
             $skippedCount = 0;
             $errors = [];
+            $electionId = $request->input('election_id');
 
             DB::beginTransaction();
             
@@ -246,7 +280,6 @@ class PositionController extends Controller
                     $validator = Validator::make($data, [
                         'name' => 'required|string|max:255',
                         'description' => 'nullable|string',
-                        'election_id' => 'required|exists:elections,id',
                         'max_votes' => 'required|integer|min:1',
                         'display_order' => 'nullable|integer|min:0',
                     ]);
@@ -258,13 +291,19 @@ class PositionController extends Controller
                     }
 
                     // Create position
-                    Position::create([
+                    $position = Position::create([
                         'name' => $data['name'],
                         'description' => $data['description'] ?? null,
-                        'election_id' => $data['election_id'],
                         'max_votes' => $data['max_votes'],
                         'display_order' => $data['display_order'] ?? 0,
                     ]);
+
+                    // Attach to election if selected
+                    if ($electionId) {
+                        $position->elections()->attach($electionId, [
+                            'display_order' => $data['display_order'] ?? 0,
+                        ]);
+                    }
 
                     $importedCount++;
                 }
@@ -314,7 +353,7 @@ class PositionController extends Controller
             'Content-Disposition' => 'attachment; filename="positions_template.csv"',
         ];
 
-        $columns = ['name', 'description', 'election_id', 'max_votes', 'display_order'];
+        $columns = ['name', 'description', 'max_votes', 'display_order'];
         
         $callback = function() use ($columns) {
             $file = fopen('php://output', 'w');
@@ -327,20 +366,17 @@ class PositionController extends Controller
                 'President',
                 'Chief executive officer of the student council',
                 '1',
-                '1',
                 '1'
             ]);
             fputcsv($file, [
                 'Vice President',
                 'Second in command of the student council',
                 '1',
-                '1',
                 '2'
             ]);
             fputcsv($file, [
                 'Secretary',
                 'Handles documentation and records',
-                '1',
                 '1',
                 '3'
             ]);

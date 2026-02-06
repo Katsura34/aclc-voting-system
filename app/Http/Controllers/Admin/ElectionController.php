@@ -14,9 +14,15 @@ class ElectionController extends Controller
      */
     public function index()
     {
-        $elections = Election::withCount(['positions', 'candidates'])
+        $elections = Election::withCount(['positions'])
             ->orderBy('created_at', 'desc')
             ->get();
+
+        // Compute candidate count for each election through pivot
+        foreach ($elections as $election) {
+            $positionIds = $election->positions()->pluck('positions.id');
+            $election->candidates_count = \App\Models\Candidate::whereIn('position_id', $positionIds)->count();
+        }
 
         return view('admin.elections.index', compact('elections'));
     }

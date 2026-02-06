@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
+use App\Models\Candidate;
 
 class Election extends Model
 {
@@ -26,7 +27,10 @@ class Election extends Model
      */
     public function positions()
     {
-        return $this->hasMany(Position::class)->orderBy('display_order');
+        return $this->belongsToMany(Position::class, 'election_position')
+            ->withPivot('display_order')
+            ->withTimestamps()
+            ->orderBy('election_position.display_order');
     }
 
     /**
@@ -34,7 +38,8 @@ class Election extends Model
      */
     public function candidates()
     {
-        return $this->hasManyThrough(Candidate::class, Position::class);
+        $positionIds = $this->positions()->pluck('positions.id');
+        return Candidate::whereIn('position_id', $positionIds);
     }
 
     /**
@@ -47,7 +52,7 @@ class Election extends Model
             return self::where('is_active', true)
                 ->with([
                     'positions' => function ($query) {
-                        $query->orderBy('display_order');
+                        $query->orderBy('election_position.display_order');
                     },
                     'positions.candidates.party'
                 ])

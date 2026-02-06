@@ -277,6 +277,7 @@ class CandidateController extends Controller
         try {
             $request->validate([
                 'csv_file' => 'required|file|mimes:csv,txt|max:2048',
+                'party_id' => 'required|exists:parties,id',
             ]);
 
             $file = $request->file('csv_file');
@@ -294,10 +295,10 @@ class CandidateController extends Controller
             }
             
             // Get headers
-            $headers = array_shift($csvData);
+            $headers = array_map('trim', array_shift($csvData));
             
             // Validate headers
-            $requiredHeaders = ['first_name', 'last_name', 'position_id', 'party_id'];
+            $requiredHeaders = ['first_name', 'last_name', 'position_name'];
             $missingHeaders = array_diff($requiredHeaders, $headers);
             
             if (!empty($missingHeaders)) {
@@ -321,7 +322,12 @@ class CandidateController extends Controller
                     }
 
                     // Create associative array
-                    $data = array_combine($headers, $row);
+                    $data = array_combine($headers, array_map('trim', $row));
+                    if ($data === false) {
+                        $skippedCount++;
+                        $errors[] = "Row {$rowNumber}: Column mismatch with headers.";
+                        continue;
+                    }
                     
                     // Validate row data
                     $validator = Validator::make($data, [
@@ -329,13 +335,19 @@ class CandidateController extends Controller
                         'last_name' => 'required|string|max:255',
                         'middle_name' => 'nullable|string|max:255',
                         'bio' => 'nullable|string',
-                        'position_id' => 'required|exists:positions,id',
-                        'party_id' => 'required|exists:parties,id',
+                        'position_name' => 'required|string',
                     ]);
 
                     if ($validator->fails()) {
                         $skippedCount++;
                         $errors[] = "Row {$rowNumber}: " . implode(', ', $validator->errors()->all());
+                        continue;
+                    }
+
+                    $position = Position::whereRaw('LOWER(name) = ?', [strtolower($data['position_name'])])->first();
+                    if (!$position) {
+                        $skippedCount++;
+                        $errors[] = "Row {$rowNumber}: Position \"{$data['position_name']}\" not found.";
                         continue;
                     }
 
@@ -345,8 +357,8 @@ class CandidateController extends Controller
                         'last_name' => $data['last_name'],
                         'middle_name' => $data['middle_name'] ?? null,
                         'bio' => $data['bio'] ?? null,
-                        'position_id' => $data['position_id'],
-                        'party_id' => $data['party_id'],
+                        'position_id' => $position->id,
+                        'party_id' => $request->party_id,
                     ]);
 
                     $importedCount++;
@@ -397,7 +409,7 @@ class CandidateController extends Controller
             'Content-Disposition' => 'attachment; filename="candidates_template.csv"',
         ];
 
-        $columns = ['first_name', 'last_name', 'middle_name', 'bio', 'position_id', 'party_id'];
+        $columns = ['first_name', 'last_name', 'middle_name', 'bio', 'position_name'];
         
         $callback = function() use ($columns) {
             $file = fopen('php://output', 'w');
@@ -411,24 +423,21 @@ class CandidateController extends Controller
                 'Dela Cruz',
                 'Santos',
                 'Experienced leader with a vision for change',
-                '1',
-                '1'
+                'President'
             ]);
             fputcsv($file, [
                 'Maria',
                 'Garcia',
                 'Lopez',
                 'Dedicated to serving the student body',
-                '1',
-                '2'
+                'President'
             ]);
             fputcsv($file, [
                 'Jose',
                 'Reyes',
                 '',
                 'Committed to transparency and accountability',
-                '2',
-                '1'
+                'Vice President'
             ]);
             
             fclose($file);

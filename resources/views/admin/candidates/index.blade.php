@@ -420,9 +420,11 @@
                                 <li><strong>last_name</strong> - Last name (required)</li>
                                 <li><strong>middle_name</strong> - Middle name (optional)</li>
                                 <li><strong>bio</strong> - Biography (optional)</li>
-                                <li><strong>position_id</strong> - Position ID number (required)</li>
-                                <li><strong>party_id</strong> - Party ID number (required)</li>
+                                <li><strong>position_name</strong> - Position name (required, must match existing position)</li>
                             </ul>
+                            <div class="mt-2">
+                                <small class="text-muted">Select the party below to apply to all imported candidates.</small>
+                            </div>
                         </div>
 
                         <div class="mb-3">
@@ -437,6 +439,23 @@
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                             <small class="text-muted">Accepted formats: .csv, .txt (Max: 2MB)</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="import_party_id" class="form-label fw-bold">Assign Party</label>
+                            <select class="form-select @error('party_id') is-invalid @enderror" 
+                                    id="import_party_id" 
+                                    name="party_id" 
+                                    required>
+                                <option value="">Select Party</option>
+                                @foreach($parties as $party)
+                                    <option value="{{ $party->id }}">{{ $party->name }} ({{ $party->acronym }})</option>
+                                @endforeach
+                            </select>
+                            @error('party_id')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                            <small class="text-muted">This party will be assigned to every imported candidate.</small>
                         </div>
 
                         <div class="text-center">

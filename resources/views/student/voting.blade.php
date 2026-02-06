@@ -420,6 +420,13 @@
         // Show review modal before submit
         const reviewModal = new bootstrap.Modal(document.getElementById('reviewModal'));
         
+        // Helper function to escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
         document.getElementById('votingForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
@@ -439,17 +446,26 @@
                     const candidateParty = candidateCard.querySelector('.candidate-party');
                     const partyName = candidateParty ? candidateParty.textContent.trim() : 'Independent';
                     
+                    // Escape all user-controlled values to prevent XSS
+                    const safePositionTitle = escapeHtml(positionTitle);
+                    const safeCandidateName = escapeHtml(candidateName);
+                    const safePartyName = escapeHtml(partyName);
+                    
+                    // Get party colors safely (fallback to gray if not available)
+                    const partyBgColor = candidateParty ? candidateParty.style.backgroundColor || '#6c757d20' : '#6c757d20';
+                    const partyTextColor = candidateParty ? candidateParty.style.color || '#6c757d' : '#6c757d';
+                    
                     reviewHTML += `
                         <div class="list-group-item">
                             <div class="d-flex w-100 justify-content-between align-items-center">
                                 <div>
                                     <h6 class="mb-1" style="color: var(--aclc-blue);">
-                                        <i class="bi bi-award"></i> ${positionTitle}
+                                        <i class="bi bi-award"></i> ${safePositionTitle}
                                     </h6>
                                     <p class="mb-0">
-                                        <strong>${candidateName}</strong>
-                                        <span class="badge" style="background-color: ${candidateParty ? candidateParty.style.backgroundColor : '#6c757d20'}; color: ${candidateParty ? candidateParty.style.color : '#6c757d'};">
-                                            ${partyName}
+                                        <strong>${safeCandidateName}</strong>
+                                        <span class="badge" style="background-color: ${partyBgColor}; color: ${partyTextColor};">
+                                            ${safePartyName}
                                         </span>
                                     </p>
                                 </div>

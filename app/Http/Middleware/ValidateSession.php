@@ -27,9 +27,17 @@ class ValidateSession
             return $next($request);
         }
 
-        // Only check for authenticated users
-        if (Auth::check()) {
-            $user = Auth::user();
+        // Determine the authenticated user across all guards
+        $user = null;
+        foreach (['admin', 'student'] as $guard) {
+            if (Auth::guard($guard)->check()) {
+                $user = Auth::guard($guard)->user();
+                break;
+            }
+        }
+
+        // Only validate session for authenticated users
+        if ($user) {
             $currentSessionId = $request->session()->getId();
 
             // Check if current session exists in database for this user
@@ -40,7 +48,8 @@ class ValidateSession
 
             // If session doesn't exist or belongs to different user, logout
             if (! $sessionExists) {
-                Auth::logout();
+                Auth::guard('admin')->logout();
+                Auth::guard('student')->logout();
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
 

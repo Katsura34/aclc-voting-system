@@ -78,12 +78,11 @@ class ResultController extends Controller
             }
 
             // Get total voters and votes cast
-            $totalVoters = \App\Models\User::where('user_type', 'student')->count();
+            $totalVoters = \App\Models\Student::count();
             $votedCount = 0;
             
             if ($selectedElection) {
-                $votedCount = \App\Models\User::where('user_type', 'student')
-                    ->where('has_voted', true)
+                $votedCount = \App\Models\Student::where('has_voted', true)
                     ->count();
             }
 
@@ -191,9 +190,8 @@ class ResultController extends Controller
             }
 
             // Fresh statistics from database
-            $totalVoters = \App\Models\User::where('user_type', 'student')->count();
-            $votedCount = \App\Models\User::where('user_type', 'student')
-                ->where('has_voted', true)
+            $totalVoters = \App\Models\Student::count();
+            $votedCount = \App\Models\Student::where('has_voted', true)
                 ->count();
 
             $turnoutRate = $totalVoters > 0 ? round(($votedCount / $totalVoters) * 100, 2) : 0;
@@ -355,9 +353,8 @@ class ResultController extends Controller
         }
 
         // Get total voters and votes cast
-        $totalVoters = \App\Models\User::where('user_type', 'student')->count();
-        $votedCount = \App\Models\User::where('user_type', 'student')
-            ->where('has_voted', true)
+        $totalVoters = \App\Models\Student::count();
+        $votedCount = \App\Models\Student::where('has_voted', true)
             ->count();
 
         return view('admin.results.print', compact(

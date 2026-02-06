@@ -7,6 +7,7 @@ use App\Models\Student;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
 class UserController extends Controller
@@ -23,8 +24,9 @@ class UserController extends Controller
             $search = $request->search;
             $query->where(function($q) use ($search) {
                 $q->where('usn', 'like', "%{$search}%")
-                  ->orWhere('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                  ->orWhere('first_name', 'like', "%{$search}%")
+                  ->orWhere('last_name', 'like', "%{$search}%")
+                  ->orWhere('name', 'like', "%{$search}%");
             });
         }
 
@@ -54,8 +56,11 @@ class UserController extends Controller
         try {
             $validated = $request->validate([
                 'usn' => 'required|string|max:50|unique:students,usn',
-                'name' => 'required|string|max:255',
-                'email' => 'required|email|max:255|unique:students,email',
+                'first_name' => 'required|string|max:255',
+                'last_name' => 'required|string|max:255',
+                'strand' => 'nullable|string|max:255',
+                'year' => 'nullable|string|max:50',
+                'gender' => 'nullable|string|in:Male,Female',
                 'password' => 'required|string|min:8|confirmed',
             ]);
 
@@ -63,6 +68,7 @@ class UserController extends Controller
             
             try {
                 $validated['password'] = Hash::make($validated['password']);
+                $validated['name'] = $validated['first_name'] . ' ' . $validated['last_name'];
                 $validated['has_voted'] = false;
 
                 Student::create($validated);
@@ -113,13 +119,11 @@ class UserController extends Controller
                     'max:50',
                     Rule::unique('students', 'usn')->ignore($user->id)
                 ],
-                'name' => 'required|string|max:255',
-                'email' => [
-                    'required',
-                    'email',
-                    'max:255',
-                    Rule::unique('students', 'email')->ignore($user->id)
-                ],
+                'first_name' => 'required|string|max:255',
+                'last_name' => 'required|string|max:255',
+                'strand' => 'nullable|string|max:255',
+                'year' => 'nullable|string|max:50',
+                'gender' => 'nullable|string|in:Male,Female',
                 'password' => 'nullable|string|min:8|confirmed',
                 'has_voted' => 'boolean',
             ]);
@@ -133,6 +137,8 @@ class UserController extends Controller
                 } else {
                     unset($validated['password']);
                 }
+
+                $validated['name'] = $validated['first_name'] . ' ' . $validated['last_name'];
 
                 $user->update($validated);
                 
@@ -255,5 +261,179 @@ class UserController extends Controller
             return redirect()->route('admin.users.index')
                 ->with('error', 'Failed to reset all voting statuses. Please try again.');
         }
+    }
+
+    /**
+     * Import students from CSV file.
+     */
+    public function import(Request $request)
+    {
+        try {
+            $request->validate([
+                'csv_file' => 'required|file|mimes:csv,txt|max:2048',
+            ]);
+
+            $file = $request->file('csv_file');
+            
+            if (!$file->isValid()) {
+                return redirect()->route('admin.users.index')
+                    ->with('error', 'The uploaded file is invalid. Please try again.');
+            }
+            
+            $csvData = array_map('str_getcsv', file($file->getRealPath()));
+            
+            if (empty($csvData)) {
+                return redirect()->route('admin.users.index')
+                    ->with('error', 'The CSV file is empty.');
+            }
+            
+            // Get headers
+            $headers = array_map('trim', array_map('strtolower', array_shift($csvData)));
+            
+            // Validate required headers
+            $requiredHeaders = ['usn', 'lastname', 'firstname', 'password'];
+            $missingHeaders = array_diff($requiredHeaders, $headers);
+            
+            if (!empty($missingHeaders)) {
+                return redirect()->route('admin.users.index')
+                    ->with('error', 'CSV file is missing required columns: ' . implode(', ', $missingHeaders) . '. Required format: usn,lastname,firstname,strand,year,gender,password');
+            }
+
+            $importedCount = 0;
+            $skippedCount = 0;
+            $errors = [];
+
+            DB::beginTransaction();
+            
+            try {
+                foreach ($csvData as $index => $row) {
+                    $rowNumber = $index + 2;
+                    
+                    // Skip empty rows
+                    if (empty(array_filter($row))) {
+                        continue;
+                    }
+
+                    // Ensure row has the same number of columns as headers
+                    if (count($row) !== count($headers)) {
+                        $skippedCount++;
+                        $errors[] = "Row {$rowNumber}: Column count mismatch.";
+                        continue;
+                    }
+
+                    // Create associative array
+                    $data = array_combine($headers, array_map('trim', $row));
+
+                    // Validate row data
+                    $validator = Validator::make($data, [
+                        'usn' => 'required|string|max:50|unique:students,usn',
+                        'lastname' => 'required|string|max:255',
+                        'firstname' => 'required|string|max:255',
+                        'strand' => 'nullable|string|max:255',
+                        'year' => 'nullable|string|max:50',
+                        'gender' => 'nullable|string|in:Male,Female,male,female',
+                        'password' => 'required|string|min:1',
+                    ]);
+
+                    if ($validator->fails()) {
+                        $skippedCount++;
+                        $errors[] = "Row {$rowNumber}: " . implode(', ', $validator->errors()->all());
+                        continue;
+                    }
+
+                    // Create student
+                    Student::create([
+                        'usn' => $data['usn'],
+                        'first_name' => $data['firstname'],
+                        'last_name' => $data['lastname'],
+                        'name' => $data['firstname'] . ' ' . $data['lastname'],
+                        'strand' => $data['strand'] ?? null,
+                        'year' => $data['year'] ?? null,
+                        'gender' => isset($data['gender']) ? ucfirst(strtolower($data['gender'])) : null,
+                        'password' => Hash::make($data['password']),
+                        'has_voted' => false,
+                    ]);
+
+                    $importedCount++;
+                }
+                
+                DB::commit();
+
+                $message = "Successfully imported {$importedCount} student(s).";
+                if ($skippedCount > 0) {
+                    $message .= " Skipped {$skippedCount} row(s) due to validation errors.";
+                }
+
+                if (!empty($errors)) {
+                    session()->flash('import_errors', $errors);
+                }
+
+                \Log::info('Students imported', [
+                    'imported' => $importedCount,
+                    'skipped' => $skippedCount
+                ]);
+
+                return redirect()->route('admin.users.index')
+                    ->with('success', $message);
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return redirect()->route('admin.users.index')
+                ->withErrors($e->errors());
+        } catch (\Exception $e) {
+            \Log::error('Student import error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return redirect()->route('admin.users.index')
+                ->with('error', 'Error importing CSV: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Download sample CSV template for student import.
+     */
+    public function downloadTemplate()
+    {
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="students_template.csv"',
+        ];
+
+        $columns = ['usn', 'lastname', 'firstname', 'strand', 'year', 'gender', 'password'];
+        
+        $callback = function() use ($columns) {
+            $file = fopen('php://output', 'w');
+            
+            // Add headers
+            fputcsv($file, $columns);
+            
+            // Add sample data
+            fputcsv($file, [
+                'USN-2024-0001',
+                'Dela Cruz',
+                'Juan',
+                'STEM',
+                '1st Year',
+                'Male',
+                'password123',
+            ]);
+            
+            fputcsv($file, [
+                'USN-2024-0002',
+                'Santos',
+                'Maria',
+                'ABM',
+                '2nd Year',
+                'Female',
+                'password456',
+            ]);
+            
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 }

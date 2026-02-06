@@ -34,7 +34,11 @@ class Election extends Model
     }
 
     /**
-     * Get the candidates for this election through positions.
+     * Get a query builder for candidates belonging to this election's positions.
+     * Note: This is not a standard Eloquent relationship, use ->get() or ->count() on the result.
+     * For eager loading candidates, use 'positions.candidates' instead.
+     *
+     * @return \Illuminate\Database\Eloquent\Builder
      */
     public function candidates()
     {

@@ -52,19 +52,23 @@ class CandidateImportTest extends TestCase
         fputcsv($file, ['Jane', 'Doe', 'President']);
         fclose($file);
 
-        $response = $this->actingAs($admin)->post('/admin/candidates/import', [
-            'csv_file' => new UploadedFile($csvPath, 'candidates.csv', null, null, true),
-            'party_id' => $party->id,
-        ]);
+        try {
+            $response = $this->actingAs($admin)->post('/admin/candidates/import', [
+                'csv_file' => new UploadedFile($csvPath, 'candidates.csv', null, null, true),
+                'party_id' => $party->id,
+            ]);
 
-        $response->assertRedirect(route('admin.candidates.index'));
-        $this->assertDatabaseHas('candidates', [
-            'first_name' => 'Jane',
-            'last_name' => 'Doe',
-            'position_id' => $position->id,
-            'party_id' => $party->id,
-        ]);
-
-        unlink($csvPath);
+            $response->assertRedirect(route('admin.candidates.index'));
+            $this->assertDatabaseHas('candidates', [
+                'first_name' => 'Jane',
+                'last_name' => 'Doe',
+                'position_id' => $position->id,
+                'party_id' => $party->id,
+            ]);
+        } finally {
+            if (file_exists($csvPath)) {
+                unlink($csvPath);
+            }
+        }
     }
 }

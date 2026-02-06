@@ -295,7 +295,8 @@ class CandidateController extends Controller
             }
             
             // Get headers
-            $headers = array_map('trim', array_shift($csvData));
+            $headers = array_shift($csvData);
+            $headers = array_map('trim', $headers);
             
             // Validate headers
             $requiredHeaders = ['first_name', 'last_name', 'position_name'];
@@ -344,7 +345,7 @@ class CandidateController extends Controller
                         continue;
                     }
 
-                    $position = Position::whereRaw('LOWER(name) = ?', [strtolower($data['position_name'])])->first();
+                    $position = Position::where('name', $data['position_name'])->first();
                     if (!$position) {
                         $skippedCount++;
                         $errors[] = "Row {$rowNumber}: Position \"{$data['position_name']}\" not found.";

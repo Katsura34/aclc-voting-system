@@ -8,6 +8,7 @@ use App\Models\Position;
 use App\Models\Party;
 use App\Models\Vote;
 use Illuminate\Http\Request;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class ElectionController extends Controller
@@ -50,14 +51,23 @@ class ElectionController extends Controller
             $validated = $request->validate([
                 'title' => 'required|string|max:255',
                 'description' => 'nullable|string',
-                'start_date' => 'required|date',
-                'end_date' => 'required|date|after:start_date',
+                'start_date' => 'required|date_format:Y-m-d\TH:i:s',
+                'end_date' => 'required|date_format:Y-m-d\TH:i:s',
                 'is_active' => 'boolean',
                 'positions' => 'nullable|array',
                 'positions.*' => 'exists:positions,id',
                 'parties' => 'nullable|array',
                 'parties.*' => 'exists:parties,id',
             ]);
+
+            $validated['start_date'] = Carbon::createFromFormat('Y-m-d\TH:i:s', $validated['start_date']);
+            $validated['end_date'] = Carbon::createFromFormat('Y-m-d\TH:i:s', $validated['end_date']);
+
+            if ($validated['end_date']->lessThanOrEqualTo($validated['start_date'])) {
+                return redirect()->back()
+                    ->withErrors(['end_date' => 'The end date must be after the start date.'])
+                    ->withInput();
+            }
 
             DB::beginTransaction();
             
@@ -143,14 +153,23 @@ class ElectionController extends Controller
             $validated = $request->validate([
                 'title' => 'required|string|max:255',
                 'description' => 'nullable|string',
-                'start_date' => 'required|date',
-                'end_date' => 'required|date|after:start_date',
+                'start_date' => 'required|date_format:Y-m-d\TH:i:s',
+                'end_date' => 'required|date_format:Y-m-d\TH:i:s',
                 'is_active' => 'boolean',
                 'positions' => 'nullable|array',
                 'positions.*' => 'exists:positions,id',
                 'parties' => 'nullable|array',
                 'parties.*' => 'exists:parties,id',
             ]);
+
+            $validated['start_date'] = Carbon::createFromFormat('Y-m-d\TH:i:s', $validated['start_date']);
+            $validated['end_date'] = Carbon::createFromFormat('Y-m-d\TH:i:s', $validated['end_date']);
+
+            if ($validated['end_date']->lessThanOrEqualTo($validated['start_date'])) {
+                return redirect()->back()
+                    ->withErrors(['end_date' => 'The end date must be after the start date.'])
+                    ->withInput();
+            }
 
             DB::beginTransaction();
             

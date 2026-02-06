@@ -297,7 +297,7 @@ class CandidateController extends Controller
             // Get headers
             $headers = array_shift($csvData);
             $headers = array_map(function ($header) {
-                return preg_replace('/\s+/', '_', strtolower(trim($header)));
+                return strtolower(trim($header));
             }, $headers);
             
             // Validate headers
@@ -313,13 +313,13 @@ class CandidateController extends Controller
             $skippedCount = 0;
             $errors = [];
 
+            $positionMap = Position::pluck('id', 'name')
+                ->mapWithKeys(fn($id, $name) => [strtolower($name) => $id])
+                ->toArray();
+
             DB::beginTransaction();
             
             try {
-                $positionMap = Position::pluck('id', 'name')
-                    ->mapWithKeys(fn($id, $name) => [strtolower($name) => $id])
-                    ->toArray();
-
                 foreach ($csvData as $index => $row) {
                     $rowNumber = $index + 2; // +2 because of header and 0-based index
                     

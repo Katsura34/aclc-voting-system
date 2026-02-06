@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ElectionController;
 use App\Http\Controllers\Admin\PartyController;
@@ -95,6 +96,11 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Route::get('results', [ResultController::class, 'index'])->name('admin.results.index');
     Route::get('results/export', [ResultController::class, 'export'])->name('admin.results.export');
     Route::get('results/print', [ResultController::class, 'print'])->name('admin.results.print');
+    
+    // Audit Logs
+    Route::get('audit-logs', [AuditLogController::class, 'index'])->name('admin.audit-logs.index');
+    Route::get('audit-logs/export', [AuditLogController::class, 'export'])->name('admin.audit-logs.export');
+    Route::get('audit-logs/print', [AuditLogController::class, 'print'])->name('admin.audit-logs.print');
     
     // User Management
     Route::get('users/download-template', [UserController::class, 'downloadTemplate'])

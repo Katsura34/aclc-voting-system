@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
+use App\Models\Candidate;
 use App\Models\Election;
 use App\Models\Position;
 use App\Models\Vote;
@@ -89,6 +91,23 @@ class VotingController extends Controller
                         'election_id' => $election->id,
                         'position_id' => $position->id,
                         'candidate_id' => $candidateId,
+                    ]);
+
+                    // Create audit log entry
+                    $candidate = Candidate::find($candidateId);
+                    AuditLog::create([
+                        'user_id' => $user->id,
+                        'election_id' => $election->id,
+                        'position_id' => $position->id,
+                        'candidate_id' => $candidateId,
+                        'action_type' => 'vote_cast',
+                        'user_usn' => $user->usn,
+                        'user_name' => $user->full_name,
+                        'candidate_name' => $candidate ? $candidate->full_name : null,
+                        'position_name' => $position->name,
+                        'ip_address' => $request->ip(),
+                        'user_agent' => $request->userAgent(),
+                        'voted_at' => now(),
                     ]);
                 }
 

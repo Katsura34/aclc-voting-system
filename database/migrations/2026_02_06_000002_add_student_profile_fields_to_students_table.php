@@ -12,12 +12,29 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('students', function (Blueprint $table) {
-            $table->string('firstname')->nullable()->after('usn');
-            $table->string('lastname')->nullable()->after('firstname');
-            $table->string('strand')->nullable()->after('lastname');
-            $table->string('year')->nullable()->after('strand');
-            $table->string('gender')->nullable()->after('year');
-            $table->string('email')->nullable()->change();
+            if (!Schema::hasColumn('students', 'firstname')) {
+                $table->string('firstname')->nullable()->after('usn');
+            }
+
+            if (!Schema::hasColumn('students', 'lastname')) {
+                $table->string('lastname')->nullable()->after('firstname');
+            }
+
+            if (!Schema::hasColumn('students', 'strand')) {
+                $table->string('strand')->nullable()->after('lastname');
+            }
+
+            if (!Schema::hasColumn('students', 'year')) {
+                $table->string('year')->nullable()->after('strand');
+            }
+
+            if (!Schema::hasColumn('students', 'gender')) {
+                $table->string('gender')->nullable()->after('year');
+            }
+
+            if (Schema::hasColumn('students', 'email')) {
+                $table->string('email')->nullable()->change();
+            }
         });
     }
 
@@ -27,8 +44,15 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('students', function (Blueprint $table) {
-            $table->dropColumn(['firstname', 'lastname', 'strand', 'year', 'gender']);
-            $table->string('email')->nullable(false)->change();
+            foreach (['firstname', 'lastname', 'strand', 'year', 'gender'] as $column) {
+                if (Schema::hasColumn('students', $column)) {
+                    $table->dropColumn($column);
+                }
+            }
+
+            if (Schema::hasColumn('students', 'email')) {
+                $table->string('email')->nullable(false)->change();
+            }
         });
     }
 };

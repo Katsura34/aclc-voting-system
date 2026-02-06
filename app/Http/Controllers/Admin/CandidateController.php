@@ -314,23 +314,25 @@ class CandidateController extends Controller
             $skippedCount = 0;
             $errors = [];
 
-            $positions = Position::select('id', 'name');
+            $positionsQuery = Position::select('id', 'name');
             if ($request->filled('election_id')) {
-                $positions->where('election_id', $request->election_id);
+                $positionsQuery->where('election_id', $request->election_id);
             }
-            $positions = $positions->get();
+            $positions = $positionsQuery->get();
 
             $positionMap = [];
-            $duplicatePositionNames = [];
+            $positionNameCounts = [];
 
             foreach ($positions as $position) {
                 $key = strtolower($position->name);
-                if (isset($positionMap[$key])) {
-                    $duplicatePositionNames[$key] = true;
-                    continue;
+                $positionNameCounts[$key] = ($positionNameCounts[$key] ?? 0) + 1;
+
+                if (!isset($positionMap[$key])) {
+                    $positionMap[$key] = $position->id;
                 }
-                $positionMap[$key] = $position->id;
             }
+
+            $duplicatePositionNames = array_keys(array_filter($positionNameCounts, fn($count) => $count > 1));
 
             if (!empty($duplicatePositionNames)) {
                 return redirect()->route('admin.candidates.index')
@@ -353,8 +355,10 @@ class CandidateController extends Controller
                         continue;
                     }
 
+                    $row = array_map('trim', $row);
+
                     // Create associative array
-                    $data = array_combine($headers, array_map('trim', $row));
+                    $data = array_combine($headers, $row);
                     if ($data === false) {
                         $skippedCount++;
                         $errors[] = "Row {$rowNumber}: Column mismatch with headers.";

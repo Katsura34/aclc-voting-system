@@ -27,8 +27,7 @@ class ElectionController extends Controller
 
         // Compute candidate count for each election through pivot
         foreach ($elections as $election) {
-            $positionIds = $election->positions()->pluck('positions.id');
-            $election->candidates_count = \App\Models\Candidate::whereIn('position_id', $positionIds)->count();
+            $election->candidates_count = $election->candidates()->count();
         }
 
         return view('admin.elections.index', compact('elections'));
@@ -120,6 +119,7 @@ class ElectionController extends Controller
     public function show(Election $election)
     {
         $election->load(['positions.candidates.party', 'parties']);
+        $election->filterCandidatesToParticipatingParties();
         
         // Get vote statistics using Student model
         $totalVoters = \App\Models\Student::count();

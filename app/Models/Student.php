@@ -17,8 +17,11 @@ class Student extends Authenticatable
      */
     protected $fillable = [
         'usn',
-        'name',
-        'email',
+        'lastname',
+        'firstname',
+        'strand',
+        'year',
+        'gender',
         'password',
         'has_voted',
     ];
@@ -72,5 +75,25 @@ class Student extends Authenticatable
     public function username()
     {
         return 'usn';
+    }
+
+    /**
+     * Get the student's full name.
+     *
+     * @return string
+     */
+    public function getFullNameAttribute()
+    {
+        return trim($this->firstname . ' ' . $this->lastname);
+    }
+
+    /**
+     * Accessor for name attribute (for backward compatibility).
+     *
+     * @return string
+     */
+    public function getNameAttribute()
+    {
+        return $this->getFullNameAttribute();
     }
 }

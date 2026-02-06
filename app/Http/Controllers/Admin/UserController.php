@@ -324,11 +324,16 @@ class UserController extends Controller
                 $csv = array_map('str_getcsv', file($path));
                 $header = array_shift($csv); // Remove header row
                 
+                // Normalize header (trim whitespace and convert to lowercase)
+                $header = array_map(function($col) {
+                    return strtolower(trim($col));
+                }, $header);
+                
                 // Validate header format
                 $expectedHeader = ['usn', 'lastname', 'firstname', 'strand', 'year', 'gender', 'password'];
                 if ($header !== $expectedHeader) {
                     return redirect()->back()
-                        ->with('error', 'Invalid CSV format. Please use the template provided.');
+                        ->with('error', 'Invalid CSV format. Expected columns: ' . implode(', ', $expectedHeader));
                 }
                 
                 $imported = 0;
@@ -350,15 +355,32 @@ class UserController extends Controller
                     
                     list($usn, $lastname, $firstname, $strand, $year, $gender, $password) = $row;
                     
+                    // Trim all values
+                    $usn = trim($usn);
+                    $lastname = trim($lastname);
+                    $firstname = trim($firstname);
+                    $strand = trim($strand);
+                    $year = trim($year);
+                    $gender = trim($gender);
+                    $password = trim($password);
+                    
                     // Basic validation
                     if (empty($usn) || empty($lastname) || empty($firstname) || empty($password)) {
                         $errors[] = "Line {$lineNumber}: USN, lastname, firstname, and password are required";
                         continue;
                     }
                     
-                    // Check if user already exists
+                    // Generate email from USN
+                    $email = $usn . '@aclc.edu.ph';
+                    
+                    // Check if user already exists by USN or email
                     if (User::where('usn', $usn)->exists()) {
                         $errors[] = "Line {$lineNumber}: USN '{$usn}' already exists";
+                        continue;
+                    }
+                    
+                    if (User::where('email', $email)->exists()) {
+                        $errors[] = "Line {$lineNumber}: Email '{$email}' already exists";
                         continue;
                     }
                     
@@ -377,7 +399,7 @@ class UserController extends Controller
                             'strand' => $strand ?: null,
                             'year' => $year ?: null,
                             'gender' => $gender ?: null,
-                            'email' => $usn . '@aclc.edu.ph', // Generate email from USN
+                            'email' => $email,
                             'password' => Hash::make($password),
                             'user_type' => 'student',
                             'has_voted' => false,
@@ -385,7 +407,13 @@ class UserController extends Controller
                         
                         $imported++;
                     } catch (\Exception $e) {
-                        $errors[] = "Line {$lineNumber}: " . $e->getMessage();
+                        // Handle database constraint violations and other errors
+                        $errorMessage = $e->getMessage();
+                        if (strpos($errorMessage, 'Duplicate entry') !== false) {
+                            $errors[] = "Line {$lineNumber}: Duplicate entry detected (USN or email already exists)";
+                        } else {
+                            $errors[] = "Line {$lineNumber}: " . $errorMessage;
+                        }
                     }
                 }
                 

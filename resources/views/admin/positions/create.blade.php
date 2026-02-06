@@ -19,7 +19,7 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h2><i class="bi bi-award-fill"></i> Add New Position</h2>
-                <p class="text-muted mb-0">Create a new position for an election</p>
+                <p class="text-muted mb-0">Create a reusable position</p>
             </div>
             <a href="{{ route('admin.positions.index') }}" class="btn btn-outline-secondary">
                 <i class="bi bi-arrow-left"></i> Back to Positions
@@ -63,27 +63,6 @@
                                       rows="4"
                                       placeholder="Brief description of the position's responsibilities...">{{ old('description') }}</textarea>
                             @error('description')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        <!-- Election -->
-                        <div class="mb-4">
-                            <label for="election_id" class="form-label fw-bold">
-                                Election <span class="text-danger">*</span>
-                            </label>
-                            <select class="form-select @error('election_id') is-invalid @enderror" 
-                                    id="election_id" 
-                                    name="election_id" 
-                                    required>
-                                <option value="">Select Election</option>
-                                @foreach($elections as $election)
-                                    <option value="{{ $election->id }}" {{ old('election_id') == $election->id ? 'selected' : '' }}>
-                                        {{ $election->title }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            @error('election_id')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
@@ -155,10 +134,6 @@
                             <hr>
                             
                             <div class="mb-2">
-                                <strong>Election:</strong>
-                                <span id="preview-election" class="float-end badge bg-success">Not selected</span>
-                            </div>
-                            <div class="mb-2">
                                 <strong>Max Votes:</strong>
                                 <span id="preview-max-votes" class="float-end badge bg-info">1</span>
                             </div>
@@ -196,11 +171,6 @@
 
             document.getElementById('description').addEventListener('input', function() {
                 document.getElementById('preview-description').textContent = this.value || 'Description will appear here...';
-            });
-
-            document.getElementById('election_id').addEventListener('change', function() {
-                const selectedOption = this.options[this.selectedIndex];
-                document.getElementById('preview-election').textContent = selectedOption.text === 'Select Election' ? 'Not selected' : selectedOption.text;
             });
 
             document.getElementById('max_votes').addEventListener('input', function() {

@@ -28,6 +28,9 @@
                 <p class="text-muted mb-0">View and manage all system users</p>
             </div>
             <div class="btn-group">
+                <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#importUsersModal">
+                    <i class="bi bi-upload"></i> Import Students
+                </button>
                 <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#resetAllVotesModal">
                     <i class="bi bi-arrow-counterclockwise"></i> Reset All Votes
                 </button>
@@ -57,10 +60,10 @@
             <div class="card-body">
                 <form method="GET" action="{{ route('admin.users.index') }}" class="row g-3">
                     <div class="col-md-4">
-                        <label class="form-label"><i class="bi bi-search"></i> Search</label>
-                        <input type="text" class="form-control" name="search" 
-                               placeholder="Student ID, Name, Email..."
-                               value="{{ request('search') }}">
+                                <label class="form-label"><i class="bi bi-search"></i> Search</label>
+                                <input type="text" class="form-control" name="search" 
+                                       placeholder="USN, Name, Strand..."
+                                       value="{{ request('search') }}">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label"><i class="bi bi-person-badge"></i> User Type</label>
@@ -97,22 +100,21 @@
                     <table class="table table-hover mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th>Student ID</th>
-                                <th>Name</th>
-                                <th>Email</th>
-                                <th>Type</th>
-                                <th>Course</th>
-                                <th>Year Level</th>
-                                <th>Voting Status</th>
-                                <th>Actions</th>
+                                 <th>USN</th>
+                                 <th>Name</th>
+                                 <th>Type</th>
+                                 <th>Strand</th>
+                                 <th>Year</th>
+                                 <th>Gender</th>
+                                 <th>Voting Status</th>
+                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse($users as $user)
                                 <tr>
-                                    <td><strong>{{ $user->student_id }}</strong></td>
+                                    <td><strong>{{ $user->usn }}</strong></td>
                                     <td>{{ $user->first_name }} {{ $user->last_name }}</td>
-                                    <td>{{ $user->email }}</td>
                                     <td>
                                         @if($user->user_type === 'admin')
                                             <span class="badge bg-danger">
@@ -124,8 +126,9 @@
                                             </span>
                                         @endif
                                     </td>
-                                    <td>{{ $user->course ?? 'N/A' }}</td>
-                                    <td>{{ $user->year_level ?? 'N/A' }}</td>
+                                    <td>{{ $user->strand ?? 'N/A' }}</td>
+                                    <td>{{ $user->year ?? 'N/A' }}</td>
+                                    <td>{{ $user->gender ?? 'N/A' }}</td>
                                     <td>
                                         @if($user->has_voted)
                                             <span class="badge bg-success">
@@ -191,6 +194,32 @@
                     {{ $users->links() }}
                 </div>
             @endif
+        </div>
+    </div>
+
+    <!-- Import Users Modal -->
+    <div class="modal fade" id="importUsersModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-secondary text-white">
+                    <h5 class="modal-title"><i class="bi bi-upload"></i> Import Students</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form action="{{ route('admin.users.import') }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Upload CSV</label>
+                            <input type="file" name="csv_file" class="form-control" accept=".csv,text/csv" required>
+                            <small class="text-muted">Columns: usn, lastname, firstname, strand, year, gender, password</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Import</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 

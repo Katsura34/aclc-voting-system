@@ -48,9 +48,9 @@
         </li>
         <li class="nav-item">
             <a class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}" 
-               href="{{ route('admin.users.index') }}">
+                href="{{ route('admin.users.index') }}">
                 <i class="bi bi-person-badge"></i>
-                Users
+                Students
             </a>
         </li>
     </ul>

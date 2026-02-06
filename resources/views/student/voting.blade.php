@@ -295,8 +295,8 @@
                         {{ $position->name }}
                     </div>
                     <div class="position-info">
-                        @if($position->max_winners > 1)
-                            Choose up to {{ $position->max_winners }} candidates
+                        @if($position->max_votes > 1)
+                            Choose up to {{ $position->max_votes }} candidates
                         @else
                             Choose one candidate
                         @endif

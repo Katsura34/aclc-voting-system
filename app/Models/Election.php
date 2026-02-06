@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
+use App\Models\Position;
 
 class Election extends Model
 {
@@ -25,20 +26,17 @@ class Election extends Model
         'show_live_results' => 'boolean',
     ];
 
-    /**
-     * Get the positions for this election.
-     */
-    public function positions()
-    {
-        return $this->hasMany(Position::class)->orderBy('display_order');
-    }
-
-    /**
-     * Get the candidates for this election through positions.
-     */
     public function candidates()
     {
-        return $this->hasManyThrough(Candidate::class, Position::class);
+        return $this->hasMany(Candidate::class);
+    }
+
+    public function positions()
+    {
+        return $this->belongsToMany(Position::class, Candidate::class, 'election_id', 'position_id')
+            ->withPivot('id')
+            ->orderBy('positions.display_order')
+            ->distinct();
     }
 
     /**
@@ -48,14 +46,27 @@ class Election extends Model
     public static function getActiveElection()
     {
         return Cache::remember('active_election', 300, function () {
-            return self::where('is_active', true)
-                ->with([
-                    'positions' => function ($query) {
-                        $query->orderBy('display_order');
-                    },
-                    'positions.candidates.party'
-                ])
-                ->first();
+            $election = self::where('is_active', true)->first();
+
+            if (!$election) {
+                return null;
+            }
+
+            $election->load(['candidates.party', 'candidates.position']);
+
+            $positions = Position::whereHas('candidates', function ($query) use ($election) {
+                    $query->where('election_id', $election->id);
+                })
+                ->with(['candidates' => function ($query) use ($election) {
+                    $query->where('election_id', $election->id)
+                        ->with('party');
+                }])
+                ->orderBy('display_order')
+                ->get();
+
+            $election->setRelation('positions', $positions);
+
+            return $election;
         });
     }
 

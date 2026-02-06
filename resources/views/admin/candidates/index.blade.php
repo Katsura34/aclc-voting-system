@@ -107,7 +107,7 @@
                             @foreach($elections as $election)
                                 <option value="{{ $election->id }}" 
                                         {{ request('election_id') == $election->id ? 'selected' : '' }}>
-                                    {{ $election->name }}
+                                    {{ $election->title }}
                                 </option>
                             @endforeach
                         </select>
@@ -122,7 +122,6 @@
                             <option value="">All Positions</option>
                             @foreach($positions as $position)
                                 <option value="{{ $position->id }}" 
-                                        data-election="{{ $position->election_id }}"
                                         {{ request('position_id') == $position->id ? 'selected' : '' }}>
                                     {{ $position->name }}
                                 </option>
@@ -172,7 +171,7 @@
                     @endif
                     @if(request('election_id'))
                         <span class="badge bg-info">
-                            Election: {{ $elections->find(request('election_id'))->name ?? 'N/A' }}
+                            Election: {{ $elections->find(request('election_id'))->title ?? 'N/A' }}
                             <a href="{{ request()->fullUrlWithQuery(['election_id' => null]) }}" 
                                class="text-white text-decoration-none ms-1">×</a>
                         </span>
@@ -228,7 +227,7 @@
                 <div class="card text-center">
                     <div class="card-body">
                         <i class="bi bi-calendar-event-fill" style="font-size: 2.5rem; color: #28a745;"></i>
-                        <h3 class="mt-2 mb-0">{{ $candidates->pluck('position.election_id')->unique()->count() }}</h3>
+                        <h3 class="mt-2 mb-0">{{ $candidates->pluck('election_id')->unique()->count() }}</h3>
                         <p class="text-muted mb-0">Elections</p>
                     </div>
                 </div>
@@ -319,7 +318,7 @@
                                         </td>
                                         <td>
                                             <small class="text-muted">
-                                                {{ $candidate->position->election->name ?? 'N/A' }}
+                                                {{ $candidate->election->title ?? 'N/A' }}
                                             </small>
                                         </td>
                                         <td>
@@ -416,6 +415,7 @@
                             <i class="bi bi-info-circle"></i> 
                             <strong>CSV Format:</strong> Your CSV file must include these columns:
                             <ul class="mb-0 mt-2">
+                                <li><strong>election_id</strong> - Election ID number (required)</li>
                                 <li><strong>first_name</strong> - First name (required)</li>
                                 <li><strong>last_name</strong> - Last name (required)</li>
                                 <li><strong>middle_name</strong> - Middle name (optional)</li>
@@ -465,40 +465,6 @@
                     document.getElementById('delete-form-' + id).submit();
                 }
             }
-
-            // Election filter affects position dropdown
-            document.getElementById('election_id').addEventListener('change', function() {
-                const selectedElection = this.value;
-                const positionSelect = document.getElementById('position_id');
-                const positionOptions = positionSelect.querySelectorAll('option');
-                
-                positionOptions.forEach(option => {
-                    if (option.value === '') {
-                        option.style.display = 'block';
-                        return;
-                    }
-                    
-                    if (selectedElection === '' || option.dataset.election === selectedElection) {
-                        option.style.display = 'block';
-                    } else {
-                        option.style.display = 'none';
-                    }
-                });
-                
-                // Reset position if it's now hidden
-                const selectedOption = positionSelect.options[positionSelect.selectedIndex];
-                if (selectedOption && selectedOption.style.display === 'none') {
-                    positionSelect.value = '';
-                }
-            });
-
-            // Trigger on page load to filter positions based on selected election
-            document.addEventListener('DOMContentLoaded', function() {
-                const electionFilter = document.getElementById('election_id');
-                if (electionFilter.value) {
-                    electionFilter.dispatchEvent(new Event('change'));
-                }
-            });
 
             // Auto-submit on filter change (optional - uncomment if you want instant filtering)
             /*

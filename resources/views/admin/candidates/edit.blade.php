@@ -134,21 +134,25 @@
                         <h5 class="mb-3"><i class="bi bi-award"></i> Election Details</h5>
 
                         <div class="row">
-                            <!-- Election (for filtering positions) -->
-                            <div class="col-md-12 mb-4">
-                                <label for="election_filter" class="form-label fw-bold">
-                                    Election
+                            <div class="col-md-6 mb-4">
+                                <label for="election_id" class="form-label fw-bold">
+                                    Election <span class="text-danger">*</span>
                                 </label>
-                                <select class="form-select" id="election_filter">
-                                    <option value="">All Elections</option>
+                                <select class="form-select @error('election_id') is-invalid @enderror" 
+                                        id="election_id" 
+                                        name="election_id" 
+                                        required>
+                                    <option value="">Select Election</option>
                                     @foreach($elections as $election)
                                         <option value="{{ $election->id }}" 
-                                                {{ $candidate->position->election_id == $election->id ? 'selected' : '' }}>
+                                                {{ old('election_id', $candidate->election_id) == $election->id ? 'selected' : '' }}>
                                             {{ $election->title }}
                                         </option>
                                     @endforeach
                                 </select>
-                                <small class="text-muted">Filter positions by election</small>
+                                @error('election_id')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
                             </div>
 
                             <!-- Position -->
@@ -163,9 +167,8 @@
                                     <option value="">Select Position</option>
                                     @foreach($positions as $position)
                                         <option value="{{ $position->id }}" 
-                                                data-election="{{ $position->election_id }}"
                                                 {{ old('position_id', $candidate->position_id) == $position->id ? 'selected' : '' }}>
-                                            {{ $position->name }} - {{ $position->election->title ?? 'N/A' }}
+                                            {{ $position->name }}
                                         </option>
                                     @endforeach
                                 </select>
@@ -311,7 +314,6 @@
             const partySelect = document.getElementById('party_id');
             const bioInput = document.getElementById('bio');
             const platformInput = document.getElementById('platform');
-            const electionFilter = document.getElementById('election_filter');
             const photoInput = document.getElementById('photo');
             const removePhotoCheckbox = document.getElementById('remove_photo');
             const currentPhoto = document.getElementById('currentPhoto');
@@ -410,30 +412,6 @@
                 previewPlatform.textContent = this.value || 'Platform will appear here...';
             });
 
-            // Election filter
-            electionFilter.addEventListener('change', function() {
-                const selectedElection = this.value;
-                const positionOptions = positionSelect.querySelectorAll('option');
-                
-                positionOptions.forEach(option => {
-                    if (option.value === '') {
-                        option.style.display = 'block';
-                        return;
-                    }
-                    
-                    if (selectedElection === '' || option.dataset.election === selectedElection) {
-                        option.style.display = 'block';
-                    } else {
-                        option.style.display = 'none';
-                    }
-                });
-                
-                // Reset position selection if hidden
-                const selectedOption = positionSelect.options[positionSelect.selectedIndex];
-                if (selectedOption && selectedOption.style.display === 'none') {
-                    positionSelect.value = '';
-                }
-            });
         </script>
     </x-slot>
 </x-admin-layout>

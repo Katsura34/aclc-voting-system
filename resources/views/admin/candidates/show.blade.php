@@ -91,7 +91,7 @@
                     </div>
                     <p class="mb-0 text-muted">
                         <i class="bi bi-calendar-event"></i> 
-                        Election: {{ $candidate->position->election->name ?? 'N/A' }}
+                        Election: {{ $candidate->election->title ?? 'N/A' }}
                     </p>
                 </div>
             </div>
@@ -163,9 +163,9 @@
                             </div>
                         </div>
                         <div class="mb-3">
-                            <div class="info-label">Election</div>
-                            <div>{{ $candidate->position->election->name ?? 'N/A' }}</div>
-                        </div>
+                        <div class="info-label">Election</div>
+                        <div>{{ $candidate->election->title ?? 'N/A' }}</div>
+                    </div>
                         <hr>
                         <div class="mb-0">
                             <div class="info-label">Created</div>

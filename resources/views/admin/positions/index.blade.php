@@ -58,17 +58,6 @@
                                        value="{{ request('search') }}">
                             </div>
                         </div>
-                        <div class="col-md-4">
-                            <select class="form-select" name="election_id" id="election_id">
-                                <option value="">All Elections</option>
-                                @foreach($elections as $election)
-                                    <option value="{{ $election->id }}" 
-                                            {{ request('election_id') == $election->id ? 'selected' : '' }}>
-                                        {{ $election->title }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
                         <div class="col-md-2">
                             <button type="submit" class="btn btn-primary w-100">
                                 <i class="bi bi-funnel"></i> Filter
@@ -80,20 +69,13 @@
         </div>
 
         <!-- Active Filters -->
-        @if(request()->hasAny(['search', 'election_id']))
+        @if(request()->has('search'))
             <div class="mb-3">
                 <span class="badge bg-secondary me-2">Active Filters:</span>
                 @if(request('search'))
                     <span class="badge bg-info me-2">
                         Search: "{{ request('search') }}"
                         <a href="{{ route('admin.positions.index', array_merge(request()->except('search'))) }}" 
-                           class="text-white ms-1" style="text-decoration: none;">×</a>
-                    </span>
-                @endif
-                @if(request('election_id'))
-                    <span class="badge bg-info me-2">
-                        Election: {{ $elections->find(request('election_id'))->title ?? 'Unknown' }}
-                        <a href="{{ route('admin.positions.index', array_merge(request()->except('election_id'))) }}" 
                            class="text-white ms-1" style="text-decoration: none;">×</a>
                     </span>
                 @endif
@@ -111,15 +93,6 @@
                         <i class="bi bi-award-fill" style="font-size: 2.5rem; color: var(--aclc-blue);"></i>
                         <h3 class="mt-2 mb-0">{{ $positions->count() }}</h3>
                         <p class="text-muted mb-0">Total Positions</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card text-center">
-                    <div class="card-body">
-                        <i class="bi bi-calendar-event-fill" style="font-size: 2.5rem; color: #28a745;"></i>
-                        <h3 class="mt-2 mb-0">{{ $positions->pluck('election_id')->unique()->count() }}</h3>
-                        <p class="text-muted mb-0">Elections</p>
                     </div>
                 </div>
             </div>
@@ -179,7 +152,6 @@
                             <thead class="table-light">
                                 <tr>
                                     <th>Position Name</th>
-                                    <th>Election</th>
                                     <th>Max Votes</th>
                                     <th>Display Order</th>
                                     <th>Candidates</th>
@@ -194,11 +166,6 @@
                                         @if($position->description)
                                             <br><small class="text-muted">{{ Str::limit($position->description, 50) }}</small>
                                         @endif
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-success">
-                                            {{ $position->election->title ?? 'N/A' }}
-                                        </span>
                                     </td>
                                     <td>
                                         <span class="badge bg-info">{{ $position->max_votes }}</span>
@@ -236,38 +203,6 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Positions by Election -->
-            <h5 class="mt-5 mb-3"><i class="bi bi-calendar-event"></i> Positions by Election</h5>
-            <div class="row">
-                @foreach($positions->groupBy('election_id') as $electionId => $electionPositions)
-                    <div class="col-md-4 mb-3">
-                        <div class="card h-100">
-                            <div class="card-header bg-primary text-white">
-                                <h6 class="mb-0">
-                                    {{ $electionPositions->first()->election->title ?? 'Unknown Election' }}
-                                    <span class="badge bg-white text-dark float-end">{{ $electionPositions->count() }}</span>
-                                </h6>
-                            </div>
-                            <div class="card-body">
-                                <ul class="list-unstyled mb-0">
-                                    @foreach($electionPositions->sortBy('display_order') as $position)
-                                        <li class="mb-2">
-                                            <i class="bi bi-award-fill text-warning"></i>
-                                            <strong>{{ $position->name }}</strong>
-                                            <br>
-                                            <small class="text-muted ms-3">
-                                                Max {{ $position->max_votes }} vote(s) • 
-                                                {{ $position->candidates->count() }} candidate(s)
-                                            </small>
-                                        </li>
-                                    @endforeach
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                @endforeach
-            </div>
         @endif
     </div>
 
@@ -290,7 +225,6 @@
                             <ul class="mb-0 mt-2">
                                 <li><strong>name</strong> - Position name (required)</li>
                                 <li><strong>description</strong> - Position description (optional)</li>
-                                <li><strong>election_id</strong> - Election ID number (required)</li>
                                 <li><strong>max_votes</strong> - Maximum votes allowed (required)</li>
                                 <li><strong>display_order</strong> - Display order number (optional)</li>
                             </ul>

@@ -19,7 +19,7 @@ class CandidateController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Candidate::with(['position.election', 'party']);
+        $query = Candidate::with(['position', 'party', 'election']);
 
         // Search by name
         if ($request->filled('search')) {
@@ -32,9 +32,7 @@ class CandidateController extends Controller
 
         // Filter by election
         if ($request->filled('election_id')) {
-            $query->whereHas('position', function($q) use ($request) {
-                $q->where('election_id', $request->election_id);
-            });
+            $query->where('election_id', $request->election_id);
         }
 
         // Filter by position
@@ -51,7 +49,7 @@ class CandidateController extends Controller
         
         // Get filter options
         $elections = Election::all();
-        $positions = Position::with('election')->get();
+        $positions = Position::orderBy('display_order')->get();
         $parties = Party::all();
         
         return view('admin.candidates.index', compact('candidates', 'elections', 'positions', 'parties'));
@@ -63,7 +61,7 @@ class CandidateController extends Controller
     public function create()
     {
         $elections = Election::all();
-        $positions = Position::with('election')->get();
+        $positions = Position::orderBy('display_order')->get();
         $parties = Party::all();
         
         return view('admin.candidates.create', compact('elections', 'positions', 'parties'));
@@ -76,6 +74,7 @@ class CandidateController extends Controller
     {
         try {
             $validated = $request->validate([
+                'election_id' => 'required|exists:elections,id',
                 'first_name' => 'required|string|max:255',
                 'last_name' => 'required|string|max:255',
                 'position_id' => 'required|exists:positions,id',
@@ -133,7 +132,7 @@ class CandidateController extends Controller
      */
     public function show(Candidate $candidate)
     {
-        $candidate->load(['position.election', 'party']);
+        $candidate->load(['position', 'party', 'election']);
         
         return view('admin.candidates.show', compact('candidate'));
     }
@@ -144,7 +143,7 @@ class CandidateController extends Controller
     public function edit(Candidate $candidate)
     {
         $elections = Election::all();
-        $positions = Position::with('election')->get();
+        $positions = Position::orderBy('display_order')->get();
         $parties = Party::all();
         
         return view('admin.candidates.edit', compact('candidate', 'elections', 'positions', 'parties'));
@@ -157,6 +156,7 @@ class CandidateController extends Controller
     {
         try {
             $validated = $request->validate([
+                'election_id' => 'required|exists:elections,id',
                 'first_name' => 'required|string|max:255',
                 'last_name' => 'required|string|max:255',
                 'position_id' => 'required|exists:positions,id',
@@ -297,7 +297,7 @@ class CandidateController extends Controller
             $headers = array_shift($csvData);
             
             // Validate headers
-            $requiredHeaders = ['first_name', 'last_name', 'position_id', 'party_id'];
+            $requiredHeaders = ['election_id', 'first_name', 'last_name', 'position_id', 'party_id'];
             $missingHeaders = array_diff($requiredHeaders, $headers);
             
             if (!empty($missingHeaders)) {
@@ -325,6 +325,7 @@ class CandidateController extends Controller
                     
                     // Validate row data
                     $validator = Validator::make($data, [
+                        'election_id' => 'required|exists:elections,id',
                         'first_name' => 'required|string|max:255',
                         'last_name' => 'required|string|max:255',
                         'middle_name' => 'nullable|string|max:255',
@@ -341,6 +342,7 @@ class CandidateController extends Controller
 
                     // Create candidate
                     Candidate::create([
+                        'election_id' => $data['election_id'],
                         'first_name' => $data['first_name'],
                         'last_name' => $data['last_name'],
                         'middle_name' => $data['middle_name'] ?? null,
@@ -397,7 +399,7 @@ class CandidateController extends Controller
             'Content-Disposition' => 'attachment; filename="candidates_template.csv"',
         ];
 
-        $columns = ['first_name', 'last_name', 'middle_name', 'bio', 'position_id', 'party_id'];
+        $columns = ['election_id', 'first_name', 'last_name', 'middle_name', 'bio', 'position_id', 'party_id'];
         
         $callback = function() use ($columns) {
             $file = fopen('php://output', 'w');
@@ -407,6 +409,7 @@ class CandidateController extends Controller
             
             // Add sample data
             fputcsv($file, [
+                '1',
                 'Juan',
                 'Dela Cruz',
                 'Santos',
@@ -415,6 +418,7 @@ class CandidateController extends Controller
                 '1'
             ]);
             fputcsv($file, [
+                '1',
                 'Maria',
                 'Garcia',
                 'Lopez',
@@ -423,6 +427,7 @@ class CandidateController extends Controller
                 '2'
             ]);
             fputcsv($file, [
+                '2',
                 'Jose',
                 'Reyes',
                 '',

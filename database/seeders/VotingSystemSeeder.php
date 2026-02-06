@@ -42,10 +42,9 @@ class VotingSystemSeeder extends Seeder
         $createdPositions = [];
         foreach ($positions as $position) {
             $createdPositions[$position['name']] = Position::create([
-                'election_id' => $election->id,
                 'name' => $position['name'],
-                'max_winners' => $position['max_winners'],
-                'order' => $position['order'],
+                'max_votes' => $position['max_winners'],
+                'display_order' => $position['order'],
             ]);
         }
 
@@ -239,6 +238,7 @@ class VotingSystemSeeder extends Seeder
 
         foreach ($candidates as $candidate) {
             Candidate::create([
+                'election_id' => $election->id,
                 'first_name' => $candidate['first_name'],
                 'last_name' => $candidate['last_name'],
                 'position_id' => $createdPositions[$candidate['position']]->id,

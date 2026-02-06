@@ -37,12 +37,6 @@
 
                         <div class="row text-start">
                             <div class="col-6 mb-3">
-                                <small class="text-muted">Election</small>
-                                <p class="mb-0">
-                                    <span class="badge bg-success">{{ $position->election->title ?? 'N/A' }}</span>
-                                </p>
-                            </div>
-                            <div class="col-6 mb-3">
                                 <small class="text-muted">Max Votes</small>
                                 <p class="mb-0">
                                     <span class="badge bg-info">{{ $position->max_votes }}</span>
@@ -172,65 +166,6 @@
                                         </div>
                                     </div>
                                 @endforeach
-                            </div>
-                        </div>
-                    </div>
-                @endif
-
-                <!-- Election Information -->
-                @if($position->election)
-                    <div class="card mt-4">
-                        <div class="card-header bg-success text-white">
-                            <h5 class="mb-0"><i class="bi bi-calendar-event"></i> Election Information</h5>
-                        </div>
-                        <div class="card-body">
-                            <h5>{{ $position->election->title }}</h5>
-                            @if($position->election->description)
-                                <p class="text-muted">{{ $position->election->description }}</p>
-                            @endif
-                            
-                            <div class="row mt-3">
-                                <div class="col-md-6">
-                                    <small class="text-muted">Start Date</small>
-                                    <p>{{ \Carbon\Carbon::parse($position->election->start_date)->format('M d, Y h:i A') }}</p>
-                                </div>
-                                <div class="col-md-6">
-                                    <small class="text-muted">End Date</small>
-                                    <p>{{ \Carbon\Carbon::parse($position->election->end_date)->format('M d, Y h:i A') }}</p>
-                                </div>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <small class="text-muted">Status</small>
-                                    <p>
-                                        @if($position->election->is_active)
-                                            <span class="badge bg-success">Active</span>
-                                        @else
-                                            <span class="badge bg-secondary">Inactive</span>
-                                        @endif
-                                    </p>
-                                </div>
-                                <div class="col-md-4">
-                                    <small class="text-muted">Allow Abstain</small>
-                                    <p>
-                                        @if($position->election->allow_abstain)
-                                            <span class="badge bg-info">Yes</span>
-                                        @else
-                                            <span class="badge bg-secondary">No</span>
-                                        @endif
-                                    </p>
-                                </div>
-                                <div class="col-md-4">
-                                    <small class="text-muted">Live Results</small>
-                                    <p>
-                                        @if($position->election->show_live_results)
-                                            <span class="badge bg-warning">Enabled</span>
-                                        @else
-                                            <span class="badge bg-secondary">Disabled</span>
-                                        @endif
-                                    </p>
-                                </div>
                             </div>
                         </div>
                     </div>

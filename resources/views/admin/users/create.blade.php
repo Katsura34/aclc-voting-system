@@ -23,16 +23,16 @@
 
                             <div class="row mb-3">
                                 <div class="col-md-6">
-                                    <label for="student_id" class="form-label">
-                                        Student ID <span class="text-danger">*</span>
+                                    <label for="usn" class="form-label">
+                                        USN <span class="text-danger">*</span>
                                     </label>
                                     <input type="text" 
-                                           class="form-control @error('student_id') is-invalid @enderror" 
-                                           id="student_id" 
-                                           name="student_id" 
-                                           value="{{ old('student_id') }}"
+                                           class="form-control @error('usn') is-invalid @enderror" 
+                                           id="usn" 
+                                           name="usn" 
+                                           value="{{ old('usn') }}"
                                            required>
-                                    @error('student_id')
+                                    @error('usn')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
@@ -87,50 +87,45 @@
                                 </div>
                             </div>
 
-                            <div class="mb-3">
-                                <label for="email" class="form-label">
-                                    Email Address <span class="text-danger">*</span>
-                                </label>
-                                <input type="email" 
-                                       class="form-control @error('email') is-invalid @enderror" 
-                                       id="email" 
-                                       name="email" 
-                                       value="{{ old('email') }}"
-                                       required>
-                                @error('email')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
                             <div class="row mb-3">
                                 <div class="col-md-6">
-                                    <label for="course" class="form-label">Course</label>
+                                    <label for="strand" class="form-label">Strand</label>
                                     <input type="text" 
-                                           class="form-control @error('course') is-invalid @enderror" 
-                                           id="course" 
-                                           name="course" 
-                                           value="{{ old('course') }}"
-                                           placeholder="e.g., BSIT, BSCS">
-                                    @error('course')
+                                           class="form-control @error('strand') is-invalid @enderror" 
+                                           id="strand" 
+                                           name="strand" 
+                                           value="{{ old('strand') }}"
+                                           placeholder="e.g., STEM, HUMSS">
+                                    @error('strand')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
 
                                 <div class="col-md-6">
-                                    <label for="year_level" class="form-label">Year Level</label>
-                                    <select class="form-select @error('year_level') is-invalid @enderror" 
-                                            id="year_level" 
-                                            name="year_level">
-                                        <option value="">Select Year Level</option>
-                                        <option value="1st Year" {{ old('year_level') == '1st Year' ? 'selected' : '' }}>1st Year</option>
-                                        <option value="2nd Year" {{ old('year_level') == '2nd Year' ? 'selected' : '' }}>2nd Year</option>
-                                        <option value="3rd Year" {{ old('year_level') == '3rd Year' ? 'selected' : '' }}>3rd Year</option>
-                                        <option value="4th Year" {{ old('year_level') == '4th Year' ? 'selected' : '' }}>4th Year</option>
-                                    </select>
-                                    @error('year_level')
+                                    <label for="year" class="form-label">Year</label>
+                                    <input type="text"
+                                           class="form-control @error('year') is-invalid @enderror"
+                                           id="year"
+                                           name="year"
+                                           value="{{ old('year') }}"
+                                           placeholder="e.g., 1st Year">
+                                    @error('year')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="gender" class="form-label">Gender</label>
+                                <input type="text"
+                                       class="form-control @error('gender') is-invalid @enderror"
+                                       id="gender"
+                                       name="gender"
+                                       value="{{ old('gender') }}"
+                                       placeholder="e.g., Male/Female">
+                                @error('gender')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
                             </div>
 
                             <hr>

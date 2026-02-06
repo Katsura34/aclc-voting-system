@@ -67,14 +67,20 @@ class VotingController extends Controller
             }
 
             // Validate votes
-            $positions = Position::where('election_id', $election->id)->get();
+            $positions = Position::whereHas('candidates', function ($query) use ($election) {
+                    $query->where('election_id', $election->id);
+                })
+                ->with(['candidates' => function ($query) use ($election) {
+                    $query->where('election_id', $election->id);
+                }])
+                ->get();
             
             $rules = [];
             foreach ($positions as $position) {
                 if ($election->allow_abstain) {
-                    $rules["position_{$position->id}"] = 'nullable|exists:candidates,id';
+                    $rules["position_{$position->id}"] = 'nullable|exists:candidates,id,election_id,' . $election->id;
                 } else {
-                    $rules["position_{$position->id}"] = 'required|exists:candidates,id';
+                    $rules["position_{$position->id}"] = 'required|exists:candidates,id,election_id,' . $election->id;
                 }
             }
 
@@ -89,6 +95,9 @@ class VotingController extends Controller
                     $candidateId = $request->input("position_{$position->id}");
                     
                     if ($candidateId) {
+                        if (!$position->candidates->firstWhere('id', $candidateId)) {
+                            continue;
+                        }
                         Vote::create([
                             'user_id' => $user->id,
                             'election_id' => $election->id,

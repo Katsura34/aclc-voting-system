@@ -27,16 +27,20 @@ class ResultController extends Controller
                     return $this->getAjaxResults($request->election_id);
                 }
 
-                // Optimized query with eager loading
-                $selectedElection = Election::with([
-                    'positions' => function ($query) {
-                        $query->orderBy('display_order');
-                    },
-                    'positions.candidates.party',
-                    'positions.candidates.votes' => function ($query) use ($request) {
-                        $query->where('election_id', $request->election_id);
-                    }
-                ])->find($request->election_id);
+                $selectedElection = Election::find($request->election_id);
+
+                if ($selectedElection) {
+                    $positions = Position::whereHas('candidates', function ($query) use ($selectedElection) {
+                            $query->where('election_id', $selectedElection->id);
+                        })
+                        ->with(['candidates' => function ($query) use ($selectedElection) {
+                            $query->where('election_id', $selectedElection->id)->with('party');
+                        }])
+                        ->orderBy('display_order')
+                        ->get();
+
+                    $selectedElection->setRelation('positions', $positions);
+                }
 
                 if ($selectedElection) {
                     foreach ($selectedElection->positions as $position) {
@@ -45,7 +49,10 @@ class ResultController extends Controller
                         $abstainVotes = 0;
 
                         foreach ($position->candidates as $candidate) {
-                            $voteCount = $candidate->votes()->where('position_id', $position->id)->count();
+                            $voteCount = $candidate->votes()
+                                ->where('election_id', $selectedElection->id)
+                                ->where('position_id', $position->id)
+                                ->count();
                             $totalVotes += $voteCount;
                             
                             $candidateResults[] = [
@@ -112,13 +119,20 @@ class ResultController extends Controller
     private function getAjaxResults($electionId)
     {
         try {
-            // Fresh query from database - no caching, optimized with eager loading
-            $selectedElection = Election::with([
-                'positions' => function ($query) {
-                    $query->orderBy('display_order');
-                },
-                'positions.candidates.party'
-            ])->find($electionId);
+            $selectedElection = Election::find($electionId);
+
+            if ($selectedElection) {
+                $positions = Position::whereHas('candidates', function ($query) use ($selectedElection) {
+                        $query->where('election_id', $selectedElection->id);
+                    })
+                    ->with(['candidates' => function ($query) use ($selectedElection) {
+                        $query->where('election_id', $selectedElection->id)->with('party');
+                    }])
+                    ->orderBy('display_order')
+                    ->get();
+
+                $selectedElection->setRelation('positions', $positions);
+            }
 
             if (!$selectedElection) {
                 return response()->json(['error' => 'Election not found'], 404);
@@ -134,6 +148,7 @@ class ResultController extends Controller
                     // Fresh vote count from database
                     $voteCount = Vote::where('position_id', $position->id)
                         ->where('candidate_id', $candidate->id)
+                        ->where('election_id', $selectedElection->id)
                         ->count();
                     
                     $totalVotes += $voteCount;
@@ -224,8 +239,23 @@ class ResultController extends Controller
      */
     public function export(Request $request)
     {
-        $election = Election::with(['positions.candidates.party', 'positions.candidates.votes'])
-            ->find($request->election_id);
+        $election = Election::find($request->election_id);
+
+        if ($election) {
+            $positions = Position::whereHas('candidates', function ($query) use ($election) {
+                    $query->where('election_id', $election->id);
+                })
+                ->with(['candidates' => function ($query) use ($election) {
+                    $query->where('election_id', $election->id)
+                        ->with(['party', 'votes' => function ($voteQuery) use ($election) {
+                            $voteQuery->where('election_id', $election->id);
+                        }]);
+                }])
+                ->orderBy('display_order')
+                ->get();
+
+            $election->setRelation('positions', $positions);
+        }
 
         if (!$election) {
             return redirect()->route('admin.results.index')
@@ -256,7 +286,10 @@ class ResultController extends Controller
                 $candidateResults = [];
 
                 foreach ($position->candidates as $candidate) {
-                    $voteCount = $candidate->votes()->where('position_id', $position->id)->count();
+                    $voteCount = $candidate->votes()
+                        ->where('election_id', $election->id)
+                        ->where('position_id', $position->id)
+                        ->count();
                     $totalVotes += $voteCount;
                     
                     $candidateResults[] = [
@@ -268,6 +301,7 @@ class ResultController extends Controller
 
                 // Get abstain votes
                 $abstainVotes = Vote::where('position_id', $position->id)
+                    ->where('election_id', $election->id)
                     ->whereNull('candidate_id')
                     ->count();
                 $totalVotes += $abstainVotes;
@@ -309,8 +343,23 @@ class ResultController extends Controller
      */
     public function print(Request $request)
     {
-        $election = Election::with(['positions.candidates.party', 'positions.candidates.votes'])
-            ->find($request->election_id);
+        $election = Election::find($request->election_id);
+
+        if ($election) {
+            $positions = Position::whereHas('candidates', function ($query) use ($election) {
+                    $query->where('election_id', $election->id);
+                })
+                ->with(['candidates' => function ($query) use ($election) {
+                    $query->where('election_id', $election->id)
+                        ->with(['party', 'votes' => function ($voteQuery) use ($election) {
+                            $voteQuery->where('election_id', $election->id);
+                        }]);
+                }])
+                ->orderBy('display_order')
+                ->get();
+
+            $election->setRelation('positions', $positions);
+        }
 
         if (!$election) {
             return redirect()->route('admin.results.index')
@@ -325,7 +374,10 @@ class ResultController extends Controller
             $abstainVotes = 0;
 
             foreach ($position->candidates as $candidate) {
-                $voteCount = $candidate->votes()->where('position_id', $position->id)->count();
+                $voteCount = $candidate->votes()
+                    ->where('election_id', $election->id)
+                    ->where('position_id', $position->id)
+                    ->count();
                 $totalVotes += $voteCount;
                 
                 $candidateResults[] = [
@@ -336,6 +388,7 @@ class ResultController extends Controller
 
             // Get abstain votes for this position
             $abstainVotes = Vote::where('position_id', $position->id)
+                ->where('election_id', $election->id)
                 ->whereNull('candidate_id')
                 ->count();
             

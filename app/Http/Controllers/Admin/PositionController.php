@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Position;
-use App\Models\Election;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -16,22 +15,15 @@ class PositionController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Position::with('election');
+        $query = Position::with('candidates');
 
         // Search by position name
         if ($request->filled('search')) {
             $query->where('name', 'like', '%' . $request->search . '%');
         }
 
-        // Filter by election
-        if ($request->filled('election_id')) {
-            $query->where('election_id', $request->election_id);
-        }
-
         $positions = $query->latest()->get();
-        $elections = Election::all();
-
-        return view('admin.positions.index', compact('positions', 'elections'));
+        return view('admin.positions.index', compact('positions'));
     }
 
     /**
@@ -39,8 +31,7 @@ class PositionController extends Controller
      */
     public function create()
     {
-        $elections = Election::all();
-        return view('admin.positions.create', compact('elections'));
+        return view('admin.positions.create');
     }
 
     /**
@@ -52,7 +43,6 @@ class PositionController extends Controller
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
                 'description' => 'nullable|string',
-                'election_id' => 'required|exists:elections,id',
                 'max_votes' => 'required|integer|min:1',
                 'display_order' => 'nullable|integer|min:0',
             ]);
@@ -92,7 +82,7 @@ class PositionController extends Controller
      */
     public function show(Position $position)
     {
-        $position->load(['election', 'candidates.party']);
+        $position->load(['candidates.party']);
         return view('admin.positions.show', compact('position'));
     }
 
@@ -101,8 +91,7 @@ class PositionController extends Controller
      */
     public function edit(Position $position)
     {
-        $elections = Election::all();
-        return view('admin.positions.edit', compact('position', 'elections'));
+        return view('admin.positions.edit', compact('position'));
     }
 
     /**
@@ -114,7 +103,6 @@ class PositionController extends Controller
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
                 'description' => 'nullable|string',
-                'election_id' => 'required|exists:elections,id',
                 'max_votes' => 'required|integer|min:1',
                 'display_order' => 'nullable|integer|min:0',
             ]);
@@ -216,7 +204,7 @@ class PositionController extends Controller
             $headers = array_shift($csvData);
             
             // Validate headers
-            $requiredHeaders = ['name', 'election_id', 'max_votes'];
+            $requiredHeaders = ['name', 'max_votes'];
             $missingHeaders = array_diff($requiredHeaders, $headers);
             
             if (!empty($missingHeaders)) {
@@ -246,7 +234,6 @@ class PositionController extends Controller
                     $validator = Validator::make($data, [
                         'name' => 'required|string|max:255',
                         'description' => 'nullable|string',
-                        'election_id' => 'required|exists:elections,id',
                         'max_votes' => 'required|integer|min:1',
                         'display_order' => 'nullable|integer|min:0',
                     ]);
@@ -261,7 +248,6 @@ class PositionController extends Controller
                     Position::create([
                         'name' => $data['name'],
                         'description' => $data['description'] ?? null,
-                        'election_id' => $data['election_id'],
                         'max_votes' => $data['max_votes'],
                         'display_order' => $data['display_order'] ?? 0,
                     ]);
@@ -314,7 +300,7 @@ class PositionController extends Controller
             'Content-Disposition' => 'attachment; filename="positions_template.csv"',
         ];
 
-        $columns = ['name', 'description', 'election_id', 'max_votes', 'display_order'];
+        $columns = ['name', 'description', 'max_votes', 'display_order'];
         
         $callback = function() use ($columns) {
             $file = fopen('php://output', 'w');
@@ -327,20 +313,17 @@ class PositionController extends Controller
                 'President',
                 'Chief executive officer of the student council',
                 '1',
-                '1',
                 '1'
             ]);
             fputcsv($file, [
                 'Vice President',
                 'Second in command of the student council',
                 '1',
-                '1',
                 '2'
             ]);
             fputcsv($file, [
                 'Secretary',
                 'Handles documentation and records',
-                '1',
                 '1',
                 '3'
             ]);

@@ -68,35 +68,6 @@
                             @enderror
                         </div>
 
-                        <!-- Election -->
-                        <div class="mb-4">
-                            <label for="election_id" class="form-label fw-bold">
-                                Election <span class="text-danger">*</span>
-                            </label>
-                            <select class="form-select @error('election_id') is-invalid @enderror" 
-                                    id="election_id" 
-                                    name="election_id" 
-                                    required>
-                                <option value="">Select Election</option>
-                                @foreach($elections as $election)
-                                    <option value="{{ $election->id }}" 
-                                            {{ old('election_id', $position->election_id) == $election->id ? 'selected' : '' }}>
-                                        {{ $election->title }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            @error('election_id')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                            @if($position->candidates->count() > 0)
-                                <small class="text-warning">
-                                    <i class="bi bi-exclamation-triangle"></i> 
-                                    Warning: This position has {{ $position->candidates->count() }} candidate(s). 
-                                    Changing the election may cause issues.
-                                </small>
-                            @endif
-                        </div>
-
                         <div class="row">
                             <!-- Max Votes -->
                             <div class="col-md-6 mb-4">
@@ -164,10 +135,6 @@
                             <hr>
                             
                             <div class="mb-2">
-                                <strong>Election:</strong>
-                                <span id="preview-election" class="float-end badge bg-success">{{ $position->election->title ?? 'Not selected' }}</span>
-                            </div>
-                            <div class="mb-2">
                                 <strong>Max Votes:</strong>
                                 <span id="preview-max-votes" class="float-end badge bg-info">{{ $position->max_votes }}</span>
                             </div>
@@ -209,11 +176,6 @@
 
             document.getElementById('description').addEventListener('input', function() {
                 document.getElementById('preview-description').textContent = this.value || 'Description will appear here...';
-            });
-
-            document.getElementById('election_id').addEventListener('change', function() {
-                const selectedOption = this.options[this.selectedIndex];
-                document.getElementById('preview-election').textContent = selectedOption.text === 'Select Election' ? 'Not selected' : selectedOption.text;
             });
 
             document.getElementById('max_votes').addEventListener('input', function() {

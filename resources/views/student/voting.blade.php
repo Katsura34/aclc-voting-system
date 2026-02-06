@@ -427,6 +427,25 @@
             return div.innerHTML;
         }
         
+        // Helper function to validate and sanitize color values
+        function sanitizeColor(color) {
+            // Only allow valid hex colors and rgb/rgba colors
+            if (!color) return '#6c757d';
+            
+            // Test for valid hex color (#xxx or #xxxxxx)
+            if (/^#[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$/.test(color)) {
+                return color;
+            }
+            
+            // Test for valid rgb/rgba color
+            if (/^rgba?\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*(,\s*[\d.]+\s*)?\)$/.test(color)) {
+                return color;
+            }
+            
+            // Default fallback
+            return '#6c757d';
+        }
+        
         document.getElementById('votingForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
@@ -451,9 +470,11 @@
                     const safeCandidateName = escapeHtml(candidateName);
                     const safePartyName = escapeHtml(partyName);
                     
-                    // Get party colors safely (fallback to gray if not available)
-                    const partyBgColor = candidateParty ? candidateParty.style.backgroundColor || '#6c757d20' : '#6c757d20';
-                    const partyTextColor = candidateParty ? candidateParty.style.color || '#6c757d' : '#6c757d';
+                    // Get and sanitize party colors
+                    const rawBgColor = candidateParty ? candidateParty.style.backgroundColor : '';
+                    const rawTextColor = candidateParty ? candidateParty.style.color : '';
+                    const partyBgColor = sanitizeColor(rawBgColor) || 'rgba(108, 117, 125, 0.125)';
+                    const partyTextColor = sanitizeColor(rawTextColor) || '#6c757d';
                     
                     reviewHTML += `
                         <div class="list-group-item">
@@ -481,7 +502,26 @@
             reviewHTML += '</div>';
             
             if (!allSelected) {
-                alert('Please select a candidate for each position before submitting.');
+                // Show error in the page instead of using browser alert
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'alert alert-danger alert-dismissible fade show';
+                errorDiv.innerHTML = `
+                    <i class="bi bi-exclamation-triangle"></i>
+                    Please select a candidate for each position before submitting.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                `;
+                document.querySelector('.submit-section').insertBefore(errorDiv, document.getElementById('submitBtn'));
+                
+                // Scroll to the error
+                errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                
+                // Auto-dismiss after 5 seconds
+                setTimeout(() => {
+                    if (errorDiv && errorDiv.parentNode) {
+                        errorDiv.remove();
+                    }
+                }, 5000);
+                
                 return;
             }
             

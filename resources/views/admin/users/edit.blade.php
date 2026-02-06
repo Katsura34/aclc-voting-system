@@ -24,21 +24,21 @@
 
                             <div class="row mb-3">
                                 <div class="col-md-6">
-                                    <label for="student_id" class="form-label">
-                                        Student ID <span class="text-danger">*</span>
+                                    <label for="usn" class="form-label">
+                                        USN <span class="text-danger">*</span>
                                     </label>
                                     <input type="text" 
-                                           class="form-control @error('student_id') is-invalid @enderror" 
-                                           id="student_id" 
-                                           name="student_id" 
-                                           value="{{ old('student_id', $user->student_id) }}"
+                                           class="form-control @error('usn') is-invalid @enderror" 
+                                           id="usn" 
+                                           name="usn" 
+                                           value="{{ old('usn', $user->usn) }}"
                                            required>
-                                    @error('student_id')
+                                    @error('usn')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
 
-                                {{-- <div class="col-md-6">
+                                <div class="col-md-6">
                                     <label for="user_type" class="form-label">
                                         User Type <span class="text-danger">*</span>
                                     </label>
@@ -53,36 +53,36 @@
                                     @error('user_type')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
-                                </div> --}}
+                                </div>
                             </div>
 
                             <div class="row mb-3">
                                 <div class="col-md-6">
-                                    <label for="first_name" class="form-label">
+                                    <label for="firstname" class="form-label">
                                         First Name <span class="text-danger">*</span>
                                     </label>
                                     <input type="text" 
-                                           class="form-control @error('first_name') is-invalid @enderror" 
-                                           id="first_name" 
-                                           name="first_name" 
-                                           value="{{ old('first_name', $user->first_name) }}"
+                                           class="form-control @error('firstname') is-invalid @enderror" 
+                                           id="firstname" 
+                                           name="firstname" 
+                                           value="{{ old('firstname', $user->firstname) }}"
                                            required>
-                                    @error('first_name')
+                                    @error('firstname')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
 
                                 <div class="col-md-6">
-                                    <label for="last_name" class="form-label">
+                                    <label for="lastname" class="form-label">
                                         Last Name <span class="text-danger">*</span>
                                     </label>
                                     <input type="text" 
-                                           class="form-control @error('last_name') is-invalid @enderror" 
-                                           id="last_name" 
-                                           name="last_name" 
-                                           value="{{ old('last_name', $user->last_name) }}"
+                                           class="form-control @error('lastname') is-invalid @enderror" 
+                                           id="lastname" 
+                                           name="lastname" 
+                                           value="{{ old('lastname', $user->lastname) }}"
                                            required>
-                                    @error('last_name')
+                                    @error('lastname')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
@@ -104,31 +104,46 @@
                             </div>
 
                             <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label for="course" class="form-label">Course</label>
+                                <div class="col-md-4">
+                                    <label for="strand" class="form-label">Strand</label>
                                     <input type="text" 
-                                           class="form-control @error('course') is-invalid @enderror" 
-                                           id="course" 
-                                           name="course" 
-                                           value="{{ old('course', $user->course) }}"
-                                           placeholder="e.g., BSIT, BSCS">
-                                    @error('course')
+                                           class="form-control @error('strand') is-invalid @enderror" 
+                                           id="strand" 
+                                           name="strand" 
+                                           value="{{ old('strand', $user->strand) }}"
+                                           placeholder="e.g., STEM, ABM, HUMSS">
+                                    @error('strand')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
 
-                                <div class="col-md-6">
-                                    <label for="year_level" class="form-label">Year Level</label>
-                                    <select class="form-select @error('year_level') is-invalid @enderror" 
-                                            id="year_level" 
-                                            name="year_level">
-                                        <option value="">Select Year Level</option>
-                                        <option value="1st Year" {{ old('year_level', $user->year_level) == '1st Year' ? 'selected' : '' }}>1st Year</option>
-                                        <option value="2nd Year" {{ old('year_level', $user->year_level) == '2nd Year' ? 'selected' : '' }}>2nd Year</option>
-                                        <option value="3rd Year" {{ old('year_level', $user->year_level) == '3rd Year' ? 'selected' : '' }}>3rd Year</option>
-                                        <option value="4th Year" {{ old('year_level', $user->year_level) == '4th Year' ? 'selected' : '' }}>4th Year</option>
+                                <div class="col-md-4">
+                                    <label for="year" class="form-label">Year</label>
+                                    <select class="form-select @error('year') is-invalid @enderror" 
+                                            id="year" 
+                                            name="year">
+                                        <option value="">Select Year</option>
+                                        <option value="1st Year" {{ old('year', $user->year) == '1st Year' ? 'selected' : '' }}>1st Year</option>
+                                        <option value="2nd Year" {{ old('year', $user->year) == '2nd Year' ? 'selected' : '' }}>2nd Year</option>
+                                        <option value="3rd Year" {{ old('year', $user->year) == '3rd Year' ? 'selected' : '' }}>3rd Year</option>
+                                        <option value="4th Year" {{ old('year', $user->year) == '4th Year' ? 'selected' : '' }}>4th Year</option>
                                     </select>
-                                    @error('year_level')
+                                    @error('year')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label for="gender" class="form-label">Gender</label>
+                                    <select class="form-select @error('gender') is-invalid @enderror" 
+                                            id="gender" 
+                                            name="gender">
+                                        <option value="">Select Gender</option>
+                                        <option value="Male" {{ old('gender', $user->gender) == 'Male' ? 'selected' : '' }}>Male</option>
+                                        <option value="Female" {{ old('gender', $user->gender) == 'Female' ? 'selected' : '' }}>Female</option>
+                                        <option value="Other" {{ old('gender', $user->gender) == 'Other' ? 'selected' : '' }}>Other</option>
+                                    </select>
+                                    @error('gender')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>

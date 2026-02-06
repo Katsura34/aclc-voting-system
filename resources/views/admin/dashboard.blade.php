@@ -269,10 +269,10 @@
                                 <div class="list-group-item">
                                     <div class="d-flex align-items-center">
                                         <div class="user-avatar me-3">
-                                            {{ substr($voter->name, 0, 1) }}
+                                            {{ substr($voter->firstname, 0, 1) }}
                                         </div>
                                         <div>
-                                            <div style="font-size: 14px; font-weight: 500;">{{ $voter->name }}</div>
+                                            <div style="font-size: 14px; font-weight: 500;">{{ $voter->firstname }} {{ $voter->lastname }}</div>
                                             <small class="text-muted">{{ $voter->usn }}</small>
                                         </div>
                                     </div>

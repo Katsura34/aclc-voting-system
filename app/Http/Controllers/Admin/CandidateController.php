@@ -296,7 +296,9 @@ class CandidateController extends Controller
             
             // Get headers
             $headers = array_shift($csvData);
-            $headers = array_map('trim', $headers);
+            $headers = array_map(function ($header) {
+                return preg_replace('/\s+/', '_', strtolower(trim($header)));
+            }, $headers);
             
             // Validate headers
             $requiredHeaders = ['first_name', 'last_name', 'position_name'];
@@ -314,6 +316,10 @@ class CandidateController extends Controller
             DB::beginTransaction();
             
             try {
+                $positionMap = Position::pluck('id', 'name')
+                    ->mapWithKeys(fn($id, $name) => [strtolower($name) => $id])
+                    ->toArray();
+
                 foreach ($csvData as $index => $row) {
                     $rowNumber = $index + 2; // +2 because of header and 0-based index
                     
@@ -345,12 +351,13 @@ class CandidateController extends Controller
                         continue;
                     }
 
-                    $position = Position::where('name', $data['position_name'])->first();
-                    if (!$position) {
+                    $positionKey = strtolower(trim($data['position_name']));
+                    if (!isset($positionMap[$positionKey])) {
                         $skippedCount++;
                         $errors[] = "Row {$rowNumber}: Position \"{$data['position_name']}\" not found.";
                         continue;
                     }
+                    $positionId = $positionMap[$positionKey];
 
                     // Create candidate
                     Candidate::create([
@@ -358,7 +365,7 @@ class CandidateController extends Controller
                         'last_name' => $data['last_name'],
                         'middle_name' => $data['middle_name'] ?? null,
                         'bio' => $data['bio'] ?? null,
-                        'position_id' => $position->id,
+                        'position_id' => $positionId,
                         'party_id' => $request->party_id,
                     ]);
 

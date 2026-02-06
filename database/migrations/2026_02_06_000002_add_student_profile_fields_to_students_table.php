@@ -12,12 +12,43 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('students', function (Blueprint $table) {
-            $table->string('firstname')->nullable()->after('usn');
-            $table->string('lastname')->nullable()->after('firstname');
-            $table->string('strand')->nullable()->after('lastname');
-            $table->string('year')->nullable()->after('strand');
-            $table->string('gender')->nullable()->after('year');
-            $table->string('email')->nullable()->change();
+            $anchor = 'usn';
+
+            if (Schema::hasColumn('students', 'firstname')) {
+                $anchor = 'firstname';
+            } else {
+                $table->string('firstname')->nullable()->after($anchor);
+                $anchor = 'firstname';
+            }
+
+            if (Schema::hasColumn('students', 'lastname')) {
+                $anchor = 'lastname';
+            } else {
+                $table->string('lastname')->nullable()->after($anchor);
+                $anchor = 'lastname';
+            }
+
+            if (Schema::hasColumn('students', 'strand')) {
+                $anchor = 'strand';
+            } else {
+                $table->string('strand')->nullable()->after($anchor);
+                $anchor = 'strand';
+            }
+
+            if (Schema::hasColumn('students', 'year')) {
+                $anchor = 'year';
+            } else {
+                $table->string('year')->nullable()->after($anchor);
+                $anchor = 'year';
+            }
+
+            if (! Schema::hasColumn('students', 'gender')) {
+                $table->string('gender')->nullable()->after($anchor);
+            }
+
+            if (Schema::hasColumn('students', 'email')) {
+                $table->string('email')->nullable()->change();
+            }
         });
     }
 
@@ -27,8 +58,15 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('students', function (Blueprint $table) {
-            $table->dropColumn(['firstname', 'lastname', 'strand', 'year', 'gender']);
-            $table->string('email')->nullable(false)->change();
+            foreach (['firstname', 'lastname', 'strand', 'year', 'gender'] as $column) {
+                if (Schema::hasColumn('students', $column)) {
+                    $table->dropColumn($column);
+                }
+            }
+
+            if (Schema::hasColumn('students', 'email')) {
+                $table->string('email')->nullable(false)->change();
+            }
         });
     }
 };

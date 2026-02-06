@@ -1,7 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\AdminLoginController;
+use App\Http\Controllers\Auth\StudentLoginController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ElectionController;
 use App\Http\Controllers\Admin\PartyController;
@@ -12,16 +13,37 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\VotingRecordController;
 use App\Http\Controllers\Student\VotingController;
 
+// Root redirect to student login (default)
 Route::get('/', function () {
-    return redirect('/login');
+    return redirect()->route('student.login');
 });
 
-// Authentication Routes
-Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
-Route::post('/login', [LoginController::class, 'login']);
-Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+// =====================================================
+// STUDENT AUTHENTICATION ROUTES
+// =====================================================
+Route::prefix('student')->group(function () {
+    Route::get('/login', [StudentLoginController::class, 'showLoginForm'])->name('student.login');
+    Route::post('/login', [StudentLoginController::class, 'login']);
+    Route::post('/logout', [StudentLoginController::class, 'logout'])->name('student.logout');
+});
 
-// Protected Routes - Student
+// =====================================================
+// ADMIN AUTHENTICATION ROUTES (Hidden URL for security)
+// =====================================================
+Route::prefix('admin')->group(function () {
+    Route::get('/login', [AdminLoginController::class, 'showLoginForm'])->name('admin.login');
+    Route::post('/login', [AdminLoginController::class, 'login']);
+    Route::post('/logout', [AdminLoginController::class, 'logout'])->name('admin.logout');
+});
+
+// Legacy login route - redirect to student login
+Route::get('/login', function () {
+    return redirect()->route('student.login');
+})->name('login');
+
+// =====================================================
+// PROTECTED ROUTES - STUDENT
+// =====================================================
 Route::middleware(['auth:student'])->group(function () {
     // Student Voting Routes
     Route::get('/voting', [VotingController::class, 'index'])->name('voting.index');
@@ -34,7 +56,9 @@ Route::middleware(['auth:student'])->group(function () {
     })->name('dashboard');
 });
 
-// Admin Routes
+// =====================================================
+// PROTECTED ROUTES - ADMIN
+// =====================================================
 Route::middleware(['auth:admin', 'admin'])->prefix('admin')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
     
@@ -116,3 +140,4 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->group(function () {
     Route::get('voting-records', [VotingRecordController::class, 'index'])->name('admin.voting-records.index');
     Route::get('voting-records/export', [VotingRecordController::class, 'export'])->name('admin.voting-records.export');
 });
+

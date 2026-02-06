@@ -17,8 +17,11 @@ class ValidateSession
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Skip validation for login/logout routes
-        if ($request->is('login') || $request->is('logout')) {
+        // Skip validation for login/logout routes (including prefixed routes)
+        if ($request->is('login') || 
+            $request->is('logout') || 
+            $request->is('*/login') || 
+            $request->is('*/logout')) {
             return $next($request);
         }
 
@@ -48,13 +51,21 @@ class ValidateSession
             $currentSessionId = $request->session()->getId();
 
             // Check if current session exists in database for this user
-            $sessionExists = DB::table('sessions')
+            // OR if this is the first request after login (no sessions in DB yet)
+            $currentSessionExists = DB::table('sessions')
                 ->where('id', $currentSessionId)
                 ->where('user_id', $user->id)
                 ->exists();
+            
+            // Check if user has ANY sessions
+            $totalUserSessions = DB::table('sessions')
+                ->where('user_id', $user->id)
+                ->count();
 
-            // If session doesn't exist or belongs to different user, logout
-            if (! $sessionExists) {
+            // If the current session doesn't exist but user has OTHER sessions,
+            // it means they logged in elsewhere - log them out
+            // If user has NO sessions yet, allow it (fresh login, session not saved yet)
+            if (!$currentSessionExists && $totalUserSessions > 0) {
                 // Logout from the appropriate guard
                 if ($guard === 'admin') {
                     Auth::guard('admin')->logout();

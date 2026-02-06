@@ -322,14 +322,20 @@ class CandidateController extends Controller
             $positions = $positionsQuery->get();
 
             $positionNameCounts = [];
+            $positionNameLookup = [];
             foreach ($positions as $position) {
                 $key = strtolower($position->name);
                 $positionNameCounts[$key] = ($positionNameCounts[$key] ?? 0) + 1;
+                $positionNameLookup[$key] = $position->name;
             }
 
-            $duplicatePositionNames = array_keys(array_filter($positionNameCounts, fn($count) => $count > 1));
+            $duplicatePositionKeys = array_keys(array_filter($positionNameCounts, fn($count) => $count > 1));
 
-            if (!empty($duplicatePositionNames)) {
+            if (!empty($duplicatePositionKeys)) {
+                $duplicatePositionNames = array_map(
+                    fn($key) => $positionNameLookup[$key] ?? $key,
+                    $duplicatePositionKeys
+                );
                 return redirect()->route('admin.candidates.index')
                     ->with('error', 'Multiple positions share the same name: ' . implode(', ', $duplicatePositionNames) . '. Please ensure unique position names before importing.');
             }
@@ -365,11 +371,6 @@ class CandidateController extends Controller
 
                     // Create associative array
                     $data = array_combine($headers, $row);
-                    if ($data === false) {
-                        $skippedCount++;
-                        $errors[] = "Row {$rowNumber}: Column mismatch with headers.";
-                        continue;
-                    }
                     
                     // Validate row data
                     $validator = Validator::make($data, [

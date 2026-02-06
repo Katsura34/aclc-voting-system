@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\Election;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class AuditLogController extends Controller
 {
@@ -55,7 +56,7 @@ class AuditLogController extends Controller
                 'totalVotes'
             ));
         } catch (\Exception $e) {
-            \Log::error('Audit log display error: ' . $e->getMessage(), [
+            Log::error('Audit log display error: ' . $e->getMessage(), [
                 'election_id' => $request->election_id ?? null,
                 'trace' => $e->getTraceAsString()
             ]);
@@ -129,7 +130,7 @@ class AuditLogController extends Controller
      */
     public function print(Request $request)
     {
-        $election = Election::find($request->election_id);
+        $election = Election::with('positions')->find($request->election_id);
 
         if (!$election) {
             return redirect()->route('admin.audit-logs.index')
@@ -145,8 +146,9 @@ class AuditLogController extends Controller
             ->groupBy('position_id');
 
         $totalVoters = AuditLog::where('election_id', $election->id)
-            ->distinct('user_id')
-            ->count('user_id');
+            ->groupBy('user_id')
+            ->get()
+            ->count();
 
         return view('admin.audit-logs.print', compact(
             'election',

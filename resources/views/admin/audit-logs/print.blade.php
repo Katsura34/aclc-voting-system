@@ -204,7 +204,7 @@
         </div>
         <div>
             <strong>Total Positions:</strong>
-            {{ $auditLogs->count() }}
+            {{ $election->positions->count() }}
         </div>
     </div>
     
@@ -256,7 +256,7 @@
                 <span class="label">Total Voters</span>
             </div>
             <div class="summary-item">
-                <span class="number">{{ $auditLogs->count() }}</span>
+                <span class="number">{{ $election->positions->count() }}</span>
                 <span class="label">Positions</span>
             </div>
             <div class="summary-item">

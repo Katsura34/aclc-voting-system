@@ -242,7 +242,7 @@
                         <div class="mb-3">
                             <label for="csv_file" class="form-label">Select CSV File</label>
                             <input type="file" class="form-control" id="csv_file" name="csv_file" accept=".csv,.txt" required>
-                            <small class="text-muted">Max file size: 2MB. Accepted formats: .csv, .txt</small>
+                            <small class="text-muted">Max file size: 50MB. Accepted formats: .csv, .txt</small>
                         </div>
 
                         <a href="{{ route('admin.users.download-template') }}" class="btn btn-outline-primary btn-sm">

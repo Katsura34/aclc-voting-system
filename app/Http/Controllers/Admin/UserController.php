@@ -270,7 +270,7 @@ class UserController extends Controller
     {
         try {
             $request->validate([
-                'csv_file' => 'required|file|mimes:csv,txt|max:2048',
+                'csv_file' => 'required|file|mimes:csv,txt|max:51200',
             ]);
 
             $file = $request->file('csv_file');

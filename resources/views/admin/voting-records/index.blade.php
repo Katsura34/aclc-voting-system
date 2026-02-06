@@ -81,7 +81,7 @@
                                         <td>{{ $records->firstItem() + $index }}</td>
                                         <td>{{ $record->election->title }}</td>
                                         <td>{{ $record->student->usn }}</td>
-                                        <td>{{ $record->student->name }}</td>
+                                        <td>{{ $record->student->full_name }}</td>
                                         <td>{{ $record->voted_at->format('M d, Y h:i A') }}</td>
                                         <td>{{ $record->ip_address ?? 'N/A' }}</td>
                                     </tr>

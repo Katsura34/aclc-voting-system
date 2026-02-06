@@ -346,6 +346,7 @@ class UserController extends Controller
                         'usn' => $data['usn'],
                         'firstname' => $data['firstname'],
                         'lastname' => $data['lastname'],
+                        'name' => $data['firstname'] . ' ' . $data['lastname'],
                         'strand' => $data['strand'] ?? null,
                         'year' => $data['year'] ?? null,
                         'gender' => isset($data['gender']) ? ucfirst(strtolower($data['gender'])) : null,

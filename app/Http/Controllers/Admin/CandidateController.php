@@ -317,6 +317,11 @@ class CandidateController extends Controller
                 ->mapWithKeys(fn($id, $name) => [strtolower($name) => $id])
                 ->toArray();
 
+            if (empty($positionMap)) {
+                return redirect()->route('admin.candidates.index')
+                    ->with('error', 'No positions found. Please create positions before importing candidates.');
+            }
+
             DB::beginTransaction();
             
             try {
@@ -351,7 +356,7 @@ class CandidateController extends Controller
                         continue;
                     }
 
-                    $positionKey = strtolower(trim($data['position_name']));
+                    $positionKey = strtolower($data['position_name']);
                     if (!isset($positionMap[$positionKey])) {
                         $skippedCount++;
                         $errors[] = "Row {$rowNumber}: Position \"{$data['position_name']}\" not found.";

@@ -298,9 +298,7 @@ class CandidateController extends Controller
             // Get headers
             $headers = array_shift($csvData);
             // Normalize headers for case-insensitive matching
-            $headers = array_map(function ($header) {
-                return strtolower(trim($header));
-            }, $headers);
+            $headers = array_map(fn($header) => strtolower(trim($header)), $headers);
             
             // Validate headers
             $requiredHeaders = ['first_name', 'last_name', 'position_name'];
@@ -326,14 +324,14 @@ class CandidateController extends Controller
             foreach ($positions as $position) {
                 $key = strtolower($position->name);
                 $positionNameCounts[$key] = ($positionNameCounts[$key] ?? 0) + 1;
-                $positionNameLookup[$key] = $position->name;
+                $positionNameLookup[$key][] = $position->name;
             }
 
             $duplicatePositionKeys = array_keys(array_filter($positionNameCounts, fn($count) => $count > 1));
 
             if (!empty($duplicatePositionKeys)) {
                 $duplicatePositionNames = array_map(
-                    fn($key) => $positionNameLookup[$key] ?? $key,
+                    fn($key) => implode(' / ', array_unique($positionNameLookup[$key] ?? [$key])),
                     $duplicatePositionKeys
                 );
                 return redirect()->route('admin.candidates.index')
@@ -356,12 +354,12 @@ class CandidateController extends Controller
                 foreach ($csvData as $index => $row) {
                     $rowNumber = $index + 2; // +2 because of header and 0-based index
                     
+                    $row = array_map('trim', $row);
+
                     // Skip empty rows
                     if (empty(array_filter($row))) {
                         continue;
                     }
-
-                    $row = array_map('trim', $row);
 
                     if (count($row) !== count($headers)) {
                         $skippedCount++;

@@ -250,6 +250,15 @@
     </nav>
 
     <div class="main-container">
+        <!-- Welcome Message -->
+        <div class="alert alert-info border-0 shadow-sm mb-4">
+            <h4 class="mb-0">
+                <i class="bi bi-hand-wave"></i>
+                Welcome, {{ Auth::user()->full_name }}!
+            </h4>
+            <p class="mb-0 mt-2">Please select your preferred candidates for each position below.</p>
+        </div>
+
         <!-- Election Header -->
         <div class="election-header">
             <h1 class="election-title">{{ $election->title }}</h1>
@@ -349,6 +358,37 @@
         </form>
     </div>
 
+    <!-- Review Modal -->
+    <div class="modal fade" id="reviewModal" tabindex="-1" aria-labelledby="reviewModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header" style="background: linear-gradient(135deg, var(--aclc-blue) 0%, var(--aclc-light-blue) 100%); color: white;">
+                    <h5 class="modal-title" id="reviewModalLabel">
+                        <i class="bi bi-clipboard-check"></i> Review Your Votes
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        Please review your selections carefully. Once submitted, you cannot change your vote.
+                    </div>
+                    <div id="reviewContent">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-pencil"></i> Edit Selections
+                    </button>
+                    <button type="button" class="btn btn-success" id="confirmSubmitBtn" style="background: linear-gradient(135deg, var(--aclc-red) 0%, var(--aclc-dark-red) 100%); border: none;">
+                        <i class="bi bi-check-circle"></i> Confirm & Submit
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Bootstrap 5 JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     
@@ -377,11 +417,68 @@
             radio.closest('.candidate-card').classList.add('selected');
         });
 
-        // Confirm before submit
+        // Show review modal before submit
+        const reviewModal = new bootstrap.Modal(document.getElementById('reviewModal'));
+        
         document.getElementById('votingForm').addEventListener('submit', function(e) {
-            if (!confirm('Are you sure you want to submit your vote? This action cannot be undone.')) {
-                e.preventDefault();
+            e.preventDefault();
+            
+            // Check if all positions have selections
+            let allSelected = true;
+            const positions = document.querySelectorAll('.position-card');
+            const reviewContent = document.getElementById('reviewContent');
+            let reviewHTML = '<div class="list-group">';
+            
+            positions.forEach(position => {
+                const positionTitle = position.querySelector('.position-title').textContent.trim();
+                const selectedRadio = position.querySelector('input[type="radio"]:checked');
+                
+                if (selectedRadio) {
+                    const candidateCard = selectedRadio.closest('.candidate-card');
+                    const candidateName = candidateCard.querySelector('.candidate-name').textContent.trim();
+                    const candidateParty = candidateCard.querySelector('.candidate-party');
+                    const partyName = candidateParty ? candidateParty.textContent.trim() : 'Independent';
+                    
+                    reviewHTML += `
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1" style="color: var(--aclc-blue);">
+                                        <i class="bi bi-award"></i> ${positionTitle}
+                                    </h6>
+                                    <p class="mb-0">
+                                        <strong>${candidateName}</strong>
+                                        <span class="badge" style="background-color: ${candidateParty ? candidateParty.style.backgroundColor : '#6c757d20'}; color: ${candidateParty ? candidateParty.style.color : '#6c757d'};">
+                                            ${partyName}
+                                        </span>
+                                    </p>
+                                </div>
+                                <i class="bi bi-check-circle-fill text-success" style="font-size: 1.5rem;"></i>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    allSelected = false;
+                }
+            });
+            
+            reviewHTML += '</div>';
+            
+            if (!allSelected) {
+                alert('Please select a candidate for each position before submitting.');
+                return;
             }
+            
+            // Populate and show the review modal
+            reviewContent.innerHTML = reviewHTML;
+            reviewModal.show();
+        });
+
+        // Confirm submit button
+        document.getElementById('confirmSubmitBtn').addEventListener('click', function() {
+            reviewModal.hide();
+            // Submit the form
+            document.getElementById('votingForm').submit();
         });
     </script>
 </body>

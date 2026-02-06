@@ -297,6 +297,7 @@ class CandidateController extends Controller
             
             // Get headers
             $headers = array_shift($csvData);
+            // Normalize headers for case-insensitive matching
             $headers = array_map(function ($header) {
                 return strtolower(trim($header));
             }, $headers);
@@ -336,7 +337,7 @@ class CandidateController extends Controller
 
             if (!empty($duplicatePositionNames)) {
                 return redirect()->route('admin.candidates.index')
-                    ->with('error', 'Multiple positions share the same name: ' . implode(', ', array_keys($duplicatePositionNames)) . '. Please ensure unique position names before importing.');
+                    ->with('error', 'Multiple positions share the same name: ' . implode(', ', $duplicatePositionNames) . '. Please ensure unique position names before importing.');
             }
 
             if (empty($positionMap)) {

@@ -70,7 +70,7 @@ class VotingRecordController extends Controller
                     $counter++,
                     $record->election->title,
                     $record->student->usn,
-                    $record->student->name,
+                    $record->student->full_name,
                     $record->voted_at->format('Y-m-d H:i:s'),
                     $record->ip_address ?? 'N/A',
                 ]);

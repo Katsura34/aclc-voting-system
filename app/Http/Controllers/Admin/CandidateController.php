@@ -278,6 +278,7 @@ class CandidateController extends Controller
             $request->validate([
                 'csv_file' => 'required|file|mimes:csv,txt|max:2048',
                 'party_id' => 'required|exists:parties,id',
+                'election_id' => 'nullable|exists:elections,id',
             ]);
 
             $file = $request->file('csv_file');
@@ -313,10 +314,16 @@ class CandidateController extends Controller
             $skippedCount = 0;
             $errors = [];
 
+            $positions = Position::select('id', 'name');
+            if ($request->filled('election_id')) {
+                $positions->where('election_id', $request->election_id);
+            }
+            $positions = $positions->get();
+
             $positionMap = [];
             $duplicatePositionNames = [];
 
-            foreach (Position::all() as $position) {
+            foreach ($positions as $position) {
                 $key = strtolower($position->name);
                 if (isset($positionMap[$key])) {
                     $duplicatePositionNames[$key] = true;
@@ -343,12 +350,6 @@ class CandidateController extends Controller
                     
                     // Skip empty rows
                     if (empty(array_filter($row))) {
-                        continue;
-                    }
-
-                    if (count($row) !== count($headers)) {
-                        $skippedCount++;
-                        $errors[] = "Row {$rowNumber}: Column count does not match headers.";
                         continue;
                     }
 

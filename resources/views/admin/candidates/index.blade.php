@@ -411,6 +411,7 @@
                 </div>
                 <form action="{{ route('admin.candidates.import') }}" method="POST" enctype="multipart/form-data">
                     @csrf
+                    <input type="hidden" name="election_id" value="{{ request('election_id') }}">
                     <div class="modal-body">
                         <div class="alert alert-info">
                             <i class="bi bi-info-circle"></i> 

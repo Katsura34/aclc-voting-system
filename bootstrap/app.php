@@ -15,6 +15,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->appendToGroup('web', \App\Http\Middleware\ValidateSession::class);
 
         // Use custom CSRF token verification middleware with exceptions
+        // Exempt /logout from CSRF verification to prevent 419 errors when session/token expires
+        // This is safe because logout requires authentication and doesn't expose sensitive data
         $middleware->validateCsrfTokens(except: [
             '/logout',
         ]);

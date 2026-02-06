@@ -175,6 +175,20 @@
             margin-top: 5px;
         }
 
+        .password-toggle {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #888;
+            z-index: 10;
+        }
+
+        .password-toggle:hover {
+            color: var(--aclc-blue);
+        }
+
         {{ $styles ?? '' }}
     </style>
 
@@ -204,6 +218,11 @@
                     return;
                 }
                 
+                // Only add toggle to fields that are in a form (avoid interfering with other structures)
+                if (!passwordInput.closest('form')) {
+                    return;
+                }
+                
                 // Wrap the input in a position relative div if not already wrapped
                 if (!passwordInput.parentElement.classList.contains('position-relative')) {
                     const wrapper = document.createElement('div');
@@ -215,7 +234,6 @@
                 // Create toggle icon
                 const toggleIcon = document.createElement('i');
                 toggleIcon.className = 'bi bi-eye-slash password-toggle';
-                toggleIcon.style.cssText = 'position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #888; z-index: 10;';
                 
                 // Insert after the input
                 passwordInput.parentElement.appendChild(toggleIcon);

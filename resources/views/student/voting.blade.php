@@ -381,7 +381,7 @@
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                         <i class="bi bi-pencil"></i> Edit Selections
                     </button>
-                    <button type="button" class="btn btn-success" id="confirmSubmitBtn" style="background: linear-gradient(135deg, var(--aclc-red) 0%, var(--aclc-dark-red) 100%); border: none;">
+                    <button type="button" class="btn btn-submit" id="confirmSubmitBtn">
                         <i class="bi bi-check-circle"></i> Confirm & Submit
                     </button>
                 </div>
@@ -393,6 +393,11 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
+        // Constants
+        const DEFAULT_PARTY_BG = 'rgba(108, 117, 125, 0.125)';
+        const DEFAULT_PARTY_TEXT = '#6c757d';
+        const ALERT_DISMISS_TIMEOUT = 5000;
+        
         // Handle candidate card selection
         document.querySelectorAll('.candidate-card').forEach(card => {
             card.addEventListener('click', function() {
@@ -430,7 +435,7 @@
         // Helper function to validate and sanitize color values
         function sanitizeColor(color) {
             // Only allow valid hex colors and rgb/rgba colors
-            if (!color) return '#6c757d';
+            if (!color) return DEFAULT_PARTY_TEXT;
             
             // Test for valid hex color (#xxx or #xxxxxx)
             if (/^#[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$/.test(color)) {
@@ -443,7 +448,7 @@
             }
             
             // Default fallback
-            return '#6c757d';
+            return DEFAULT_PARTY_TEXT;
         }
         
         document.getElementById('votingForm').addEventListener('submit', function(e) {
@@ -473,8 +478,8 @@
                     // Get and sanitize party colors
                     const rawBgColor = candidateParty ? candidateParty.style.backgroundColor : '';
                     const rawTextColor = candidateParty ? candidateParty.style.color : '';
-                    const partyBgColor = sanitizeColor(rawBgColor) || 'rgba(108, 117, 125, 0.125)';
-                    const partyTextColor = sanitizeColor(rawTextColor) || '#6c757d';
+                    const partyBgColor = sanitizeColor(rawBgColor) || DEFAULT_PARTY_BG;
+                    const partyTextColor = sanitizeColor(rawTextColor) || DEFAULT_PARTY_TEXT;
                     
                     reviewHTML += `
                         <div class="list-group-item">
@@ -515,12 +520,12 @@
                 // Scroll to the error
                 errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 
-                // Auto-dismiss after 5 seconds
+                // Auto-dismiss after timeout
                 setTimeout(() => {
                     if (errorDiv && errorDiv.parentNode) {
                         errorDiv.remove();
                     }
-                }, 5000);
+                }, ALERT_DISMISS_TIMEOUT);
                 
                 return;
             }

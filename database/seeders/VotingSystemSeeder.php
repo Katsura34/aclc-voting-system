@@ -24,19 +24,17 @@ class VotingSystemSeeder extends Seeder
             'is_active' => true,
             'start_date' => Carbon::now(),
             'end_date' => Carbon::now()->addDays(7),
-            'allow_abstain' => true,
-            'show_live_results' => false,
         ]);
 
         // Create Positions
         $positions = [
-            ['name' => 'President', 'max_winners' => 1, 'order' => 1],
-            ['name' => 'Vice President', 'max_winners' => 1, 'order' => 2],
-            ['name' => 'Secretary', 'max_winners' => 1, 'order' => 3],
-            ['name' => 'Treasurer', 'max_winners' => 1, 'order' => 4],
-            ['name' => 'Auditor', 'max_winners' => 1, 'order' => 5],
-            ['name' => 'Public Relations Officer', 'max_winners' => 1, 'order' => 6],
-            ['name' => 'Representative', 'max_winners' => 3, 'order' => 7],
+            ['name' => 'President', 'max_votes' => 1, 'display_order' => 1],
+            ['name' => 'Vice President', 'max_votes' => 1, 'display_order' => 2],
+            ['name' => 'Secretary', 'max_votes' => 1, 'display_order' => 3],
+            ['name' => 'Treasurer', 'max_votes' => 1, 'display_order' => 4],
+            ['name' => 'Auditor', 'max_votes' => 1, 'display_order' => 5],
+            ['name' => 'Public Relations Officer', 'max_votes' => 1, 'display_order' => 6],
+            ['name' => 'Representative', 'max_votes' => 3, 'display_order' => 7],
         ];
 
         $createdPositions = [];
@@ -44,8 +42,8 @@ class VotingSystemSeeder extends Seeder
             $createdPositions[$position['name']] = Position::create([
                 'election_id' => $election->id,
                 'name' => $position['name'],
-                'max_winners' => $position['max_winners'],
-                'order' => $position['order'],
+                'max_votes' => $position['max_votes'],
+                'display_order' => $position['display_order'],
             ]);
         }
 

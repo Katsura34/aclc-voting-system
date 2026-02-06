@@ -14,6 +14,13 @@ return Application::configure(basePath: dirname(__DIR__))
         // Add session validation middleware to web group
         $middleware->appendToGroup('web', \App\Http\Middleware\ValidateSession::class);
 
+        // Use custom CSRF token verification middleware with exceptions
+        // Exempt /logout from CSRF verification to prevent 419 errors when session/token expires
+        // This is safe because logout requires authentication and doesn't expose sensitive data
+        $middleware->validateCsrfTokens(except: [
+            '/logout',
+        ]);
+
         // Register custom middleware aliases
         $middleware->alias([
             'admin' => \App\Http\Middleware\IsAdmin::class,

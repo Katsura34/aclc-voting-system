@@ -188,6 +188,22 @@
             font-size: 18px;
         }
 
+        .password-toggle {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #888;
+            font-size: 18px;
+            cursor: pointer;
+            transition: color 0.3s ease;
+            z-index: 10;
+        }
+
+        .password-toggle:hover {
+            color: #003366;
+        }
+
         .form-control {
             width: 100%;
             padding: 14px 15px 14px 45px;
@@ -389,6 +405,7 @@
                         autocomplete="current-password"
                         required
                     >
+                    <i class="bi bi-eye-slash password-toggle" id="togglePassword"></i>
                     @error('password')
                         <div class="invalid-feedback d-block">{{ $message }}</div>
                     @enderror
@@ -404,5 +421,30 @@
 
     <!-- Bootstrap 5 JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Password Toggle Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const togglePassword = document.getElementById('togglePassword');
+            const passwordInput = document.getElementById('password');
+            
+            if (togglePassword && passwordInput) {
+                togglePassword.addEventListener('click', function() {
+                    // Toggle the password field type
+                    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                    passwordInput.setAttribute('type', type);
+                    
+                    // Toggle the icon
+                    if (type === 'password') {
+                        this.classList.remove('bi-eye');
+                        this.classList.add('bi-eye-slash');
+                    } else {
+                        this.classList.remove('bi-eye-slash');
+                        this.classList.add('bi-eye');
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html>

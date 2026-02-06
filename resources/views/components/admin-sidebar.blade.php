@@ -47,6 +47,13 @@
             </a>
         </li>
         <li class="nav-item">
+            <a class="nav-link {{ request()->routeIs('admin.audit-logs.*') ? 'active' : '' }}" 
+               href="{{ route('admin.audit-logs.index') }}">
+                <i class="bi bi-file-earmark-text"></i>
+                Audit Logs
+            </a>
+        </li>
+        <li class="nav-item">
             <a class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}" 
                href="{{ route('admin.users.index') }}">
                 <i class="bi bi-person-badge"></i>

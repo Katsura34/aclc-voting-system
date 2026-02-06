@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Election;
+use App\Models\Position;
+use App\Models\Party;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -32,7 +34,10 @@ class ElectionController extends Controller
      */
     public function create()
     {
-        return view('admin.elections.create');
+        $positions = Position::orderBy('name')->get();
+        $parties = Party::orderBy('name')->get();
+
+        return view('admin.elections.create', compact('positions', 'parties'));
     }
 
     /**
@@ -47,6 +52,10 @@ class ElectionController extends Controller
                 'start_date' => 'required|date',
                 'end_date' => 'required|date|after:start_date',
                 'is_active' => 'boolean',
+                'positions' => 'nullable|array',
+                'positions.*' => 'exists:positions,id',
+                'parties' => 'nullable|array',
+                'parties.*' => 'exists:parties,id',
             ]);
 
             DB::beginTransaction();
@@ -58,6 +67,20 @@ class ElectionController extends Controller
                 }
 
                 $election = Election::create($validated);
+
+                // Sync positions with display order
+                if ($request->has('positions')) {
+                    $positionData = [];
+                    foreach ($request->positions as $index => $positionId) {
+                        $positionData[$positionId] = ['display_order' => $index];
+                    }
+                    $election->positions()->sync($positionData);
+                }
+
+                // Sync parties
+                if ($request->has('parties')) {
+                    $election->parties()->sync($request->parties);
+                }
                 
                 DB::commit();
 
@@ -89,7 +112,7 @@ class ElectionController extends Controller
      */
     public function show(Election $election)
     {
-        $election->load(['positions.candidates.party']);
+        $election->load(['positions.candidates.party', 'parties']);
         
         // Get vote statistics using Student model
         $totalVoters = \App\Models\Student::count();
@@ -103,7 +126,11 @@ class ElectionController extends Controller
      */
     public function edit(Election $election)
     {
-        return view('admin.elections.edit', compact('election'));
+        $positions = Position::orderBy('name')->get();
+        $parties = Party::orderBy('name')->get();
+        $election->load(['positions', 'parties']);
+
+        return view('admin.elections.edit', compact('election', 'positions', 'parties'));
     }
 
     /**
@@ -118,6 +145,10 @@ class ElectionController extends Controller
                 'start_date' => 'required|date',
                 'end_date' => 'required|date|after:start_date',
                 'is_active' => 'boolean',
+                'positions' => 'nullable|array',
+                'positions.*' => 'exists:positions,id',
+                'parties' => 'nullable|array',
+                'parties.*' => 'exists:parties,id',
             ]);
 
             DB::beginTransaction();
@@ -131,6 +162,18 @@ class ElectionController extends Controller
                 }
 
                 $election->update($validated);
+
+                // Sync positions with display order
+                $positionData = [];
+                if ($request->has('positions')) {
+                    foreach ($request->positions as $index => $positionId) {
+                        $positionData[$positionId] = ['display_order' => $index];
+                    }
+                }
+                $election->positions()->sync($positionData);
+
+                // Sync parties
+                $election->parties()->sync($request->parties ?? []);
                 
                 DB::commit();
 

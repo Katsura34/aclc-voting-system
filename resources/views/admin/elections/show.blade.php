@@ -190,6 +190,30 @@
         </div>
     </div>
 
+    <!-- Parties -->
+    @if($election->parties->count() > 0)
+        <div class="card">
+            <h2 class="section-title"><i class="bi bi-flag"></i> Participating Parties</h2>
+            <div class="row">
+                @foreach($election->parties as $party)
+                    <div class="col-md-4 mb-3">
+                        <div class="candidate-item">
+                            <div class="candidate-avatar" @if($party->color) style="background: {{ $party->color }}" @endif>
+                                {{ strtoupper(substr($party->name, 0, 2)) }}
+                            </div>
+                            <div class="candidate-info">
+                                <div class="candidate-name">{{ $party->name }}</div>
+                                @if($party->acronym)
+                                    <div class="candidate-party">{{ $party->acronym }}</div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    @endif
+
     <!-- Positions and Candidates -->
     <div class="card">
         <h2 class="section-title"><i class="bi bi-award"></i> Positions & Candidates</h2>

@@ -32,7 +32,7 @@
                     <i class="bi bi-arrow-counterclockwise"></i> Reset All Votes
                 </button>
                 <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#importModal">
-                    <i class="bi bi-upload"></i> Bulk Import CSV
+                    <i class="bi bi-upload"></i>  Import CSV
                 </button>
                 <a href="{{ route('admin.users.create') }}" class="btn btn-primary">
                     <i class="bi bi-plus-circle"></i> Add New Student
@@ -226,7 +226,7 @@
             <div class="modal-content">
                 <div class="modal-header bg-success text-white">
                     <h5 class="modal-title">
-                        <i class="bi bi-upload"></i> Bulk Import Students from CSV
+                        <i class="bi bi-upload"></i> Import Students from CSV
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>

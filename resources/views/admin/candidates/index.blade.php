@@ -122,7 +122,7 @@
                             <option value="">All Positions</option>
                             @foreach($positions as $position)
                                 <option value="{{ $position->id }}" 
-                                        data-election="{{ $position->election_id }}"
+                                        data-elections="{{ $position->elections->pluck('id')->join(',') }}"
                                         {{ request('position_id') == $position->id ? 'selected' : '' }}>
                                     {{ $position->name }}
                                 </option>
@@ -228,7 +228,7 @@
                 <div class="card text-center">
                     <div class="card-body">
                         <i class="bi bi-calendar-event-fill" style="font-size: 2.5rem; color: #28a745;"></i>
-                        <h3 class="mt-2 mb-0">{{ $candidates->pluck('position.election_id')->unique()->count() }}</h3>
+                        <h3 class="mt-2 mb-0">{{ $candidates->flatMap(fn($c) => $c->position->elections ?? collect())->pluck('id')->unique()->count() }}</h3>
                         <p class="text-muted mb-0">Elections</p>
                     </div>
                 </div>
@@ -319,7 +319,7 @@
                                         </td>
                                         <td>
                                             <small class="text-muted">
-                                                {{ $candidate->position->election->name ?? 'N/A' }}
+                                                {{ $candidate->position->elections->pluck('title')->join(', ') ?: 'N/A' }}
                                             </small>
                                         </td>
                                         <td>
@@ -420,9 +420,21 @@
                                 <li><strong>last_name</strong> - Last name (required)</li>
                                 <li><strong>middle_name</strong> - Middle name (optional)</li>
                                 <li><strong>bio</strong> - Biography (optional)</li>
-                                <li><strong>position_id</strong> - Position ID number (required)</li>
-                                <li><strong>party_id</strong> - Party ID number (required)</li>
+                                <li><strong>position</strong> - Position name text (required, must match existing position)</li>
                             </ul>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="import_party_id" class="form-label fw-bold">
+                                <i class="bi bi-flag"></i> Select Party <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="import_party_id" name="party_id" required>
+                                <option value="">Choose a party...</option>
+                                @foreach($parties as $party)
+                                    <option value="{{ $party->id }}">{{ $party->name }} ({{ $party->acronym }})</option>
+                                @endforeach
+                            </select>
+                            <small class="text-muted">All imported candidates will be assigned to this party.</small>
                         </div>
 
                         <div class="mb-3">
@@ -478,7 +490,8 @@
                         return;
                     }
                     
-                    if (selectedElection === '' || option.dataset.election === selectedElection) {
+                    const electionIds = (option.dataset.elections || '').split(',');
+                    if (selectedElection === '' || electionIds.includes(selectedElection)) {
                         option.style.display = 'block';
                     } else {
                         option.style.display = 'none';

@@ -30,7 +30,7 @@ class ResultController extends Controller
                 // Optimized query with eager loading
                 $selectedElection = Election::with([
                     'positions' => function ($query) {
-                        $query->orderBy('display_order');
+                        $query->orderBy('election_position.display_order');
                     },
                     'positions.candidates.party',
                     'positions.candidates.votes' => function ($query) use ($request) {
@@ -115,7 +115,7 @@ class ResultController extends Controller
             // Fresh query from database - no caching, optimized with eager loading
             $selectedElection = Election::with([
                 'positions' => function ($query) {
-                    $query->orderBy('display_order');
+                    $query->orderBy('election_position.display_order');
                 },
                 'positions.candidates.party'
             ])->find($electionId);

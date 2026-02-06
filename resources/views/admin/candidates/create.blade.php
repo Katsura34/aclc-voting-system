@@ -136,9 +136,9 @@
                                     <option value="">Select Position</option>
                                     @foreach($positions as $position)
                                         <option value="{{ $position->id }}" 
-                                                data-election="{{ $position->election_id }}"
+                                                data-elections="{{ $position->elections->pluck('id')->join(',') }}"
                                                 {{ old('position_id') == $position->id ? 'selected' : '' }}>
-                                            {{ $position->name }} - {{ $position->election->title ?? 'N/A' }}
+                                            {{ $position->name }}
                                         </option>
                                     @endforeach
                                 </select>
@@ -346,7 +346,8 @@
                         return;
                     }
                     
-                    if (selectedElection === '' || option.dataset.election === selectedElection) {
+                    const electionIds = (option.dataset.elections || '').split(',');
+                    if (selectedElection === '' || electionIds.includes(selectedElection)) {
                         option.style.display = 'block';
                     } else {
                         option.style.display = 'none';

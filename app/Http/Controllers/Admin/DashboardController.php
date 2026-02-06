@@ -37,16 +37,15 @@ class DashboardController extends Controller
             // Get voting progress by position (if active election exists)
             $positionStats = [];
             if ($activeElection) {
-                $positions = Position::where('election_id', $activeElection->id)
+                $positions = $activeElection->positions()
                     ->withCount('candidates')
-                    ->orderBy('display_order')
                     ->get();
                 
                 foreach ($positions as $position) {
                     $positionStats[] = [
                         'name' => $position->name,
                         'candidates' => $position->candidates_count,
-                        'max_winners' => $position->max_winners,
+                        'max_votes' => $position->max_votes,
                     ];
                 }
             }

@@ -241,7 +241,7 @@
                                         <tr>
                                             <td><strong>{{ $stat['name'] }}</strong></td>
                                             <td>{{ $stat['candidates'] }}</td>
-                                            <td>{{ $stat['max_winners'] }}</td>
+                                            <td>{{ $stat['max_votes'] }}</td>
                                         </tr>
                                     @endforeach
                                 </tbody>

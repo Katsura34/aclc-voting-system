@@ -224,21 +224,6 @@
             border: none;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
-
-        .abstain-option {
-            border: 2px dashed #ccc;
-            background: #f8f9fa;
-        }
-
-        .abstain-option:hover {
-            border-color: #999;
-            background: #e9ecef;
-        }
-
-        .abstain-option.selected {
-            border-color: #666;
-            background: #dee2e6;
-        }
     </style>
 </head>
 <body>
@@ -269,12 +254,6 @@
         <div class="election-header">
             <h1 class="election-title">{{ $election->title }}</h1>
             <p class="election-description">{{ $election->description }}</p>
-            @if($election->allow_abstain)
-                <div class="alert alert-info mt-3">
-                    <i class="bi bi-info-circle"></i>
-                    <strong>Note:</strong> You may choose to abstain from voting for any position.
-                </div>
-            @endif
         </div>
 
         @if(session('error'))
@@ -295,14 +274,12 @@
                         {{ $position->name }}
                     </div>
                     <div class="position-info">
-                        @if($position->max_winners > 1)
-                            Choose up to {{ $position->max_winners }} candidates
+                        @if($position->max_votes > 1)
+                            Choose up to {{ $position->max_votes }} candidates
                         @else
                             Choose one candidate
                         @endif
-                        @if(!$election->allow_abstain)
-                            <span class="text-danger">*</span>
-                        @endif
+                        <span class="text-danger">*</span>
                     </div>
 
                     @error("position_{$position->id}")
@@ -355,32 +332,6 @@
                                 @endif
                             </label>
                         @endforeach
-
-                        @if($election->allow_abstain)
-                            <label class="candidate-card abstain-option" data-position="{{ $position->id }}">
-                                <input 
-                                    type="radio" 
-                                    name="position_{{ $position->id }}" 
-                                    value=""
-                                    {{ old("position_{$position->id}") === '' ? 'checked' : '' }}
-                                >
-                                <div class="check-indicator">
-                                    <i class="bi bi-check-lg"></i>
-                                </div>
-                                
-                                <div class="candidate-photo" style="background: #6c757d;">
-                                    <i class="bi bi-dash-circle"></i>
-                                </div>
-                                
-                                <div class="candidate-name" style="color: #6c757d;">
-                                    Abstain
-                                </div>
-                                
-                                <div class="candidate-details">
-                                    Skip this position
-                                </div>
-                            </label>
-                        @endif
                     </div>
                 </div>
             @endforeach

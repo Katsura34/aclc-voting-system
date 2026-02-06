@@ -91,7 +91,7 @@
                     </div>
                     <p class="mb-0 text-muted">
                         <i class="bi bi-calendar-event"></i> 
-                        Election: {{ $candidate->position->election->name ?? 'N/A' }}
+                        Election: {{ $candidate->position->elections->pluck('title')->join(', ') ?: 'N/A' }}
                     </p>
                 </div>
             </div>
@@ -163,8 +163,8 @@
                             </div>
                         </div>
                         <div class="mb-3">
-                            <div class="info-label">Election</div>
-                            <div>{{ $candidate->position->election->name ?? 'N/A' }}</div>
+                            <div class="info-label">Elections</div>
+                            <div>{{ $candidate->position->elections->pluck('title')->join(', ') ?: 'N/A' }}</div>
                         </div>
                         <hr>
                         <div class="mb-0">

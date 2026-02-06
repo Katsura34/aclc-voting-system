@@ -96,34 +96,78 @@
                 </div>
             </div>
 
-            <div class="mb-3">
-                <div class="form-check form-switch">
-                    <input class="form-check-input" 
-                           type="checkbox" 
-                           id="allow_abstain" 
-                           name="allow_abstain" 
-                           value="1"
-                           {{ old('allow_abstain', $election->allow_abstain) ? 'checked' : '' }}>
-                    <label class="form-check-label" for="allow_abstain">
-                        <strong>Allow Abstain</strong>
-                        <div class="help-text">Voters can choose to skip voting for specific positions.</div>
-                    </label>
-                </div>
+            <!-- Positions Selection -->
+            <div class="section-title mt-4">
+                <i class="bi bi-award"></i> Positions
             </div>
 
             <div class="mb-4">
-                <div class="form-check form-switch">
-                    <input class="form-check-input" 
-                           type="checkbox" 
-                           id="show_live_results" 
-                           name="show_live_results" 
-                           value="1"
-                           {{ old('show_live_results', $election->show_live_results) ? 'checked' : '' }}>
-                    <label class="form-check-label" for="show_live_results">
-                        <strong>Show Live Results</strong>
-                        <div class="help-text">Display real-time voting results during the election period.</div>
-                    </label>
-                </div>
+                <label class="form-label">Select Positions for this Election</label>
+                <div class="help-text mb-2">Choose which positions will be part of this election. Each position can only be selected once.</div>
+                @if($positions->count() > 0)
+                    <div class="row">
+                        @foreach($positions as $position)
+                            <div class="col-md-6 mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" 
+                                           type="checkbox" 
+                                           name="positions[]" 
+                                           value="{{ $position->id }}" 
+                                           id="position_{{ $position->id }}"
+                                           {{ in_array($position->id, old('positions', $election->positions->pluck('id')->toArray())) ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="position_{{ $position->id }}">
+                                        {{ $position->name }}
+                                        @if($position->description)
+                                            <small class="text-muted d-block">{{ $position->description }}</small>
+                                        @endif
+                                    </label>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <p class="text-muted">No positions available. <a href="{{ route('admin.positions.create') }}">Create positions first.</a></p>
+                @endif
+                @error('positions')
+                    <div class="text-danger small mt-1">{{ $message }}</div>
+                @enderror
+            </div>
+
+            <!-- Parties Selection -->
+            <div class="section-title mt-4">
+                <i class="bi bi-flag"></i> Parties
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label">Select Parties for this Election</label>
+                <div class="help-text mb-2">Choose which parties will participate in this election.</div>
+                @if($parties->count() > 0)
+                    <div class="row">
+                        @foreach($parties as $party)
+                            <div class="col-md-6 mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" 
+                                           type="checkbox" 
+                                           name="parties[]" 
+                                           value="{{ $party->id }}" 
+                                           id="party_{{ $party->id }}"
+                                           {{ in_array($party->id, old('parties', $election->parties->pluck('id')->toArray())) ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="party_{{ $party->id }}">
+                                        {{ $party->name }}
+                                        @if($party->acronym)
+                                            <span class="badge bg-secondary">{{ $party->acronym }}</span>
+                                        @endif
+                                    </label>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <p class="text-muted">No parties available. <a href="{{ route('admin.parties.create') }}">Create parties first.</a></p>
+                @endif
+                @error('parties')
+                    <div class="text-danger small mt-1">{{ $message }}</div>
+                @enderror
             </div>
 
             <!-- Action Buttons -->

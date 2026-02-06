@@ -4,19 +4,32 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Election;
+use App\Models\Position;
+use App\Models\Party;
+use App\Models\Vote;
 use Illuminate\Http\Request;
+use Carbon\Carbon;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\DB;
 
 class ElectionController extends Controller
 {
+    private const DATETIME_LOCAL_FORMAT = 'Y-m-d\TH:i';
+
     /**
      * Display a listing of elections.
      */
     public function index()
     {
-        $elections = Election::withCount(['positions', 'candidates'])
+        $elections = Election::withCount(['positions'])
             ->orderBy('created_at', 'desc')
             ->get();
+
+        // Compute candidate count for each election through pivot
+        foreach ($elections as $election) {
+            $positionIds = $election->positions()->pluck('positions.id');
+            $election->candidates_count = \App\Models\Candidate::whereIn('position_id', $positionIds)->count();
+        }
 
         return view('admin.elections.index', compact('elections'));
     }
@@ -26,7 +39,10 @@ class ElectionController extends Controller
      */
     public function create()
     {
-        return view('admin.elections.create');
+        $positions = Position::orderBy('name')->get();
+        $parties = Party::orderBy('name')->get();
+
+        return view('admin.elections.create', compact('positions', 'parties'));
     }
 
     /**
@@ -38,12 +54,16 @@ class ElectionController extends Controller
             $validated = $request->validate([
                 'title' => 'required|string|max:255',
                 'description' => 'nullable|string',
-                'start_date' => 'required|date',
-                'end_date' => 'required|date|after:start_date',
+                'start_date' => 'required|date_format:'.self::DATETIME_LOCAL_FORMAT,
+                'end_date' => 'required|date_format:'.self::DATETIME_LOCAL_FORMAT,
                 'is_active' => 'boolean',
-                'allow_abstain' => 'boolean',
-                'show_live_results' => 'boolean',
+                'positions' => 'nullable|array',
+                'positions.*' => 'exists:positions,id',
+                'parties' => 'nullable|array',
+                'parties.*' => 'exists:parties,id',
             ]);
+
+            $validated = $this->normalizeDates($validated);
 
             DB::beginTransaction();
             
@@ -54,6 +74,20 @@ class ElectionController extends Controller
                 }
 
                 $election = Election::create($validated);
+
+                // Sync positions with display order
+                if ($request->has('positions')) {
+                    $positionData = [];
+                    foreach ($request->positions as $index => $positionId) {
+                        $positionData[$positionId] = ['display_order' => $index];
+                    }
+                    $election->positions()->sync($positionData);
+                }
+
+                // Sync parties
+                if ($request->has('parties')) {
+                    $election->parties()->sync($request->parties);
+                }
                 
                 DB::commit();
 
@@ -85,13 +119,11 @@ class ElectionController extends Controller
      */
     public function show(Election $election)
     {
-        $election->load(['positions.candidates.party']);
+        $election->load(['positions.candidates.party', 'parties']);
         
-        // Get vote statistics
-        $totalVoters = \App\Models\User::where('user_type', 'student')->count();
-        $votedCount = \App\Models\User::where('user_type', 'student')
-            ->where('has_voted', true)
-            ->count();
+        // Get vote statistics using Student model
+        $totalVoters = \App\Models\Student::count();
+        $votedCount = \App\Models\Student::where('has_voted', true)->count();
 
         return view('admin.elections.show', compact('election', 'totalVoters', 'votedCount'));
     }
@@ -101,7 +133,11 @@ class ElectionController extends Controller
      */
     public function edit(Election $election)
     {
-        return view('admin.elections.edit', compact('election'));
+        $positions = Position::orderBy('name')->get();
+        $parties = Party::orderBy('name')->get();
+        $election->load(['positions', 'parties']);
+
+        return view('admin.elections.edit', compact('election', 'positions', 'parties'));
     }
 
     /**
@@ -113,12 +149,16 @@ class ElectionController extends Controller
             $validated = $request->validate([
                 'title' => 'required|string|max:255',
                 'description' => 'nullable|string',
-                'start_date' => 'required|date',
-                'end_date' => 'required|date|after:start_date',
+                'start_date' => 'required|date_format:'.self::DATETIME_LOCAL_FORMAT,
+                'end_date' => 'required|date_format:'.self::DATETIME_LOCAL_FORMAT,
                 'is_active' => 'boolean',
-                'allow_abstain' => 'boolean',
-                'show_live_results' => 'boolean',
+                'positions' => 'nullable|array',
+                'positions.*' => 'exists:positions,id',
+                'parties' => 'nullable|array',
+                'parties.*' => 'exists:parties,id',
             ]);
+
+            $validated = $this->normalizeDates($validated);
 
             DB::beginTransaction();
             
@@ -131,6 +171,18 @@ class ElectionController extends Controller
                 }
 
                 $election->update($validated);
+
+                // Sync positions with display order
+                $positionData = [];
+                if ($request->has('positions')) {
+                    foreach ($request->positions as $index => $positionId) {
+                        $positionData[$positionId] = ['display_order' => $index];
+                    }
+                }
+                $election->positions()->sync($positionData);
+
+                // Sync parties
+                $election->parties()->sync($request->parties ?? []);
                 
                 DB::commit();
 
@@ -156,6 +208,30 @@ class ElectionController extends Controller
                 ->with('error', 'Failed to update election. Please try again.')
                 ->withInput();
         }
+    }
+
+    /**
+     * Normalize and validate datetime-local fields.
+     */
+    private function normalizeDates(array $validated): array
+    {
+        try {
+            $validated['start_date'] = Carbon::createFromFormat(self::DATETIME_LOCAL_FORMAT, $validated['start_date']);
+            $validated['end_date'] = Carbon::createFromFormat(self::DATETIME_LOCAL_FORMAT, $validated['end_date']);
+        } catch (\Exception $e) {
+            throw ValidationException::withMessages([
+                'start_date' => 'Invalid date format.',
+                'end_date' => 'Invalid date format.',
+            ]);
+        }
+
+        if ($validated['end_date']->lessThanOrEqualTo($validated['start_date'])) {
+            throw ValidationException::withMessages([
+                'end_date' => 'The end date must be after the start date.',
+            ]);
+        }
+
+        return $validated;
     }
 
     /**

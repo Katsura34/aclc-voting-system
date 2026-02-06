@@ -118,7 +118,7 @@
                 <div class="card text-center">
                     <div class="card-body">
                         <i class="bi bi-calendar-event-fill" style="font-size: 2.5rem; color: #28a745;"></i>
-                        <h3 class="mt-2 mb-0">{{ $positions->pluck('election_id')->unique()->count() }}</h3>
+                        <h3 class="mt-2 mb-0">{{ $positions->flatMap->elections->pluck('id')->unique()->count() }}</h3>
                         <p class="text-muted mb-0">Elections</p>
                     </div>
                 </div>
@@ -179,7 +179,7 @@
                             <thead class="table-light">
                                 <tr>
                                     <th>Position Name</th>
-                                    <th>Election</th>
+                                    <th>Elections</th>
                                     <th>Max Votes</th>
                                     <th>Display Order</th>
                                     <th>Candidates</th>
@@ -196,9 +196,13 @@
                                         @endif
                                     </td>
                                     <td>
-                                        <span class="badge bg-success">
-                                            {{ $position->election->title ?? 'N/A' }}
-                                        </span>
+                                        @if($position->elections->isNotEmpty())
+                                            @foreach($position->elections as $election)
+                                                <span class="badge bg-success">{{ $election->title }}</span>
+                                            @endforeach
+                                        @else
+                                            <span class="badge bg-secondary">Not Assigned</span>
+                                        @endif
                                     </td>
                                     <td>
                                         <span class="badge bg-info">{{ $position->max_votes }}</span>
@@ -240,12 +244,14 @@
             <!-- Positions by Election -->
             <h5 class="mt-5 mb-3"><i class="bi bi-calendar-event"></i> Positions by Election</h5>
             <div class="row">
-                @foreach($positions->groupBy('election_id') as $electionId => $electionPositions)
+                @foreach($elections as $election)
+                    @php $electionPositions = $positions->filter(fn($p) => $p->elections->contains('id', $election->id)); @endphp
+                    @if($electionPositions->isNotEmpty())
                     <div class="col-md-4 mb-3">
                         <div class="card h-100">
                             <div class="card-header bg-primary text-white">
                                 <h6 class="mb-0">
-                                    {{ $electionPositions->first()->election->title ?? 'Unknown Election' }}
+                                    {{ $election->title }}
                                     <span class="badge bg-white text-dark float-end">{{ $electionPositions->count() }}</span>
                                 </h6>
                             </div>
@@ -266,7 +272,37 @@
                             </div>
                         </div>
                     </div>
+                    @endif
                 @endforeach
+
+                @php $unassignedPositions = $positions->filter(fn($p) => $p->elections->isEmpty()); @endphp
+                @if($unassignedPositions->isNotEmpty())
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100">
+                        <div class="card-header bg-secondary text-white">
+                            <h6 class="mb-0">
+                                Unassigned Positions
+                                <span class="badge bg-white text-dark float-end">{{ $unassignedPositions->count() }}</span>
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled mb-0">
+                                @foreach($unassignedPositions->sortBy('display_order') as $position)
+                                    <li class="mb-2">
+                                        <i class="bi bi-award-fill text-warning"></i>
+                                        <strong>{{ $position->name }}</strong>
+                                        <br>
+                                        <small class="text-muted ms-3">
+                                            Max {{ $position->max_votes }} vote(s) • 
+                                            {{ $position->candidates->count() }} candidate(s)
+                                        </small>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                @endif
             </div>
         @endif
     </div>
@@ -290,10 +326,20 @@
                             <ul class="mb-0 mt-2">
                                 <li><strong>name</strong> - Position name (required)</li>
                                 <li><strong>description</strong> - Position description (optional)</li>
-                                <li><strong>election_id</strong> - Election ID number (required)</li>
                                 <li><strong>max_votes</strong> - Maximum votes allowed (required)</li>
                                 <li><strong>display_order</strong> - Display order number (optional)</li>
                             </ul>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="import_election_id" class="form-label fw-bold">Assign to Election (optional)</label>
+                            <select class="form-select" id="import_election_id" name="election_id">
+                                <option value="">No Election (create unassigned)</option>
+                                @foreach($elections as $election)
+                                    <option value="{{ $election->id }}">{{ $election->title }}</option>
+                                @endforeach
+                            </select>
+                            <small class="text-muted">Select an election to assign imported positions to, or leave empty.</small>
                         </div>
 
                         <div class="mb-3">

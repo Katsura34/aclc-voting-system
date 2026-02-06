@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
+use App\Models\Candidate;
 
 class Election extends Model
 {
@@ -13,16 +14,12 @@ class Election extends Model
         'start_date',
         'end_date',
         'is_active',
-        'allow_abstain',
-        'show_live_results',
     ];
 
     protected $casts = [
         'start_date' => 'datetime',
         'end_date' => 'datetime',
         'is_active' => 'boolean',
-        'allow_abstain' => 'boolean',
-        'show_live_results' => 'boolean',
     ];
 
     /**
@@ -30,15 +27,32 @@ class Election extends Model
      */
     public function positions()
     {
-        return $this->hasMany(Position::class)->orderBy('display_order');
+        return $this->belongsToMany(Position::class, 'election_position')
+            ->withPivot('display_order')
+            ->withTimestamps()
+            ->orderBy('election_position.display_order');
     }
 
     /**
-     * Get the candidates for this election through positions.
+     * Get the parties for this election.
+     */
+    public function parties()
+    {
+        return $this->belongsToMany(Party::class, 'election_party')
+            ->withTimestamps();
+    }
+
+    /**
+     * Get a query builder for candidates belonging to this election's positions.
+     * Note: This is not a standard Eloquent relationship, use ->get() or ->count() on the result.
+     * For eager loading candidates, use 'positions.candidates' instead.
+     *
+     * @return \Illuminate\Database\Eloquent\Builder
      */
     public function candidates()
     {
-        return $this->hasManyThrough(Candidate::class, Position::class);
+        $positionIds = $this->positions()->pluck('positions.id');
+        return Candidate::whereIn('position_id', $positionIds);
     }
 
     /**
@@ -51,7 +65,7 @@ class Election extends Model
             return self::where('is_active', true)
                 ->with([
                     'positions' => function ($query) {
-                        $query->orderBy('display_order');
+                        $query->orderBy('election_position.display_order');
                     },
                     'positions.candidates.party'
                 ])

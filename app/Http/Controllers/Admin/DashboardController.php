@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\User;
+use App\Models\Student;
 use App\Models\Election;
 use App\Models\Position;
 use App\Models\Candidate;
@@ -17,8 +17,8 @@ class DashboardController extends Controller
     {
         try {
             // Get statistics with optimized queries
-            $totalStudents = User::where('user_type', 'student')->count();
-            $totalVoted = User::where('user_type', 'student')->where('has_voted', true)->count();
+            $totalStudents = Student::count();
+            $totalVoted = Student::where('has_voted', true)->count();
             $votingPercentage = $totalStudents > 0 ? round(($totalVoted / $totalStudents) * 100, 2) : 0;
             
             $activeElections = Election::where('is_active', true)->count();
@@ -29,8 +29,7 @@ class DashboardController extends Controller
             $activeElection = Election::getActiveElection();
             
             // Get recent voters with optimized query
-            $recentVoters = User::where('user_type', 'student')
-                ->where('has_voted', true)
+            $recentVoters = Student::where('has_voted', true)
                 ->orderBy('updated_at', 'desc')
                 ->limit(10)
                 ->get();
@@ -38,16 +37,15 @@ class DashboardController extends Controller
             // Get voting progress by position (if active election exists)
             $positionStats = [];
             if ($activeElection) {
-                $positions = Position::where('election_id', $activeElection->id)
+                $positions = $activeElection->positions()
                     ->withCount('candidates')
-                    ->orderBy('display_order')
                     ->get();
                 
                 foreach ($positions as $position) {
                     $positionStats[] = [
                         'name' => $position->name,
                         'candidates' => $position->candidates_count,
-                        'max_winners' => $position->max_winners,
+                        'max_votes' => $position->max_votes,
                     ];
                 }
             }

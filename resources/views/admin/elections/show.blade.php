@@ -122,6 +122,24 @@
             font-size: 0.85rem;
             color: #666;
         }
+
+        .candidate-actions {
+            display: flex;
+            gap: 5px;
+            margin-left: auto;
+        }
+
+        .candidate-actions .btn {
+            padding: 3px 8px;
+            font-size: 0.75rem;
+        }
+
+        .position-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
     </x-slot>
 
     <!-- Page Header -->
@@ -138,6 +156,9 @@
                 </span>
             </div>
             <div>
+                <a href="{{ route('admin.candidates.index', ['election_id' => $election->id]) }}" class="btn btn-success">
+                    <i class="bi bi-people"></i> Manage Candidates
+                </a>
                 <a href="{{ route('admin.elections.edit', $election) }}" class="btn btn-primary">
                     <i class="bi bi-pencil"></i> Edit
                 </a>
@@ -155,7 +176,7 @@
             <div class="stat-label">Positions</div>
         </div>
         <div class="stat-card">
-            <div class="stat-value">{{ $election->candidates->count() }}</div>
+            <div class="stat-value">{{ $election->candidates()->count() }}</div>
             <div class="stat-label">Candidates</div>
         </div>
         <div class="stat-card">
@@ -188,40 +209,53 @@
             <div class="info-label">End Date</div>
             <div class="info-value">{{ $election->end_date->format('F d, Y - h:i A') }}</div>
         </div>
-        
-        <div class="info-row">
-            <div class="info-label">Allow Abstain</div>
-            <div class="info-value">
-                @if($election->allow_abstain)
-                    <span class="badge bg-success">Yes</span>
-                @else
-                    <span class="badge bg-secondary">No</span>
-                @endif
-            </div>
-        </div>
-        
-        <div class="info-row">
-            <div class="info-label">Show Live Results</div>
-            <div class="info-value">
-                @if($election->show_live_results)
-                    <span class="badge bg-success">Yes</span>
-                @else
-                    <span class="badge bg-secondary">No</span>
-                @endif
-            </div>
-        </div>
     </div>
+
+    <!-- Parties -->
+    @if($election->parties->count() > 0)
+        <div class="card">
+            <h2 class="section-title"><i class="bi bi-flag"></i> Participating Parties</h2>
+            <div class="row">
+                @foreach($election->parties as $party)
+                    <div class="col-md-4 mb-3">
+                        <div class="candidate-item">
+                            <div class="candidate-avatar" @if($party->color) style="background: {{ $party->color }}" @endif>
+                                {{ strtoupper(substr($party->name, 0, 2)) }}
+                            </div>
+                            <div class="candidate-info">
+                                <div class="candidate-name">{{ $party->name }}</div>
+                                @if($party->acronym)
+                                    <div class="candidate-party">{{ $party->acronym }}</div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    @endif
 
     <!-- Positions and Candidates -->
     <div class="card">
-        <h2 class="section-title"><i class="bi bi-award"></i> Positions & Candidates</h2>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="section-title mb-0"><i class="bi bi-award"></i> Positions & Candidates</h2>
+            <a href="{{ route('admin.candidates.create', ['election_id' => $election->id]) }}" class="btn btn-primary btn-sm">
+                <i class="bi bi-plus-circle"></i> Add Candidate
+            </a>
+        </div>
         
         @if($election->positions->count() > 0)
             @foreach($election->positions as $position)
                 <div class="position-card">
-                    <div class="position-title">
-                        {{ $position->name }}
-                        <small class="text-muted">(Max Winners: {{ $position->max_winners }})</small>
+                    <div class="position-header">
+                        <div class="position-title mb-0">
+                            {{ $position->name }}
+                            <small class="text-muted">(Max Votes: {{ $position->max_votes }})</small>
+                        </div>
+                        <a href="{{ route('admin.candidates.create', ['election_id' => $election->id, 'position_id' => $position->id]) }}" 
+                           class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-plus"></i> Add Candidate
+                        </a>
                     </div>
                     
                     @if($position->candidates->count() > 0)
@@ -239,16 +273,21 @@
                                             </div>
                                         @endif
                                     </div>
+                                    <div class="candidate-actions">
+                                        <a href="{{ route('admin.candidates.edit', $candidate) }}" class="btn btn-outline-warning btn-sm" title="Edit">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                    </div>
                                 </div>
                             @endforeach
                         </div>
                     @else
-                        <p class="text-muted">No candidates assigned to this position yet.</p>
+                        <p class="text-muted mb-0">No candidates assigned to this position yet.</p>
                     @endif
                 </div>
             @endforeach
         @else
-            <p class="text-muted">No positions created for this election yet.</p>
+            <p class="text-muted">No positions assigned to this election yet. <a href="{{ route('admin.elections.edit', $election) }}">Edit election</a> to add positions.</p>
         @endif
     </div>
 </x-admin-layout>

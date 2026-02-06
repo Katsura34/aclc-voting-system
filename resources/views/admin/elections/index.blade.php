@@ -173,18 +173,6 @@
                         <i class="bi bi-calendar-x"></i>
                         <span>End: {{ $election->end_date->format('M d, Y') }}</span>
                     </div>
-                    @if($election->allow_abstain)
-                        <div class="meta-item">
-                            <i class="bi bi-dash-circle"></i>
-                            <span>Abstain Allowed</span>
-                        </div>
-                    @endif
-                    @if($election->show_live_results)
-                        <div class="meta-item">
-                            <i class="bi bi-eye"></i>
-                            <span>Live Results</span>
-                        </div>
-                    @endif
                 </div>
 
                 <div class="election-stats">
@@ -199,6 +187,9 @@
                 <div class="action-buttons">
                     <a href="{{ route('admin.elections.show', $election) }}" class="btn btn-info btn-sm">
                         <i class="bi bi-eye"></i> View Details
+                    </a>
+                    <a href="{{ route('admin.candidates.index', ['election_id' => $election->id]) }}" class="btn btn-success btn-sm">
+                        <i class="bi bi-people"></i> Candidates
                     </a>
                     <a href="{{ route('admin.elections.edit', $election) }}" class="btn btn-warning btn-sm">
                         <i class="bi bi-pencil"></i> Edit

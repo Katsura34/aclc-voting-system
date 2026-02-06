@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\PositionController;
 use App\Http\Controllers\Admin\CandidateController;
 use App\Http\Controllers\Admin\ResultController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\VotingRecordController;
 use App\Http\Controllers\Student\VotingController;
 
 Route::get('/', function () {
@@ -20,8 +21,8 @@ Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
-// Protected Routes
-Route::middleware(['auth'])->group(function () {
+// Protected Routes - Student
+Route::middleware(['auth:student'])->group(function () {
     // Student Voting Routes
     Route::get('/voting', [VotingController::class, 'index'])->name('voting.index');
     Route::post('/voting/submit', [VotingController::class, 'submit'])->name('voting.submit');
@@ -34,7 +35,7 @@ Route::middleware(['auth'])->group(function () {
 });
 
 // Admin Routes
-Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
+Route::middleware(['auth:admin', 'admin'])->prefix('admin')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
     
     // Election Management
@@ -96,7 +97,11 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Route::get('results/export', [ResultController::class, 'export'])->name('admin.results.export');
     Route::get('results/print', [ResultController::class, 'print'])->name('admin.results.print');
     
-    // User Management
+    // User Management (Students)
+    Route::get('users/download-template', [UserController::class, 'downloadTemplate'])
+        ->name('admin.users.download-template');
+    Route::post('users/import', [UserController::class, 'import'])
+        ->name('admin.users.import');
     Route::patch('users/{user}/reset-vote', [UserController::class, 'resetVote'])
         ->name('admin.users.reset-vote');
     Route::post('users/reset-all-votes', [UserController::class, 'resetAllVotes'])
@@ -110,4 +115,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
         'update' => 'admin.users.update',
         'destroy' => 'admin.users.destroy',
     ]);
+    
+    // Voting Records
+    Route::get('voting-records', [VotingRecordController::class, 'index'])->name('admin.voting-records.index');
+    Route::get('voting-records/export', [VotingRecordController::class, 'export'])->name('admin.voting-records.export');
 });

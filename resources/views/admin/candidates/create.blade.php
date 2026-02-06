@@ -118,7 +118,7 @@
                                 <select class="form-select" id="election_filter">
                                     <option value="">All Elections</option>
                                     @foreach($elections as $election)
-                                        <option value="{{ $election->id }}">{{ $election->title }}</option>
+                                        <option value="{{ $election->id }}" {{ ($selectedElectionId ?? '') == $election->id ? 'selected' : '' }}>{{ $election->title }}</option>
                                     @endforeach
                                 </select>
                                 <small class="text-muted">Filter positions by election</small>
@@ -136,9 +136,9 @@
                                     <option value="">Select Position</option>
                                     @foreach($positions as $position)
                                         <option value="{{ $position->id }}" 
-                                                data-election="{{ $position->election_id }}"
-                                                {{ old('position_id') == $position->id ? 'selected' : '' }}>
-                                            {{ $position->name }} - {{ $position->election->title ?? 'N/A' }}
+                                                data-elections="{{ $position->elections->pluck('id')->join(',') }}"
+                                                {{ old('position_id', $selectedPositionId ?? '') == $position->id ? 'selected' : '' }}>
+                                            {{ $position->name }}
                                         </option>
                                     @endforeach
                                 </select>
@@ -346,7 +346,8 @@
                         return;
                     }
                     
-                    if (selectedElection === '' || option.dataset.election === selectedElection) {
+                    const electionIds = (option.dataset.elections || '').split(',');
+                    if (selectedElection === '' || electionIds.includes(selectedElection)) {
                         option.style.display = 'block';
                     } else {
                         option.style.display = 'none';
@@ -359,6 +360,11 @@
                     positionSelect.value = '';
                 }
             });
+
+            // Trigger election filter on page load if pre-selected
+            if (electionFilter.value) {
+                electionFilter.dispatchEvent(new Event('change'));
+            }
         </script>
     </x-slot>
 </x-admin-layout>

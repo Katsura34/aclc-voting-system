@@ -67,25 +67,26 @@
                             @enderror
                         </div>
 
-                        <!-- Election -->
+                        <!-- Elections (Multi-select) -->
                         <div class="mb-4">
-                            <label for="election_id" class="form-label fw-bold">
-                                Election <span class="text-danger">*</span>
+                            <label for="election_ids" class="form-label fw-bold">
+                                Elections
                             </label>
-                            <select class="form-select @error('election_id') is-invalid @enderror" 
-                                    id="election_id" 
-                                    name="election_id" 
-                                    required>
-                                <option value="">Select Election</option>
+                            <select class="form-select @error('election_ids') is-invalid @enderror" 
+                                    id="election_ids" 
+                                    name="election_ids[]" 
+                                    multiple
+                                    size="4">
                                 @foreach($elections as $election)
-                                    <option value="{{ $election->id }}" {{ old('election_id') == $election->id ? 'selected' : '' }}>
+                                    <option value="{{ $election->id }}" {{ in_array($election->id, old('election_ids', [])) ? 'selected' : '' }}>
                                         {{ $election->title }}
                                     </option>
                                 @endforeach
                             </select>
-                            @error('election_id')
+                            @error('election_ids')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
+                            <small class="text-muted">Hold Ctrl/Cmd to select multiple elections. Leave empty to create an unassigned position.</small>
                         </div>
 
                         <div class="row">
@@ -155,7 +156,7 @@
                             <hr>
                             
                             <div class="mb-2">
-                                <strong>Election:</strong>
+                                <strong>Elections:</strong>
                                 <span id="preview-election" class="float-end badge bg-success">Not selected</span>
                             </div>
                             <div class="mb-2">
@@ -198,9 +199,9 @@
                 document.getElementById('preview-description').textContent = this.value || 'Description will appear here...';
             });
 
-            document.getElementById('election_id').addEventListener('change', function() {
-                const selectedOption = this.options[this.selectedIndex];
-                document.getElementById('preview-election').textContent = selectedOption.text === 'Select Election' ? 'Not selected' : selectedOption.text;
+            document.getElementById('election_ids').addEventListener('change', function() {
+                const selectedOptions = Array.from(this.selectedOptions).map(o => o.text);
+                document.getElementById('preview-election').textContent = selectedOptions.length > 0 ? selectedOptions.join(', ') : 'Not selected';
             });
 
             document.getElementById('max_votes').addEventListener('input', function() {

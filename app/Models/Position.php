@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 class Position extends Model
 {
     protected $fillable = [
-        'election_id',
         'name',
         'description',
         'max_votes',
@@ -20,11 +19,13 @@ class Position extends Model
     ];
 
     /**
-     * Get the election that owns the position.
+     * Get the elections that include this position.
      */
-    public function election()
+    public function elections()
     {
-        return $this->belongsTo(Election::class);
+        return $this->belongsToMany(Election::class, 'election_position')
+            ->withPivot('display_order')
+            ->withTimestamps();
     }
 
     /**

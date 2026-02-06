@@ -34,6 +34,15 @@ class Election extends Model
     }
 
     /**
+     * Get the parties for this election.
+     */
+    public function parties()
+    {
+        return $this->belongsToMany(Party::class, 'election_party')
+            ->withTimestamps();
+    }
+
+    /**
      * Get a query builder for candidates belonging to this election's positions.
      * Note: This is not a standard Eloquent relationship, use ->get() or ->count() on the result.
      * For eager loading candidates, use 'positions.candidates' instead.

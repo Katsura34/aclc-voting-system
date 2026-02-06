@@ -21,4 +21,13 @@ class Party extends Model
     {
         return $this->hasMany(Candidate::class);
     }
+
+    /**
+     * Get the elections that include this party.
+     */
+    public function elections()
+    {
+        return $this->belongsToMany(Election::class, 'election_party')
+            ->withTimestamps();
+    }
 }

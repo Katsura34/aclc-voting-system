@@ -9,10 +9,13 @@ use App\Models\Party;
 use App\Models\Vote;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\DB;
 
 class ElectionController extends Controller
 {
+    private const DATETIME_LOCAL_FORMAT = 'Y-m-d\TH:i:s';
+
     /**
      * Display a listing of elections.
      */
@@ -51,8 +54,8 @@ class ElectionController extends Controller
             $validated = $request->validate([
                 'title' => 'required|string|max:255',
                 'description' => 'nullable|string',
-                'start_date' => 'required|date_format:Y-m-d\TH:i:s',
-                'end_date' => 'required|date_format:Y-m-d\TH:i:s',
+                'start_date' => 'required|date_format:'.self::DATETIME_LOCAL_FORMAT,
+                'end_date' => 'required|date_format:'.self::DATETIME_LOCAL_FORMAT,
                 'is_active' => 'boolean',
                 'positions' => 'nullable|array',
                 'positions.*' => 'exists:positions,id',
@@ -60,14 +63,7 @@ class ElectionController extends Controller
                 'parties.*' => 'exists:parties,id',
             ]);
 
-            $validated['start_date'] = Carbon::createFromFormat('Y-m-d\TH:i:s', $validated['start_date']);
-            $validated['end_date'] = Carbon::createFromFormat('Y-m-d\TH:i:s', $validated['end_date']);
-
-            if ($validated['end_date']->lessThanOrEqualTo($validated['start_date'])) {
-                return redirect()->back()
-                    ->withErrors(['end_date' => 'The end date must be after the start date.'])
-                    ->withInput();
-            }
+            $validated = $this->normalizeDates($validated);
 
             DB::beginTransaction();
             
@@ -153,8 +149,8 @@ class ElectionController extends Controller
             $validated = $request->validate([
                 'title' => 'required|string|max:255',
                 'description' => 'nullable|string',
-                'start_date' => 'required|date_format:Y-m-d\TH:i:s',
-                'end_date' => 'required|date_format:Y-m-d\TH:i:s',
+                'start_date' => 'required|date_format:'.self::DATETIME_LOCAL_FORMAT,
+                'end_date' => 'required|date_format:'.self::DATETIME_LOCAL_FORMAT,
                 'is_active' => 'boolean',
                 'positions' => 'nullable|array',
                 'positions.*' => 'exists:positions,id',
@@ -162,14 +158,7 @@ class ElectionController extends Controller
                 'parties.*' => 'exists:parties,id',
             ]);
 
-            $validated['start_date'] = Carbon::createFromFormat('Y-m-d\TH:i:s', $validated['start_date']);
-            $validated['end_date'] = Carbon::createFromFormat('Y-m-d\TH:i:s', $validated['end_date']);
-
-            if ($validated['end_date']->lessThanOrEqualTo($validated['start_date'])) {
-                return redirect()->back()
-                    ->withErrors(['end_date' => 'The end date must be after the start date.'])
-                    ->withInput();
-            }
+            $validated = $this->normalizeDates($validated);
 
             DB::beginTransaction();
             
@@ -219,6 +208,30 @@ class ElectionController extends Controller
                 ->with('error', 'Failed to update election. Please try again.')
                 ->withInput();
         }
+    }
+
+    /**
+     * Normalize and validate datetime-local fields.
+     */
+    private function normalizeDates(array $validated): array
+    {
+        try {
+            $validated['start_date'] = Carbon::createFromFormat(self::DATETIME_LOCAL_FORMAT, $validated['start_date']);
+            $validated['end_date'] = Carbon::createFromFormat(self::DATETIME_LOCAL_FORMAT, $validated['end_date']);
+        } catch (\Exception $e) {
+            throw ValidationException::withMessages([
+                'start_date' => 'Invalid date format.',
+                'end_date' => 'Invalid date format.',
+            ]);
+        }
+
+        if ($validated['end_date']->lessThanOrEqualTo($validated['start_date'])) {
+            throw ValidationException::withMessages([
+                'end_date' => 'The end date must be after the start date.',
+            ]);
+        }
+
+        return $validated;
     }
 
     /**

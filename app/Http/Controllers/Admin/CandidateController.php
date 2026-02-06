@@ -277,6 +277,8 @@ class CandidateController extends Controller
         try {
             $request->validate([
                 'csv_file' => 'required|file|mimes:csv,txt|max:2048',
+                'party_id' => 'required|exists:parties,id',
+                'election_id' => 'nullable|exists:elections,id',
             ]);
 
             $file = $request->file('csv_file');
@@ -295,9 +297,11 @@ class CandidateController extends Controller
             
             // Get headers
             $headers = array_shift($csvData);
+            // Normalize headers for case-insensitive matching
+            $headers = array_map(fn($header) => strtolower(trim($header)), $headers);
             
             // Validate headers
-            $requiredHeaders = ['first_name', 'last_name', 'position_id', 'party_id'];
+            $requiredHeaders = ['first_name', 'last_name', 'position_name'];
             $missingHeaders = array_diff($requiredHeaders, $headers);
             
             if (!empty($missingHeaders)) {
@@ -309,14 +313,57 @@ class CandidateController extends Controller
             $skippedCount = 0;
             $errors = [];
 
+            $positionsQuery = Position::select('id', 'name');
+            if ($request->filled('election_id')) {
+                $positionsQuery->where('election_id', $request->election_id);
+            }
+            $positions = $positionsQuery->get();
+
+            $positionNameCounts = [];
+            $positionNameLookup = [];
+            foreach ($positions as $position) {
+                $key = strtolower($position->name);
+                $positionNameCounts[$key] = ($positionNameCounts[$key] ?? 0) + 1;
+                $positionNameLookup[$key][] = $position->name;
+            }
+
+            $duplicatePositionKeys = array_keys(array_filter($positionNameCounts, fn($count) => $count > 1));
+
+            if (!empty($duplicatePositionKeys)) {
+                $duplicatePositionNames = array_map(
+                    fn($key) => implode(' / ', array_unique($positionNameLookup[$key] ?? [$key])),
+                    $duplicatePositionKeys
+                );
+                return redirect()->route('admin.candidates.index')
+                    ->with('error', 'Multiple positions share the same name: ' . implode(', ', $duplicatePositionNames) . '. Please ensure unique position names before importing.');
+            }
+
+            $positionMap = [];
+            foreach ($positions as $position) {
+                $positionMap[strtolower($position->name)] = $position->id;
+            }
+
+            if (empty($positionMap)) {
+                return redirect()->route('admin.candidates.index')
+                    ->with('error', 'No positions found. Please create positions before importing candidates.');
+            }
+
             DB::beginTransaction();
             
             try {
                 foreach ($csvData as $index => $row) {
                     $rowNumber = $index + 2; // +2 because of header and 0-based index
                     
+                    $row = array_map('trim', $row);
+
                     // Skip empty rows
                     if (empty(array_filter($row))) {
+                        continue;
+                    }
+
+                    if (count($row) !== count($headers)) {
+                        $skippedCount++;
+                        $errors[] = "Row {$rowNumber}: Expected " . count($headers) . " columns, found " . count($row) . ".";
                         continue;
                     }
 
@@ -329,8 +376,7 @@ class CandidateController extends Controller
                         'last_name' => 'required|string|max:255',
                         'middle_name' => 'nullable|string|max:255',
                         'bio' => 'nullable|string',
-                        'position_id' => 'required|exists:positions,id',
-                        'party_id' => 'required|exists:parties,id',
+                        'position_name' => 'required|string',
                     ]);
 
                     if ($validator->fails()) {
@@ -339,14 +385,22 @@ class CandidateController extends Controller
                         continue;
                     }
 
+                    $positionKey = strtolower($data['position_name']);
+                    if (!isset($positionMap[$positionKey])) {
+                        $skippedCount++;
+                        $errors[] = "Row {$rowNumber}: Position \"{$data['position_name']}\" not found.";
+                        continue;
+                    }
+                    $positionId = $positionMap[$positionKey];
+
                     // Create candidate
                     Candidate::create([
                         'first_name' => $data['first_name'],
                         'last_name' => $data['last_name'],
                         'middle_name' => $data['middle_name'] ?? null,
                         'bio' => $data['bio'] ?? null,
-                        'position_id' => $data['position_id'],
-                        'party_id' => $data['party_id'],
+                        'position_id' => $positionId,
+                        'party_id' => $request->party_id,
                     ]);
 
                     $importedCount++;
@@ -397,7 +451,7 @@ class CandidateController extends Controller
             'Content-Disposition' => 'attachment; filename="candidates_template.csv"',
         ];
 
-        $columns = ['first_name', 'last_name', 'middle_name', 'bio', 'position_id', 'party_id'];
+        $columns = ['first_name', 'last_name', 'middle_name', 'bio', 'position_name'];
         
         $callback = function() use ($columns) {
             $file = fopen('php://output', 'w');
@@ -411,24 +465,21 @@ class CandidateController extends Controller
                 'Dela Cruz',
                 'Santos',
                 'Experienced leader with a vision for change',
-                '1',
-                '1'
+                'President'
             ]);
             fputcsv($file, [
                 'Maria',
                 'Garcia',
                 'Lopez',
                 'Dedicated to serving the student body',
-                '1',
-                '2'
+                'President'
             ]);
             fputcsv($file, [
                 'Jose',
                 'Reyes',
                 '',
                 'Committed to transparency and accountability',
-                '2',
-                '1'
+                'Vice President'
             ]);
             
             fclose($file);

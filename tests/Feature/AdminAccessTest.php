@@ -2,7 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
+use App\Models\Admin;
+use App\Models\Student;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -15,12 +16,13 @@ class AdminAccessTest extends TestCase
      */
     public function test_admin_can_access_admin_dashboard(): void
     {
-        $admin = User::factory()->create([
-            'user_type' => 'admin',
-            'usn' => 'ADMIN001',
+        $admin = Admin::create([
+            'username' => 'admin001',
+            'name' => 'Admin User',
+            'password' => 'password',
         ]);
 
-        $response = $this->actingAs($admin)->get('/admin/dashboard');
+        $response = $this->actingAs($admin, 'admin')->get('/admin/dashboard');
 
         $response->assertStatus(200);
     }
@@ -30,15 +32,16 @@ class AdminAccessTest extends TestCase
      */
     public function test_student_cannot_access_admin_dashboard(): void
     {
-        $student = User::factory()->create([
-            'user_type' => 'student',
+        $student = Student::create([
             'usn' => '2024-001-BS',
+            'name' => 'Student One',
+            'email' => 'student1@example.com',
+            'password' => 'password',
         ]);
 
-        $response = $this->actingAs($student)->get('/admin/dashboard');
+        $response = $this->actingAs($student, 'student')->get('/admin/dashboard');
 
-        $response->assertRedirect(route('voting.index'));
-        $response->assertSessionHas('error', 'You do not have permission to access this page.');
+        $response->assertRedirect(route('login'));
     }
 
     /**
@@ -46,15 +49,16 @@ class AdminAccessTest extends TestCase
      */
     public function test_student_cannot_access_admin_candidates(): void
     {
-        $student = User::factory()->create([
-            'user_type' => 'student',
+        $student = Student::create([
             'usn' => '2024-002-BS',
+            'name' => 'Student Two',
+            'email' => 'student2@example.com',
+            'password' => 'password',
         ]);
 
-        $response = $this->actingAs($student)->get('/admin/candidates');
+        $response = $this->actingAs($student, 'student')->get('/admin/candidates');
 
-        $response->assertRedirect(route('voting.index'));
-        $response->assertSessionHas('error', 'You do not have permission to access this page.');
+        $response->assertRedirect(route('login'));
     }
 
     /**
@@ -72,12 +76,13 @@ class AdminAccessTest extends TestCase
      */
     public function test_admin_can_access_admin_candidates(): void
     {
-        $admin = User::factory()->create([
-            'user_type' => 'admin',
-            'usn' => 'ADMIN002',
+        $admin = Admin::create([
+            'username' => 'admin002',
+            'name' => 'Admin Two',
+            'password' => 'password',
         ]);
 
-        $response = $this->actingAs($admin)->get('/admin/candidates');
+        $response = $this->actingAs($admin, 'admin')->get('/admin/candidates');
 
         $response->assertStatus(200);
     }
@@ -87,15 +92,16 @@ class AdminAccessTest extends TestCase
      */
     public function test_student_cannot_access_admin_elections(): void
     {
-        $student = User::factory()->create([
-            'user_type' => 'student',
+        $student = Student::create([
             'usn' => '2024-003-BS',
+            'name' => 'Student Three',
+            'email' => 'student3@example.com',
+            'password' => 'password',
         ]);
 
-        $response = $this->actingAs($student)->get('/admin/elections');
+        $response = $this->actingAs($student, 'student')->get('/admin/elections');
 
-        $response->assertRedirect(route('voting.index'));
-        $response->assertSessionHas('error', 'You do not have permission to access this page.');
+        $response->assertRedirect(route('login'));
     }
 
     /**
@@ -103,14 +109,15 @@ class AdminAccessTest extends TestCase
      */
     public function test_student_cannot_access_admin_results(): void
     {
-        $student = User::factory()->create([
-            'user_type' => 'student',
+        $student = Student::create([
             'usn' => '2024-004-BS',
+            'name' => 'Student Four',
+            'email' => 'student4@example.com',
+            'password' => 'password',
         ]);
 
-        $response = $this->actingAs($student)->get('/admin/results');
+        $response = $this->actingAs($student, 'student')->get('/admin/results');
 
-        $response->assertRedirect(route('voting.index'));
-        $response->assertSessionHas('error', 'You do not have permission to access this page.');
+        $response->assertRedirect(route('login'));
     }
 }

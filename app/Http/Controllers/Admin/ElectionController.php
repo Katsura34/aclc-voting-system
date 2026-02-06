@@ -8,10 +8,14 @@ use App\Models\Position;
 use App\Models\Party;
 use App\Models\Vote;
 use Illuminate\Http\Request;
+use Carbon\Carbon;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\DB;
 
 class ElectionController extends Controller
 {
+    private const DATETIME_LOCAL_FORMAT = 'Y-m-d\TH:i:s';
+
     /**
      * Display a listing of elections.
      */
@@ -50,14 +54,16 @@ class ElectionController extends Controller
             $validated = $request->validate([
                 'title' => 'required|string|max:255',
                 'description' => 'nullable|string',
-                'start_date' => 'required|date',
-                'end_date' => 'required|date|after:start_date',
+                'start_date' => 'required|date_format:'.self::DATETIME_LOCAL_FORMAT,
+                'end_date' => 'required|date_format:'.self::DATETIME_LOCAL_FORMAT,
                 'is_active' => 'boolean',
                 'positions' => 'nullable|array',
                 'positions.*' => 'exists:positions,id',
                 'parties' => 'nullable|array',
                 'parties.*' => 'exists:parties,id',
             ]);
+
+            $validated = $this->normalizeDates($validated);
 
             DB::beginTransaction();
             
@@ -143,14 +149,16 @@ class ElectionController extends Controller
             $validated = $request->validate([
                 'title' => 'required|string|max:255',
                 'description' => 'nullable|string',
-                'start_date' => 'required|date',
-                'end_date' => 'required|date|after:start_date',
+                'start_date' => 'required|date_format:'.self::DATETIME_LOCAL_FORMAT,
+                'end_date' => 'required|date_format:'.self::DATETIME_LOCAL_FORMAT,
                 'is_active' => 'boolean',
                 'positions' => 'nullable|array',
                 'positions.*' => 'exists:positions,id',
                 'parties' => 'nullable|array',
                 'parties.*' => 'exists:parties,id',
             ]);
+
+            $validated = $this->normalizeDates($validated);
 
             DB::beginTransaction();
             
@@ -200,6 +208,30 @@ class ElectionController extends Controller
                 ->with('error', 'Failed to update election. Please try again.')
                 ->withInput();
         }
+    }
+
+    /**
+     * Normalize and validate datetime-local fields.
+     */
+    private function normalizeDates(array $validated): array
+    {
+        try {
+            $validated['start_date'] = Carbon::createFromFormat(self::DATETIME_LOCAL_FORMAT, $validated['start_date']);
+            $validated['end_date'] = Carbon::createFromFormat(self::DATETIME_LOCAL_FORMAT, $validated['end_date']);
+        } catch (\Exception $e) {
+            throw ValidationException::withMessages([
+                'start_date' => 'Invalid date format.',
+                'end_date' => 'Invalid date format.',
+            ]);
+        }
+
+        if ($validated['end_date']->lessThanOrEqualTo($validated['start_date'])) {
+            throw ValidationException::withMessages([
+                'end_date' => 'The end date must be after the start date.',
+            ]);
+        }
+
+        return $validated;
     }
 
     /**

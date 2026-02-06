@@ -12,24 +12,38 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('students', function (Blueprint $table) {
-            if (!Schema::hasColumn('students', 'firstname')) {
-                $table->string('firstname')->nullable()->after('usn');
+            $anchor = 'usn';
+
+            if (Schema::hasColumn('students', 'firstname')) {
+                $anchor = 'firstname';
+            } else {
+                $table->string('firstname')->nullable()->after($anchor);
+                $anchor = 'firstname';
             }
 
-            if (!Schema::hasColumn('students', 'lastname')) {
-                $table->string('lastname')->nullable()->after('firstname');
+            if (Schema::hasColumn('students', 'lastname')) {
+                $anchor = 'lastname';
+            } else {
+                $table->string('lastname')->nullable()->after($anchor);
+                $anchor = 'lastname';
             }
 
-            if (!Schema::hasColumn('students', 'strand')) {
-                $table->string('strand')->nullable()->after('lastname');
+            if (Schema::hasColumn('students', 'strand')) {
+                $anchor = 'strand';
+            } else {
+                $table->string('strand')->nullable()->after($anchor);
+                $anchor = 'strand';
             }
 
-            if (!Schema::hasColumn('students', 'year')) {
-                $table->string('year')->nullable()->after('strand');
+            if (Schema::hasColumn('students', 'year')) {
+                $anchor = 'year';
+            } else {
+                $table->string('year')->nullable()->after($anchor);
+                $anchor = 'year';
             }
 
-            if (!Schema::hasColumn('students', 'gender')) {
-                $table->string('gender')->nullable()->after('year');
+            if (! Schema::hasColumn('students', 'gender')) {
+                $table->string('gender')->nullable()->after($anchor);
             }
 
             if (Schema::hasColumn('students', 'email')) {

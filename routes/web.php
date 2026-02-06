@@ -97,7 +97,11 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->group(function () {
     Route::get('results/export', [ResultController::class, 'export'])->name('admin.results.export');
     Route::get('results/print', [ResultController::class, 'print'])->name('admin.results.print');
     
-    // User Management
+    // User Management (Students)
+    Route::get('users/download-template', [UserController::class, 'downloadTemplate'])
+        ->name('admin.users.download-template');
+    Route::post('users/import', [UserController::class, 'import'])
+        ->name('admin.users.import');
     Route::patch('users/{user}/reset-vote', [UserController::class, 'resetVote'])
         ->name('admin.users.reset-vote');
     Route::post('users/reset-all-votes', [UserController::class, 'resetAllVotes'])

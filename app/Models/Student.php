@@ -17,11 +17,27 @@ class Student extends Authenticatable
      */
     protected $fillable = [
         'usn',
+        'first_name',
+        'last_name',
         'name',
         'email',
+        'strand',
+        'year',
+        'gender',
         'password',
         'has_voted',
     ];
+
+    /**
+     * Get the student's full name.
+     */
+    public function getFullNameAttribute(): string
+    {
+        if ($this->first_name || $this->last_name) {
+            return trim($this->first_name . ' ' . $this->last_name);
+        }
+        return $this->name ?? '';
+    }
 
     /**
      * The attributes that should be hidden for serialization.

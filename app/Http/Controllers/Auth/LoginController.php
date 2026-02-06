@@ -39,11 +39,11 @@ class LoginController extends Controller
             $admin = Admin::where('username', $usn)->first();
             
             if ($admin && Hash::check($password, $admin->password)) {
-                // Log in as admin
+                // Log in as admin (this also regenerates the session)
                 Auth::guard('admin')->login($admin, $request->filled('remember'));
                 
-                // Regenerate session first to prevent fixation attacks
-                $request->session()->regenerate();
+                // Set admin as the default guard so session user_id is stored correctly
+                Auth::shouldUse('admin');
                 
                 // Invalidate all other sessions for this admin
                 $currentSessionId = $request->session()->getId();
@@ -65,11 +65,11 @@ class LoginController extends Controller
             $student = Student::where('usn', $usn)->first();
             
             if ($student && Hash::check($password, $student->password)) {
-                // Log in as student
+                // Log in as student (this also regenerates the session)
                 Auth::guard('student')->login($student, $request->filled('remember'));
                 
-                // Regenerate session first to prevent fixation attacks
-                $request->session()->regenerate();
+                // Set student as the default guard so session user_id is stored correctly
+                Auth::shouldUse('student');
                 
                 // Invalidate all other sessions for this student
                 $currentSessionId = $request->session()->getId();

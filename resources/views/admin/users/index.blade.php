@@ -1,4 +1,4 @@
-<x-admin-layout title="Manage Users">
+<x-admin-layout title="Manage Students">
     <x-slot name="styles">
         <style>
             .user-card {
@@ -24,15 +24,18 @@
         <!-- Header -->
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <h2><i class="bi bi-people-fill"></i> Manage Users</h2>
-                <p class="text-muted mb-0">View and manage all system users</p>
+                <h2><i class="bi bi-people-fill"></i> Manage Students</h2>
+                <p class="text-muted mb-0">View and manage all students</p>
             </div>
             <div class="btn-group">
                 <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#resetAllVotesModal">
                     <i class="bi bi-arrow-counterclockwise"></i> Reset All Votes
                 </button>
+                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#importModal">
+                    <i class="bi bi-upload"></i> Bulk Import CSV
+                </button>
                 <a href="{{ route('admin.users.create') }}" class="btn btn-primary">
-                    <i class="bi bi-plus-circle"></i> Add New User
+                    <i class="bi bi-plus-circle"></i> Add New Student
                 </a>
             </div>
         </div>
@@ -52,25 +55,29 @@
             </div>
         @endif
 
+        @if(session('import_errors'))
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle"></i> <strong>Import Errors:</strong>
+                <ul class="mb-0 mt-1">
+                    @foreach(session('import_errors') as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        @endif
+
         <!-- Search and Filter -->
         <div class="card filter-card mb-4">
             <div class="card-body">
                 <form method="GET" action="{{ route('admin.users.index') }}" class="row g-3">
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <label class="form-label"><i class="bi bi-search"></i> Search</label>
                         <input type="text" class="form-control" name="search" 
-                               placeholder="Student ID, Name, Email..."
+                               placeholder="USN, First Name, Last Name..."
                                value="{{ request('search') }}">
                     </div>
-                    <div class="col-md-3">
-                        <label class="form-label"><i class="bi bi-person-badge"></i> User Type</label>
-                        <select class="form-select" name="user_type">
-                            <option value="">All Types</option>
-                            <option value="student" {{ request('user_type') == 'student' ? 'selected' : '' }}>Student</option>
-                            <option value="admin" {{ request('user_type') == 'admin' ? 'selected' : '' }}>Admin</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <label class="form-label"><i class="bi bi-check-circle"></i> Voting Status</label>
                         <select class="form-select" name="has_voted">
                             <option value="">All Status</option>
@@ -87,22 +94,22 @@
             </div>
         </div>
 
-        <!-- Users Table -->
+        <!-- Students Table -->
         <div class="card">
             <div class="card-header bg-dark text-white">
-                <h5 class="mb-0"><i class="bi bi-table"></i> Users List ({{ $users->total() }} users)</h5>
+                <h5 class="mb-0"><i class="bi bi-table"></i> Students List ({{ $users->total() }} students)</h5>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
                     <table class="table table-hover mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th>Student ID</th>
-                                <th>Name</th>
-                                <th>Email</th>
-                                <th>Type</th>
-                                <th>Course</th>
-                                <th>Year Level</th>
+                                <th>USN</th>
+                                <th>Last Name</th>
+                                <th>First Name</th>
+                                <th>Strand</th>
+                                <th>Year</th>
+                                <th>Gender</th>
                                 <th>Voting Status</th>
                                 <th>Actions</th>
                             </tr>
@@ -110,22 +117,12 @@
                         <tbody>
                             @forelse($users as $user)
                                 <tr>
-                                    <td><strong>{{ $user->student_id }}</strong></td>
-                                    <td>{{ $user->first_name }} {{ $user->last_name }}</td>
-                                    <td>{{ $user->email }}</td>
-                                    <td>
-                                        @if($user->user_type === 'admin')
-                                            <span class="badge bg-danger">
-                                                <i class="bi bi-shield-fill"></i> Admin
-                                            </span>
-                                        @else
-                                            <span class="badge bg-primary">
-                                                <i class="bi bi-person"></i> Student
-                                            </span>
-                                        @endif
-                                    </td>
-                                    <td>{{ $user->course ?? 'N/A' }}</td>
-                                    <td>{{ $user->year_level ?? 'N/A' }}</td>
+                                    <td><strong>{{ $user->usn }}</strong></td>
+                                    <td>{{ $user->last_name ?? '' }}</td>
+                                    <td>{{ $user->first_name ?? '' }}</td>
+                                    <td>{{ $user->strand ?? 'N/A' }}</td>
+                                    <td>{{ $user->year ?? 'N/A' }}</td>
+                                    <td>{{ $user->gender ?? 'N/A' }}</td>
                                     <td>
                                         @if($user->has_voted)
                                             <span class="badge bg-success">
@@ -145,11 +142,11 @@
                                                 <i class="bi bi-pencil"></i>
                                             </a>
                                             
-                                            @if($user->has_voted && $user->user_type === 'student')
+                                            @if($user->has_voted)
                                                 <form action="{{ route('admin.users.reset-vote', $user) }}" 
                                                       method="POST" 
                                                       class="d-inline"
-                                                      onsubmit="return confirm('Reset voting status for this user?')">
+                                                      onsubmit="return confirm('Reset voting status for this student?')">
                                                     @csrf
                                                     @method('PATCH')
                                                     <button type="submit" class="btn btn-info" title="Reset Vote">
@@ -161,13 +158,12 @@
                                             <form action="{{ route('admin.users.destroy', $user) }}" 
                                                   method="POST" 
                                                   class="d-inline"
-                                                  onsubmit="return confirm('Are you sure you want to delete this user?')">
+                                                  onsubmit="return confirm('Are you sure you want to delete this student?')">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" 
                                                         class="btn btn-danger"
-                                                        title="Delete"
-                                                        {{ $user->id === auth()->user()->id ? 'disabled' : '' }}>
+                                                        title="Delete">
                                                     <i class="bi bi-trash"></i>
                                                 </button>
                                             </form>
@@ -178,7 +174,7 @@
                                 <tr>
                                     <td colspan="8" class="text-center py-4">
                                         <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc;"></i>
-                                        <p class="text-muted mt-2">No users found</p>
+                                        <p class="text-muted mt-2">No students found</p>
                                     </td>
                                 </tr>
                             @endforelse
@@ -217,6 +213,46 @@
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                         <button type="submit" class="btn btn-warning">
                             <i class="bi bi-arrow-counterclockwise"></i> Reset All Votes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import CSV Modal -->
+    <div class="modal fade" id="importModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-upload"></i> Bulk Import Students from CSV
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form action="{{ route('admin.users.import') }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <div class="modal-body">
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> 
+                            <strong>CSV Format:</strong> usn, lastname, firstname, strand, year, gender, password
+                            <br><small>Required columns: usn, lastname, firstname, password</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="csv_file" class="form-label">Select CSV File</label>
+                            <input type="file" class="form-control" id="csv_file" name="csv_file" accept=".csv,.txt" required>
+                            <small class="text-muted">Max file size: 2MB. Accepted formats: .csv, .txt</small>
+                        </div>
+
+                        <a href="{{ route('admin.users.download-template') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-download"></i> Download Sample Template
+                        </a>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-upload"></i> Import Students
                         </button>
                     </div>
                 </form>

@@ -321,16 +321,10 @@ class CandidateController extends Controller
             }
             $positions = $positionsQuery->get();
 
-            $positionMap = [];
             $positionNameCounts = [];
-
             foreach ($positions as $position) {
                 $key = strtolower($position->name);
                 $positionNameCounts[$key] = ($positionNameCounts[$key] ?? 0) + 1;
-
-                if (!isset($positionMap[$key])) {
-                    $positionMap[$key] = $position->id;
-                }
             }
 
             $duplicatePositionNames = array_keys(array_filter($positionNameCounts, fn($count) => $count > 1));
@@ -338,6 +332,11 @@ class CandidateController extends Controller
             if (!empty($duplicatePositionNames)) {
                 return redirect()->route('admin.candidates.index')
                     ->with('error', 'Multiple positions share the same name: ' . implode(', ', $duplicatePositionNames) . '. Please ensure unique position names before importing.');
+            }
+
+            $positionMap = [];
+            foreach ($positions as $position) {
+                $positionMap[strtolower($position->name)] = $position->id;
             }
 
             if (empty($positionMap)) {
@@ -357,6 +356,12 @@ class CandidateController extends Controller
                     }
 
                     $row = array_map('trim', $row);
+
+                    if (count($row) !== count($headers)) {
+                        $skippedCount++;
+                        $errors[] = "Row {$rowNumber}: Expected " . count($headers) . " columns, found " . count($row) . ".";
+                        continue;
+                    }
 
                     // Create associative array
                     $data = array_combine($headers, $row);

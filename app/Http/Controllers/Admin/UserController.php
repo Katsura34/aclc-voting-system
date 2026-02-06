@@ -24,8 +24,8 @@ class UserController extends Controller
             $search = $request->search;
             $query->where(function($q) use ($search) {
                 $q->where('usn', 'like', "%{$search}%")
-                  ->orWhere('first_name', 'like', "%{$search}%")
-                  ->orWhere('last_name', 'like', "%{$search}%")
+                  ->orWhere('firstname', 'like', "%{$search}%")
+                  ->orWhere('lastname', 'like', "%{$search}%")
                   ->orWhere('name', 'like', "%{$search}%");
             });
         }
@@ -56,8 +56,8 @@ class UserController extends Controller
         try {
             $validated = $request->validate([
                 'usn' => 'required|string|max:50|unique:students,usn',
-                'first_name' => 'required|string|max:255',
-                'last_name' => 'required|string|max:255',
+                'firstname' => 'required|string|max:255',
+                'lastname' => 'required|string|max:255',
                 'strand' => 'nullable|string|max:255',
                 'year' => 'nullable|string|max:50',
                 'gender' => 'nullable|string|in:Male,Female',
@@ -68,7 +68,7 @@ class UserController extends Controller
             
             try {
                 $validated['password'] = Hash::make($validated['password']);
-                $validated['name'] = $validated['first_name'] . ' ' . $validated['last_name'];
+                $validated['name'] = $validated['firstname'] . ' ' . $validated['lastname'];
                 $validated['has_voted'] = false;
 
                 Student::create($validated);
@@ -119,8 +119,8 @@ class UserController extends Controller
                     'max:50',
                     Rule::unique('students', 'usn')->ignore($user->id)
                 ],
-                'first_name' => 'required|string|max:255',
-                'last_name' => 'required|string|max:255',
+                'firstname' => 'required|string|max:255',
+                'lastname' => 'required|string|max:255',
                 'strand' => 'nullable|string|max:255',
                 'year' => 'nullable|string|max:50',
                 'gender' => 'nullable|string|in:Male,Female',
@@ -138,7 +138,7 @@ class UserController extends Controller
                     unset($validated['password']);
                 }
 
-                $validated['name'] = $validated['first_name'] . ' ' . $validated['last_name'];
+                $validated['name'] = $validated['firstname'] . ' ' . $validated['lastname'];
 
                 $user->update($validated);
                 
@@ -344,8 +344,8 @@ class UserController extends Controller
                     // Create student
                     Student::create([
                         'usn' => $data['usn'],
-                        'first_name' => $data['firstname'],
-                        'last_name' => $data['lastname'],
+                        'firstname' => $data['firstname'],
+                        'lastname' => $data['lastname'],
                         'name' => $data['firstname'] . ' ' . $data['lastname'],
                         'strand' => $data['strand'] ?? null,
                         'year' => $data['year'] ?? null,

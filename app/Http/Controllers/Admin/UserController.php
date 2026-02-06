@@ -22,9 +22,9 @@ class UserController extends Controller
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
-                $q->where('student_id', 'like', "%{$search}%")
-                  ->orWhere('first_name', 'like', "%{$search}%")
-                  ->orWhere('last_name', 'like', "%{$search}%")
+                $q->where('usn', 'like', "%{$search}%")
+                  ->orWhere('firstname', 'like', "%{$search}%")
+                  ->orWhere('lastname', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%");
             });
         }
@@ -59,14 +59,15 @@ class UserController extends Controller
     {
         try {
             $validated = $request->validate([
-                'student_id' => 'required|string|max:50|unique:users,student_id',
-                'first_name' => 'required|string|max:100',
-                'last_name' => 'required|string|max:100',
+                'usn' => 'required|string|max:50|unique:users,usn',
+                'firstname' => 'required|string|max:100',
+                'lastname' => 'required|string|max:100',
                 'email' => 'required|email|max:255|unique:users,email',
                 'password' => 'required|string|min:8|confirmed',
                 'user_type' => 'required|in:student,admin',
-                'year_level' => 'nullable|string|max:50',
-                'course' => 'nullable|string|max:100',
+                'strand' => 'nullable|string|max:100',
+                'year' => 'nullable|string|max:50',
+                'gender' => 'nullable|in:Male,Female,Other',
             ]);
 
             DB::beginTransaction();
@@ -79,7 +80,7 @@ class UserController extends Controller
                 
                 DB::commit();
 
-                \Log::info('User created', ['student_id' => $validated['student_id']]);
+                \Log::info('User created', ['usn' => $validated['usn']]);
 
                 return redirect()->route('admin.users.index')
                     ->with('success', 'User created successfully!');
@@ -117,14 +118,14 @@ class UserController extends Controller
     {
         try {
             $validated = $request->validate([
-                'student_id' => [
+                'usn' => [
                     'required',
                     'string',
                     'max:50',
-                    Rule::unique('users', 'student_id')->ignore($user->id)
+                    Rule::unique('users', 'usn')->ignore($user->id)
                 ],
-                'first_name' => 'required|string|max:100',
-                'last_name' => 'required|string|max:100',
+                'firstname' => 'required|string|max:100',
+                'lastname' => 'required|string|max:100',
                 'email' => [
                     'required',
                     'email',
@@ -133,8 +134,9 @@ class UserController extends Controller
                 ],
                 'password' => 'nullable|string|min:8|confirmed',
                 'user_type' => 'required|in:student,admin',
-                'year_level' => 'nullable|string|max:50',
-                'course' => 'nullable|string|max:100',
+                'strand' => 'nullable|string|max:100',
+                'year' => 'nullable|string|max:50',
+                'gender' => 'nullable|in:Male,Female,Other',
                 'has_voted' => 'boolean',
             ]);
 
@@ -152,7 +154,7 @@ class UserController extends Controller
                 
                 DB::commit();
 
-                \Log::info('User updated', ['user_id' => $user->id, 'student_id' => $user->student_id]);
+                \Log::info('User updated', ['user_id' => $user->id, 'usn' => $user->usn]);
 
                 return redirect()->route('admin.users.index')
                     ->with('success', 'User updated successfully!');
@@ -274,6 +276,151 @@ class UserController extends Controller
             
             return redirect()->route('admin.users.index')
                 ->with('error', 'Failed to reset all voting statuses. Please try again.');
+        }
+    }
+
+    /**
+     * Download CSV template for bulk import.
+     */
+    public function downloadTemplate()
+    {
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="users_import_template.csv"',
+        ];
+
+        $callback = function() {
+            $file = fopen('php://output', 'w');
+            
+            // Add CSV headers
+            fputcsv($file, ['usn', 'lastname', 'firstname', 'strand', 'year', 'gender', 'password']);
+            
+            // Add example row
+            fputcsv($file, ['2024-001', 'Doe', 'John', 'STEM', '1st Year', 'Male', 'password123']);
+            fputcsv($file, ['2024-002', 'Smith', 'Jane', 'ABM', '2nd Year', 'Female', 'password123']);
+            
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Import users from CSV file.
+     */
+    public function import(Request $request)
+    {
+        try {
+            $request->validate([
+                'csv_file' => 'required|file|mimes:csv,txt|max:2048',
+            ]);
+
+            $file = $request->file('csv_file');
+            $path = $file->getRealPath();
+            
+            DB::beginTransaction();
+            
+            try {
+                $csv = array_map('str_getcsv', file($path));
+                $header = array_shift($csv); // Remove header row
+                
+                // Validate header format
+                $expectedHeader = ['usn', 'lastname', 'firstname', 'strand', 'year', 'gender', 'password'];
+                if ($header !== $expectedHeader) {
+                    return redirect()->back()
+                        ->with('error', 'Invalid CSV format. Please use the template provided.');
+                }
+                
+                $imported = 0;
+                $errors = [];
+                
+                foreach ($csv as $index => $row) {
+                    $lineNumber = $index + 2; // +2 because we removed header and arrays are 0-indexed
+                    
+                    // Skip empty rows
+                    if (empty(array_filter($row))) {
+                        continue;
+                    }
+                    
+                    // Validate row has correct number of columns
+                    if (count($row) !== 7) {
+                        $errors[] = "Line {$lineNumber}: Invalid number of columns";
+                        continue;
+                    }
+                    
+                    list($usn, $lastname, $firstname, $strand, $year, $gender, $password) = $row;
+                    
+                    // Basic validation
+                    if (empty($usn) || empty($lastname) || empty($firstname) || empty($password)) {
+                        $errors[] = "Line {$lineNumber}: USN, lastname, firstname, and password are required";
+                        continue;
+                    }
+                    
+                    // Check if user already exists
+                    if (User::where('usn', $usn)->exists()) {
+                        $errors[] = "Line {$lineNumber}: USN '{$usn}' already exists";
+                        continue;
+                    }
+                    
+                    // Validate gender
+                    if (!empty($gender) && !in_array($gender, ['Male', 'Female', 'Other'])) {
+                        $errors[] = "Line {$lineNumber}: Invalid gender value. Must be Male, Female, or Other";
+                        continue;
+                    }
+                    
+                    try {
+                        // Create user
+                        User::create([
+                            'usn' => $usn,
+                            'lastname' => $lastname,
+                            'firstname' => $firstname,
+                            'strand' => $strand ?: null,
+                            'year' => $year ?: null,
+                            'gender' => $gender ?: null,
+                            'email' => $usn . '@aclc.edu.ph', // Generate email from USN
+                            'password' => Hash::make($password),
+                            'user_type' => 'student',
+                            'has_voted' => false,
+                        ]);
+                        
+                        $imported++;
+                    } catch (\Exception $e) {
+                        $errors[] = "Line {$lineNumber}: " . $e->getMessage();
+                    }
+                }
+                
+                DB::commit();
+                
+                \Log::info('Users imported from CSV', [
+                    'imported' => $imported,
+                    'errors' => count($errors)
+                ]);
+                
+                $message = "Successfully imported {$imported} user(s)";
+                if (count($errors) > 0) {
+                    $message .= ". " . count($errors) . " error(s) occurred: " . implode('; ', array_slice($errors, 0, 5));
+                    if (count($errors) > 5) {
+                        $message .= " (and " . (count($errors) - 5) . " more)";
+                    }
+                }
+                
+                return redirect()->route('admin.users.index')
+                    ->with(count($errors) > 0 ? 'error' : 'success', $message);
+                    
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return redirect()->back()
+                ->withErrors($e->errors());
+        } catch (\Exception $e) {
+            \Log::error('CSV import error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return redirect()->back()
+                ->with('error', 'Failed to import users. Please check the CSV format and try again.');
         }
     }
 }

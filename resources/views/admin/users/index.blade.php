@@ -28,6 +28,12 @@
                 <p class="text-muted mb-0">View and manage all system Student</p>
             </div>
             <div class="btn-group">
+                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#importModal">
+                    <i class="bi bi-upload"></i> Import CSV
+                </button>
+                <a href="{{ route('admin.users.download-template') }}" class="btn btn-info">
+                    <i class="bi bi-download"></i> Download Template
+                </a>
                 <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#resetAllVotesModal">
                     <i class="bi bi-arrow-counterclockwise"></i> Reset All Votes
                 </button>
@@ -59,7 +65,7 @@
                     <div class="col-md-4">
                         <label class="form-label"><i class="bi bi-search"></i> Search</label>
                         <input type="text" class="form-control" name="search" 
-                               placeholder="Student ID, Name, Email..."
+                               placeholder="USN, Name, Email..."
                                value="{{ request('search') }}">
                     </div>
                     <div class="col-md-3">
@@ -97,12 +103,13 @@
                     <table class="table table-hover mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th>Student ID</th>
+                                <th>USN</th>
                                 <th>Name</th>
                                 <th>Email</th>
                                 <th>Type</th>
-                                <th>Course</th>
-                                <th>Year Level</th>
+                                <th>Strand</th>
+                                <th>Year</th>
+                                <th>Gender</th>
                                 <th>Voting Status</th>
                                 <th>Actions</th>
                             </tr>
@@ -110,8 +117,8 @@
                         <tbody>
                             @forelse($users as $user)
                                 <tr>
-                                    <td><strong>{{ $user->student_id }}</strong></td>
-                                    <td>{{ $user->first_name }} {{ $user->last_name }}</td>
+                                    <td><strong>{{ $user->usn }}</strong></td>
+                                    <td>{{ $user->firstname }} {{ $user->lastname }}</td>
                                     <td>{{ $user->email }}</td>
                                     <td>
                                         @if($user->user_type === 'admin')
@@ -124,8 +131,9 @@
                                             </span>
                                         @endif
                                     </td>
-                                    <td>{{ $user->course ?? 'N/A' }}</td>
-                                    <td>{{ $user->year_level ?? 'N/A' }}</td>
+                                    <td>{{ $user->strand ?? 'N/A' }}</td>
+                                    <td>{{ $user->year ?? 'N/A' }}</td>
+                                    <td>{{ $user->gender ?? 'N/A' }}</td>
                                     <td>
                                         @if($user->has_voted)
                                             <span class="badge bg-success">
@@ -176,7 +184,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="8" class="text-center py-4">
+                                    <td colspan="9" class="text-center py-4">
                                         <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc;"></i>
                                         <p class="text-muted mt-2">No Student found</p>
                                     </td>
@@ -217,6 +225,49 @@
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                         <button type="submit" class="btn btn-warning">
                             <i class="bi bi-arrow-counterclockwise"></i> Reset All Votes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import CSV Modal -->
+    <div class="modal fade" id="importModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-upload"></i> Import Users from CSV
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form action="{{ route('admin.users.import') }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <div class="modal-body">
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> 
+                            <strong>CSV Format:</strong> usn, lastname, firstname, strand, year, gender, password
+                        </div>
+                        <div class="mb-3">
+                            <label for="csv_file" class="form-label">Select CSV File</label>
+                            <input type="file" 
+                                   class="form-control" 
+                                   id="csv_file" 
+                                   name="csv_file" 
+                                   accept=".csv"
+                                   required>
+                            <small class="text-muted">Maximum file size: 2MB</small>
+                        </div>
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i> 
+                            Make sure your CSV file follows the template format. Download the template if you haven't already.
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-upload"></i> Import Users
                         </button>
                     </div>
                 </form>

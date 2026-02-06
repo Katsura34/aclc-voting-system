@@ -24,15 +24,15 @@
         <!-- Header -->
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <h2><i class="bi bi-people-fill"></i> Manage Users</h2>
-                <p class="text-muted mb-0">View and manage all system users</p>
+                <h2><i class="bi bi-people-fill"></i> Manage Students</h2>
+                <p class="text-muted mb-0">View and manage all system Student</p>
             </div>
             <div class="btn-group">
                 <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#resetAllVotesModal">
                     <i class="bi bi-arrow-counterclockwise"></i> Reset All Votes
                 </button>
                 <a href="{{ route('admin.users.create') }}" class="btn btn-primary">
-                    <i class="bi bi-plus-circle"></i> Add New User
+                    <i class="bi bi-plus-circle"></i> Add New Student
                 </a>
             </div>
         </div>
@@ -178,7 +178,7 @@
                                 <tr>
                                     <td colspan="8" class="text-center py-4">
                                         <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc;"></i>
-                                        <p class="text-muted mt-2">No users found</p>
+                                        <p class="text-muted mt-2">No Student found</p>
                                     </td>
                                 </tr>
                             @endforelse

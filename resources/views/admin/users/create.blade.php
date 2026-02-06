@@ -3,11 +3,11 @@
         <!-- Header -->
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <h2><i class="bi bi-person-plus-fill"></i> Add New User</h2>
+                <h2><i class="bi bi-person-plus-fill"></i> Add New Student</h2>
                 <p class="text-muted mb-0">Create a new student or admin account</p>
             </div>
             <a href="{{ route('admin.users.index') }}" class="btn btn-secondary">
-                <i class="bi bi-arrow-left"></i> Back to Users
+                <i class="bi bi-arrow-left"></i> Back to Students
             </a>
         </div>
 
@@ -15,7 +15,7 @@
             <div class="col-md-8">
                 <div class="card">
                     <div class="card-header bg-dark text-white">
-                        <h5 class="mb-0"><i class="bi bi-card-text"></i> User Information</h5>
+                        <h5 class="mb-0"><i class="bi bi-card-text"></i> Student Information</h5>
                     </div>
                     <div class="card-body">
                         <form action="{{ route('admin.users.store') }}" method="POST">
@@ -37,7 +37,7 @@
                                     @enderror
                                 </div>
 
-                                <div class="col-md-6">
+                                {{-- <div class="col-md-6">
                                     <label for="user_type" class="form-label">
                                         User Type <span class="text-danger">*</span>
                                     </label>
@@ -52,7 +52,7 @@
                                     @error('user_type')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
-                                </div>
+                                </div> --}}
                             </div>
 
                             <div class="row mb-3">

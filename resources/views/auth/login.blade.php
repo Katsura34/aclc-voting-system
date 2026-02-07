@@ -213,6 +213,10 @@
             transition: all 0.3s ease;
         }
 
+        .form-group.password-field .form-control {
+            padding-right: 45px;
+        }
+
         .form-control:focus {
             outline: none;
             border-color: #003366;
@@ -394,7 +398,7 @@
                     @enderror
                 </div>
 
-                <div class="form-group">
+                <div class="form-group password-field">
                     <i class="bi bi-lock-fill"></i>
                     <input 
                         type="password" 

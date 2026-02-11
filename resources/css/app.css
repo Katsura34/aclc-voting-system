@@ -1,23 +1,15 @@
 @import 'bootstrap/dist/css/bootstrap.min.css';
 @import 'bootstrap-icons/font/bootstrap-icons.css';
-
-
-
 @import 'tailwindcss';
-@import "bootstrap/dist/css/bootstrap.min.css";
-@import "bootstrap-icons/font/bootstrap-icons.css";
 
+:root {
+    --aclc-blue: #003366;
+    --aclc-light-blue: #00509E;
+    --aclc-red: #CC0000;
+    --aclc-dark-red: #990000;
+}
 
-
-
-    :root {
-        --aclc-blue: #003366;
-        --aclc-light-blue: #00509E;
-        --aclc-red: #CC0000;
-        --aclc-dark-red: #990000;
-    }
-
-        body {
+body {
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             min-height: 100vh;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;

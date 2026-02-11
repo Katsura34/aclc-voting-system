@@ -186,7 +186,7 @@
     <button class="print-button no-print" onclick="window.print()">🖨️ Print</button>
     
     <div class="header">
-        <h1>AUDIT LOG - VOTER RECORDS</h1>
+        <h1>VOTER RECORDS</h1>
         <h2>{{ $election->title }}</h2>
         <div style="margin-top: 10px; font-size: 9pt; color: #666;">
             Generated on {{ now()->format('F d, Y \a\t h:i A') }}

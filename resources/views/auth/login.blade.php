@@ -4,10 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Voting System</title>
-    <!-- Bootstrap 5 CSS -->
+    {{-- <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet"> --}}
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    
+
+    
     <style>
         * {
             margin: 0;
@@ -34,6 +38,7 @@
             overflow: hidden;
             box-shadow: 0 10px 50px rgba(0, 0, 0, 0.3);
         }
+        
 
         /* Left Panel - Blue and Red Side */
         .left-panel {
@@ -175,11 +180,12 @@
         }
 
         .form-group {
+            position: relative;   /* 👈 THIS FIXES IT */
             margin-bottom: 25px;
-            position: relative;
         }
 
-        .form-group i {
+        .form-group .bi-lock-fill,
+        .form-group .bi-person-circle {
             position: absolute;
             left: 15px;
             top: 50%;
@@ -188,30 +194,35 @@
             font-size: 18px;
         }
 
-        .password-toggle {
+
+       .password-toggle {
             position: absolute;
             right: 15px;
+            left: auto;
             top: 50%;
             transform: translateY(-50%);
             color: #888;
             font-size: 18px;
             cursor: pointer;
-            transition: color 0.3s ease;
             z-index: 10;
+            user-select: none;
         }
+
 
         .password-toggle:hover {
             color: #003366;
         }
 
+
         .form-control {
             width: 100%;
-            padding: 14px 15px 14px 45px;
+            padding: 14px 50px 14px 45px;
             border: 2px solid #e0e0e0;
             border-radius: 8px;
             font-size: 15px;
-            transition: all 0.3s ease;
         }
+
+
 
         .form-control:focus {
             outline: none;
@@ -286,7 +297,7 @@
             text-decoration: underline;
             color: #003366;
         }
-        }
+        
 
         .alert {
             border-radius: 8px;
@@ -305,7 +316,11 @@
             }
 
             .right-panel {
-                padding: 40px 30px;
+                flex: 1;
+                padding: 60px 50px;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
             }
 
             .main-logo {
@@ -405,10 +420,11 @@
                         autocomplete="current-password"
                         required
                     >
-                    <i class="bi bi-eye-slash password-toggle" id="togglePassword"></i>
+                   
                     @error('password')
                         <div class="invalid-feedback d-block">{{ $message }}</div>
                     @enderror
+                    <i class="bi bi-eye-slash password-toggle" id="togglePassword"></i>
                 </div>
 
 
@@ -420,7 +436,8 @@
     </div>
 
     <!-- Bootstrap 5 JS Bundle -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    {{-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script> --}}
+
     
     <!-- Password Toggle Script -->
     <script>

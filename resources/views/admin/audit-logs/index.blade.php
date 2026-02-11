@@ -35,7 +35,7 @@
                             <div>
                                 <h4 class="mb-1">
                                     <i class="bi bi-file-earmark-text me-2"></i>
-                                    Audit Logs - Voter Records
+                                    Voter Records
                                 </h4>
                                 <p class="text-muted mb-0">View detailed voting records for manual counting and verification</p>
                             </div>

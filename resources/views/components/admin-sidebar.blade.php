@@ -50,7 +50,7 @@
             <a class="nav-link {{ request()->routeIs('admin.audit-logs.*') ? 'active' : '' }}" 
                href="{{ route('admin.audit-logs.index') }}">
                 <i class="bi bi-file-earmark-text"></i>
-                Audit Logs
+                Voter Records
             </a>
         </li>
         <li class="nav-item">
@@ -60,17 +60,18 @@
                 Students
             </a>
         </li>
-    </ul>
-    
-    <div class="sidebar-footer">
-        <form method="POST" action="{{ route('logout') }}">
+        <li class="nav-item">
+            <form method="POST" action="{{ route('logout') }}">
             @csrf
             <button type="submit" class="btn-logout">
                 <i class="bi bi-box-arrow-right"></i>
                 Logout
             </button>
         </form>
-    </div>
+        </li>
+    </ul>
+    
+
 </div>
 
 <style>

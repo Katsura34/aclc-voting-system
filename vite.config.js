@@ -6,38 +6,43 @@ export default defineConfig({
     plugins: [
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.js'],
-            refresh: true,
+            refresh: true, // Hot reload for dev
         }),
         tailwindcss(),
     ],
     build: {
-        // Optimize build output
+        // Key fix: Laravel expects assets in public/build/assets
+        outDir: 'public/build',
+        assetsDir: 'assets',
+
+        // Optional: minify JS/CSS for production
         minify: 'terser',
         terserOptions: {
             compress: {
-                drop_console: true, // Remove console.log in production
+                drop_console: true,
                 drop_debugger: true
             }
         },
-        // Reduce chunk size warnings threshold
+
+        // Optional: chunk size warnings
         chunkSizeWarningLimit: 1000,
+
         rollupOptions: {
             output: {
-                // Manual chunking for better caching
                 manualChunks: {
-                    vendor: ['axios']
+                    vendor: ['axios'] // vendor splitting
                 }
             }
         },
-        // Enable source maps for debugging (disable in production if needed)
+
+        // Optional: source maps
         sourcemap: false
     },
-    // Optimize dependencies
     optimizeDeps: {
         include: ['axios']
     },
     server: {
-        // Hot Module Replacement configuration
+        // HMR for dev
         hmr: {
             host: 'localhost'
         }

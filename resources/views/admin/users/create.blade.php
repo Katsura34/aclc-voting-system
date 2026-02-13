@@ -122,10 +122,9 @@
                                             id="year" 
                                             name="year">
                                         <option value="">Select Year</option>
-                                        <option value="1st Year" {{ old('year') == '1st Year' ? 'selected' : '' }}>1st Year</option>
-                                        <option value="2nd Year" {{ old('year') == '2nd Year' ? 'selected' : '' }}>2nd Year</option>
-                                        <option value="3rd Year" {{ old('year') == '3rd Year' ? 'selected' : '' }}>3rd Year</option>
-                                        <option value="4th Year" {{ old('year') == '4th Year' ? 'selected' : '' }}>4th Year</option>
+                                        @for($i = 1; $i <= 12; $i++)
+                                            <option value="{{ $i }}" {{ old('year') == $i ? 'selected' : '' }}>{{ $i }}</option>
+                                        @endfor
                                     </select>
                                     @error('year')
                                         <div class="invalid-feedback">{{ $message }}</div>

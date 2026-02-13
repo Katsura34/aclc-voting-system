@@ -105,29 +105,29 @@
 
                             <div class="row mb-3">
                                 <div class="col-md-4">
-                                    <label for="strand" class="form-label">Strand</label>
+                                    <label for="course" class="form-label">Course/Strand</label>
                                     <input type="text" 
-                                           class="form-control @error('strand') is-invalid @enderror" 
-                                           id="strand" 
-                                           name="strand" 
-                                           value="{{ old('strand', $user->strand) }}"
+                                           class="form-control @error('course') is-invalid @enderror" 
+                                           id="course" 
+                                           name="course" 
+                                           value="{{ old('course', $user->course ?? $user->strand) }}"
                                            placeholder="e.g., STEM, ABM, HUMSS">
-                                    @error('strand')
+                                    @error('course')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
 
                                 <div class="col-md-4">
-                                    <label for="year" class="form-label">Year</label>
-                                    <select class="form-select @error('year') is-invalid @enderror" 
-                                            id="year" 
-                                            name="year">
+                                    <label for="year_level" class="form-label">Year Level</label>
+                                    <select class="form-select @error('year_level') is-invalid @enderror" 
+                                            id="year_level" 
+                                            name="year_level">
                                         <option value="">Select Year</option>
                                         @for($i = 1; $i <= 12; $i++)
-                                            <option value="{{ $i }}" {{ old('year', $user->year) == $i ? 'selected' : '' }}>{{ $i }}</option>
+                                            <option value="{{ $i }}" {{ old('year_level', $user->year_level ?? $user->year) == $i ? 'selected' : '' }}>{{ $i }}</option>
                                         @endfor
                                     </select>
-                                    @error('year')
+                                    @error('year_level')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>

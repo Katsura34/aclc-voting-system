@@ -84,50 +84,59 @@
                     @enderror
 
                     <div class="candidates-grid">
+                        @php
+                            $user = Auth::user();
+                        @endphp
                         @foreach($position->candidates as $candidate)
-                            <label class="candidate-card" data-position="{{ $position->id }}">
-                                <input 
-                                    type="radio" 
-                                    name="position_{{ $position->id }}" 
-                                    value="{{ $candidate->id }}"
-                                    {{ old("position_{$position->id}") == $candidate->id ? 'checked' : '' }}
-                                >
-                                <div class="check-indicator">
-                                    <i class="bi bi-check-lg"></i>
-                                </div>
-                                
-                                <div class="candidate-photo">
-                                    @if($candidate->photo_path)
-                                        <img src="{{ asset('storage/' . $candidate->photo_path) }}" 
-                                             alt="{{ $candidate->full_name }}"
-                                             style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
-                                    @else
-                                        {{ strtoupper(substr($candidate->first_name, 0, 1) . substr($candidate->last_name, 0, 1)) }}
-                                    @endif
-                                </div>
-                                
-                                <div class="candidate-name">
-                                    {{ $candidate->full_name }}
-                                </div>
-                                
-                                <div class="candidate-details">
-                                    @if($candidate->course && $candidate->year_level)
-                                        {{ $candidate->course }} - {{ $candidate->year_level }}
-                                    @endif
-                                </div>
-                                
-                                @if($candidate->party)
-                                    <div class="candidate-party" style="background-color: {{ $candidate->party->color }}20; color: {{ $candidate->party->color }}; border: 1px solid {{ $candidate->party->color }};">
-                                        {{ $candidate->party->name }}
+                            @if(
+                                strtolower($position->name) === 'representative' ?
+                                    ($candidate->course === $user->strand && $candidate->year_level === $user->year)
+                                    : true
+                            )
+                                <label class="candidate-card" data-position="{{ $position->id }}">
+                                    <input 
+                                        type="radio" 
+                                        name="position_{{ $position->id }}" 
+                                        value="{{ $candidate->id }}"
+                                        {{ old("position_{$position->id}") == $candidate->id ? 'checked' : '' }}
+                                    >
+                                    <div class="check-indicator">
+                                        <i class="bi bi-check-lg"></i>
                                     </div>
-                                @endif
+                                    
+                                    <div class="candidate-photo">
+                                        @if($candidate->photo_path)
+                                            <img src="{{ asset('storage/' . $candidate->photo_path) }}" 
+                                                 alt="{{ $candidate->full_name }}"
+                                                 style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                                        @else
+                                            {{ strtoupper(substr($candidate->first_name, 0, 1) . substr($candidate->last_name, 0, 1)) }}
+                                        @endif
+                                    </div>
+                                    
+                                    <div class="candidate-name">
+                                        {{ $candidate->full_name }}
+                                    </div>
+                                    
+                                    <div class="candidate-details">
+                                        @if($candidate->course && $candidate->year_level)
+                                            {{ $candidate->course }} - {{ $candidate->year_level }}
+                                        @endif
+                                    </div>
+                                    
+                                    @if($candidate->party)
+                                        <div class="candidate-party" style="background-color: {{ $candidate->party->color }}20; color: {{ $candidate->party->color }}; border: 1px solid {{ $candidate->party->color }};">
+                                            {{ $candidate->party->name }}
+                                        </div>
+                                    @endif
 
-                                @if($candidate->bio)
-                                    <div class="candidate-bio">
-                                        "{{ Str::limit($candidate->bio, 100) }}"
-                                    </div>
-                                @endif
-                            </label>
+                                    @if($candidate->bio)
+                                        <div class="candidate-bio">
+                                            "{{ Str::limit($candidate->bio, 100) }}"
+                                        </div>
+                                    @endif
+                                </label>
+                            @endif
                         @endforeach
                     </div>
                 </div>

@@ -175,6 +175,37 @@
                         <hr class="my-4">
                         <h5 class="mb-3"><i class="bi bi-file-text"></i> Candidate Information</h5>
 
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <label for="strand" class="form-label fw-bold">
+                                    Strand
+                                </label>
+                                <input type="text"
+                                       class="form-control @error('strand') is-invalid @enderror"
+                                       id="strand"
+                                       name="strand"
+                                       value="{{ old('strand') }}"
+                                       placeholder="e.g., STEM, ABM, HUMSS">
+                                @error('strand')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-6 mb-4">
+                                <label for="year" class="form-label fw-bold">
+                                    Year
+                                </label>
+                                <input type="text"
+                                       class="form-control @error('year') is-invalid @enderror"
+                                       id="year"
+                                       name="year"
+                                       value="{{ old('year') }}"
+                                       placeholder="e.g., 11, 12">
+                                @error('year')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+
                         <!-- Bio -->
                         <div class="mb-4">
                             <label for="bio" class="form-label fw-bold">

@@ -91,7 +91,7 @@
                         @foreach($position->candidates as $candidate)
                             @if(
                                 $isRepresentative
-                                    ? ($candidate->strand == $user->strand && $candidate->year == $user->year)
+                                    ? ($candidate->course == $user->strand && $candidate->year_level == $user->year)
                                     : true
                             )
                                 <label class="candidate-card" data-position="{{ $position->id }}">

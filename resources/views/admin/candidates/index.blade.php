@@ -420,8 +420,8 @@
                                 <li><strong>first_name</strong> - First name (required)</li>
                                 <li><strong>last_name</strong> - Last name (required)</li>
                                 <li><strong>middle_name</strong> - Middle name (optional)</li>
-                                <li><strong>strand</strong> - Strand (required for Representative, optional otherwise)</li>
-                                <li><strong>year</strong> - Year (required for Representative, optional otherwise)</li>
+                                <li><strong>course</strong> - Course/Strand (required for Representative, optional otherwise)</li>
+                                <li><strong>year_level</strong> - Year Level as number 1-12 (required for Representative, optional otherwise)</li>
                                 <li><strong>bio</strong> - Biography (optional)</li>
                                 <li><strong>position_name</strong> - Position name (required, must match existing position)</li>
                             </ul>

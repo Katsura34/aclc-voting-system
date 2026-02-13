@@ -29,23 +29,14 @@ class UserFactory extends Factory
             'usn' => fake()->unique()->numerify('####-###-BS'),
             'email' => fake()->unique()->safeEmail(),
             'strand' => fake()->randomElement(['STEM', 'ABM', 'HUMSS', 'GAS']),
-            'year' => fake()->randomElement(['1st Year', '2nd Year', '3rd Year', '4th Year']),
+            'year' => fake()->randomElement([1, 2, 3, 4, 11, 12]),
             'gender' => fake()->randomElement(['Male', 'Female', 'Other']),
             'user_type' => 'student',
             'has_voted' => false,
-            'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
         ];
     }
 
-    /**
-     * Indicate that the model's email address should be unverified.
-     */
-    public function unverified(): static
-    {
-        return $this->state(fn (array $attributes) => [
-            'email_verified_at' => null,
-        ]);
-    }
+
 }

@@ -89,7 +89,7 @@
                         @endphp
                         @foreach($position->candidates as $candidate)
                             @if(
-                                strtolower($position->name) === 'representative' ?
+                                strtolower($position->name) === 'Representative' ?
                                     ($candidate->strand == $user->strand && $candidate->year == $user->year)
                                     : true
                             )

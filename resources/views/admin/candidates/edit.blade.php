@@ -234,10 +234,6 @@
                                 @enderror
                             </div>
                         </div>
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
 
                         <!-- Bio -->
                         <div class="mb-4">

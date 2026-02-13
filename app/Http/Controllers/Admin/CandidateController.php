@@ -80,6 +80,8 @@ class CandidateController extends Controller
                 'last_name' => 'required|string|max:255',
                 'position_id' => 'required|exists:positions,id',
                 'party_id' => 'required|exists:parties,id',
+                'course' => 'nullable|string|max:255',
+                'year_level' => 'nullable|integer|min:1|max:12',
                 'bio' => 'nullable|string',
                 'platform' => 'nullable|string',
                 'photo' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
@@ -161,6 +163,8 @@ class CandidateController extends Controller
                 'last_name' => 'required|string|max:255',
                 'position_id' => 'required|exists:positions,id',
                 'party_id' => 'required|exists:parties,id',
+                'course' => 'nullable|string|max:255',
+                'year_level' => 'nullable|integer|min:1|max:12',
                 'bio' => 'nullable|string',
                 'platform' => 'nullable|string',
                 'photo' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
@@ -375,6 +379,8 @@ class CandidateController extends Controller
                         'first_name' => 'required|string|max:255',
                         'last_name' => 'required|string|max:255',
                         'middle_name' => 'nullable|string|max:255',
+                        'course' => 'nullable|string|max:255',
+                        'year_level' => 'nullable|integer|min:1|max:12',
                         'bio' => 'nullable|string',
                         'position_name' => 'required|string',
                     ]);
@@ -398,6 +404,8 @@ class CandidateController extends Controller
                         'first_name' => $data['first_name'],
                         'last_name' => $data['last_name'],
                         'middle_name' => $data['middle_name'] ?? null,
+                        'course' => $data['course'] ?? null,
+                        'year_level' => isset($data['year_level']) && $data['year_level'] !== '' ? (int)$data['year_level'] : null,
                         'bio' => $data['bio'] ?? null,
                         'position_id' => $positionId,
                         'party_id' => $request->party_id,
@@ -451,7 +459,7 @@ class CandidateController extends Controller
             'Content-Disposition' => 'attachment; filename="candidates_template.csv"',
         ];
 
-        $columns = ['first_name', 'last_name', 'middle_name', 'bio', 'position_name'];
+        $columns = ['first_name', 'last_name', 'middle_name', 'course', 'year_level', 'bio', 'position_name'];
         
         $callback = function() use ($columns) {
             $file = fopen('php://output', 'w');
@@ -464,6 +472,8 @@ class CandidateController extends Controller
                 'Juan',
                 'Dela Cruz',
                 'Santos',
+                'STEM',
+                '11',
                 'Experienced leader with a vision for change',
                 'President'
             ]);
@@ -471,6 +481,8 @@ class CandidateController extends Controller
                 'Maria',
                 'Garcia',
                 'Lopez',
+                'ABM',
+                '12',
                 'Dedicated to serving the student body',
                 'President'
             ]);
@@ -478,6 +490,8 @@ class CandidateController extends Controller
                 'Jose',
                 'Reyes',
                 '',
+                'HUMSS',
+                '11',
                 'Committed to transparency and accountability',
                 'Vice President'
             ]);

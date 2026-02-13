@@ -83,7 +83,7 @@ class VotingSystemSeeder extends Seeder
                 'position' => 'President',
                 'party' => 'Unity Party',
                 'course' => 'BS Computer Science',
-                'year_level' => '4th Year',
+                'year_level' => 4,
                 'bio' => 'Dedicated student leader with vision for inclusive campus development.',
             ],
             [
@@ -92,7 +92,7 @@ class VotingSystemSeeder extends Seeder
                 'position' => 'President',
                 'party' => 'Progress Alliance',
                 'course' => 'BS Information Technology',
-                'year_level' => '4th Year',
+                'year_level' => 4,
                 'bio' => 'Passionate advocate for student welfare and academic excellence.',
             ],
 
@@ -103,7 +103,7 @@ class VotingSystemSeeder extends Seeder
                 'position' => 'Vice President',
                 'party' => 'Unity Party',
                 'course' => 'BS Business Administration',
-                'year_level' => '3rd Year',
+                'year_level' => 3,
                 'bio' => 'Committed to supporting student initiatives and programs.',
             ],
             [
@@ -112,7 +112,7 @@ class VotingSystemSeeder extends Seeder
                 'position' => 'Vice President',
                 'party' => 'Progress Alliance',
                 'course' => 'BS Accountancy',
-                'year_level' => '3rd Year',
+                'year_level' => 3,
                 'bio' => 'Experienced organizer with proven track record in student activities.',
             ],
 
@@ -123,7 +123,7 @@ class VotingSystemSeeder extends Seeder
                 'position' => 'Secretary',
                 'party' => 'Unity Party',
                 'course' => 'BS Office Administration',
-                'year_level' => '2nd Year',
+                'year_level' => 2,
                 'bio' => 'Detail-oriented and organized, ready to document student achievements.',
             ],
             [
@@ -132,7 +132,7 @@ class VotingSystemSeeder extends Seeder
                 'position' => 'Secretary',
                 'party' => 'Student Voice',
                 'course' => 'BS Computer Science',
-                'year_level' => '2nd Year',
+                'year_level' => 2,
                 'bio' => 'Tech-savvy secretary bringing innovation to student documentation.',
             ],
 
@@ -143,7 +143,7 @@ class VotingSystemSeeder extends Seeder
                 'position' => 'Treasurer',
                 'party' => 'Progress Alliance',
                 'course' => 'BS Accountancy',
-                'year_level' => '3rd Year',
+                'year_level' => 3,
                 'bio' => 'Fiscally responsible with experience in financial management.',
             ],
             [
@@ -152,7 +152,7 @@ class VotingSystemSeeder extends Seeder
                 'position' => 'Treasurer',
                 'party' => 'Student Voice',
                 'course' => 'BS Business Administration',
-                'year_level' => '3rd Year',
+                'year_level' => 3,
                 'bio' => 'Transparent and accountable financial steward.',
             ],
 
@@ -163,7 +163,7 @@ class VotingSystemSeeder extends Seeder
                 'position' => 'Auditor',
                 'party' => 'Unity Party',
                 'course' => 'BS Accountancy',
-                'year_level' => '4th Year',
+                'year_level' => 4,
                 'bio' => 'Ensuring transparency and accountability in student funds.',
             ],
 
@@ -174,7 +174,7 @@ class VotingSystemSeeder extends Seeder
                 'position' => 'Public Relations Officer',
                 'party' => 'Progress Alliance',
                 'course' => 'BS Mass Communication',
-                'year_level' => '3rd Year',
+                'year_level' => 3,
                 'bio' => 'Creative communicator bridging students and administration.',
             ],
             [
@@ -183,7 +183,7 @@ class VotingSystemSeeder extends Seeder
                 'position' => 'Public Relations Officer',
                 'party' => 'Student Voice',
                 'course' => 'BS Marketing',
-                'year_level' => '2nd Year',
+                'year_level' => 2,
                 'bio' => 'Dynamic PR specialist with fresh ideas for student engagement.',
             ],
 
@@ -194,7 +194,7 @@ class VotingSystemSeeder extends Seeder
                 'position' => 'Representative',
                 'party' => 'Unity Party',
                 'course' => 'BS Information Technology',
-                'year_level' => '2nd Year',
+                'year_level' => 2,
                 'bio' => 'Voice of the IT students, tech advocate.',
             ],
             [
@@ -203,7 +203,7 @@ class VotingSystemSeeder extends Seeder
                 'position' => 'Representative',
                 'party' => 'Progress Alliance',
                 'course' => 'BS Psychology',
-                'year_level' => '2nd Year',
+                'year_level' => 2,
                 'bio' => 'Advocate for student mental health and wellness.',
             ],
             [
@@ -212,7 +212,7 @@ class VotingSystemSeeder extends Seeder
                 'position' => 'Representative',
                 'party' => 'Student Voice',
                 'course' => 'BS Engineering',
-                'year_level' => '3rd Year',
+                'year_level' => 3,
                 'bio' => 'Engineering solutions for student concerns.',
             ],
             [
@@ -221,7 +221,7 @@ class VotingSystemSeeder extends Seeder
                 'position' => 'Representative',
                 'party' => 'Unity Party',
                 'course' => 'BS Nursing',
-                'year_level' => '2nd Year',
+                'year_level' => 2,
                 'bio' => 'Caring representative for health science students.',
             ],
             [
@@ -230,7 +230,7 @@ class VotingSystemSeeder extends Seeder
                 'position' => 'Representative',
                 'party' => null,
                 'course' => 'BS Computer Science',
-                'year_level' => '3rd Year',
+                'year_level' => 3,
                 'bio' => 'Independent candidate focused on student innovation.',
             ],
         ];

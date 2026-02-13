@@ -86,11 +86,12 @@
                     <div class="candidates-grid">
                         @php
                             $user = Auth::user();
+                            $isRepresentative = strtolower(trim($position->name)) === 'representative';
                         @endphp
                         @foreach($position->candidates as $candidate)
                             @if(
-                                strtolower($position->name) === 'Representative' ?
-                                    ($candidate->strand == $user->strand && $candidate->year == $user->year)
+                                $isRepresentative
+                                    ? ($candidate->strand == $user->strand && $candidate->year == $user->year)
                                     : true
                             )
                                 <label class="candidate-card" data-position="{{ $position->id }}">

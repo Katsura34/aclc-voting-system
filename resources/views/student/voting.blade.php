@@ -90,9 +90,9 @@
                         @endphp
                         @foreach($position->candidates as $candidate)
                             @if(
-                                $isRepresentative
-                                    ? ($candidate->course == $user->strand && $candidate->year_level == $user->year)
-                                    : true
+                                $isRepresentative && $candidate->course == $user->strand && $candidate->year_level == $user->year
+                                    ? true
+                                    : !$isRepresentative
                             )
                                 <label class="candidate-card" data-position="{{ $position->id }}">
                                     <input 

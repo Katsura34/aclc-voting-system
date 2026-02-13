@@ -17,10 +17,6 @@ class Candidate extends Model
         'photo_path',
     ];
 
-    protected $casts = [
-        'year_level' => 'integer',
-    ];
-
     /**
      * Get the position this candidate is running for.
      */

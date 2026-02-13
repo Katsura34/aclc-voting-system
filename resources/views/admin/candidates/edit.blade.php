@@ -204,32 +204,30 @@
 
                         <div class="row">
                             <div class="col-md-6 mb-4">
-                                <label for="course" class="form-label fw-bold">
-                                    Course/Strand
+                                <label for="strand" class="form-label fw-bold">
+                                    Strand
                                 </label>
                                 <input type="text"
-                                       class="form-control @error('course') is-invalid @enderror"
-                                       id="course"
-                                       name="course"
-                                       value="{{ old('course', $candidate->course) }}"
+                                       class="form-control @error('strand') is-invalid @enderror"
+                                       id="strand"
+                                       name="strand"
+                                       value="{{ old('strand', $candidate->strand) }}"
                                        placeholder="e.g., STEM, ABM, HUMSS">
-                                @error('course')
+                                @error('strand')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
                             <div class="col-md-6 mb-4">
-                                <label for="year_level" class="form-label fw-bold">
-                                    Year Level
+                                <label for="year" class="form-label fw-bold">
+                                    Year
                                 </label>
-                                <input type="number"
-                                       class="form-control @error('year_level') is-invalid @enderror"
-                                       id="year_level"
-                                       name="year_level"
-                                       value="{{ old('year_level', $candidate->year_level) }}"
-                                       placeholder="e.g., 11, 12"
-                                       min="1"
-                                       max="12">
-                                @error('year_level')
+                                <input type="text"
+                                       class="form-control @error('year') is-invalid @enderror"
+                                       id="year"
+                                       name="year"
+                                       value="{{ old('year', $candidate->year) }}"
+                                       placeholder="e.g., 11, 12">
+                                @error('year')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>

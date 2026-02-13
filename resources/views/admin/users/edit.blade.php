@@ -124,7 +124,7 @@
                                                id="year" 
                                                name="year" 
                                                value="{{ old('year', $user->year) }}"
-                                               placeholder="e.g., 1st Year, 2nd Year">
+                                               placeholder="e.g., 1-12">
                                         @error('year')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror

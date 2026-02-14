@@ -155,82 +155,50 @@ class CandidateController extends Controller
     /**
      * Update the specified candidate in storage.
      */
-    public function update(Request $request, Candidate $candidate)
-    {
+ public function update(Request $request, Candidate $candidate)
+{
+    $validated = $request->validate([
+        'first_name' => 'required|string|max:255',
+        'last_name' => 'required|string|max:255',
+        'position_id' => 'required|exists:positions,id',
+        'party_id' => 'required|exists:parties,id',
+        'course' => 'nullable|string|max:255',
+        'year_level' => 'nullable|integer|min:1|max:12',
+        'bio' => 'nullable|string',
+        'platform' => 'nullable|string',
+        'photo' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
+        'remove_photo' => 'nullable|boolean',
+    ]);
 
-        try {
-            $validated = $request->validate([
-                'first_name' => 'required|string|max:255',
-                'last_name' => 'required|string|max:255',
-                'position_id' => 'required|exists:positions,id',
-                'party_id' => 'required|exists:parties,id',
-                'course' => 'nullable|string|max:255',
-                'year_level' => 'nullable|integer|min:1|max:12',
-                'bio' => 'nullable|string',
-                'platform' => 'nullable|string',
-                'photo' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
-                'remove_photo' => 'nullable|boolean',
-            ]);
+    // Remove flag fields
+    unset($validated['photo'], $validated['remove_photo']);
 
-            DB::beginTransaction();
-            
-            try {
-                // Handle photo removal
-                if ($request->input('remove_photo')) {
-                    if ($candidate->photo_path && Storage::disk('public')->exists($candidate->photo_path)) {
-                        Storage::disk('public')->delete($candidate->photo_path);
-                    }
-                    $validated['photo_path'] = null;
-                }
-                // Handle photo upload
-                elseif ($request->hasFile('photo')) {
-                    $photo = $request->file('photo');
-                    $photoPath = $photo->store('candidates', 'public');
-                    $validated['photo_path'] = $photoPath;
-                    
-                    // Delete old photo
-                    if ($candidate->photo_path && Storage::disk('public')->exists($candidate->photo_path)) {
-                        Storage::disk('public')->delete($candidate->photo_path);
-                    }
-                }
-                
-                // Remove the remove_photo flag and photo file from validated data before updating
-                // Only photo_path should be used for database updates
-                $updateData = collect($validated)->except(['remove_photo', 'photo'])->toArray();
-                
-                $candidate->update($updateData);
-
-                DB::commit();
-
-                \Log::info('Candidate updated', ['candidate_id' => $candidate->id]);
-
-                return redirect()->route('admin.candidates.index')
-                    ->with('success', 'Candidate updated successfully!');
-            } catch (\Exception $e) {
-                DB::rollBack();
-                
-                // Delete uploaded photo if update failed
-                if (isset($photoPath) && Storage::disk('public')->exists($photoPath)) {
-                    Storage::disk('public')->delete($photoPath);
-                }
-                
-                throw $e;
-            }
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return redirect()->back()
-                ->withErrors($e->errors())
-                ->withInput();
-        } catch (\Exception $e) {
-            \Log::error('Candidate update error: ' . $e->getMessage(), [
-                'candidate_id' => $candidate->id,
-                'trace' => $e->getTraceAsString()
-            ]);
-            
-            return redirect()->back()
-                ->with('error', 'Failed to update candidate. Please try again.')
-                ->withInput();
+    // Handle remove photo
+    if ($request->boolean('remove_photo')) {
+        if ($candidate->photo_path && Storage::disk('public')->exists($candidate->photo_path)) {
+            Storage::disk('public')->delete($candidate->photo_path);
         }
+        $validated['photo_path'] = null;
     }
+
+    // Handle upload
+    if ($request->hasFile('photo')) {
+
+        // Delete old photo first
+        if ($candidate->photo_path && Storage::disk('public')->exists($candidate->photo_path)) {
+            Storage::disk('public')->delete($candidate->photo_path);
+        }
+
+        $validated['photo_path'] = $request->file('photo')
+            ->store('candidates', 'public');
+    }
+
+    $candidate->update($validated);
+
+    return redirect()
+        ->route('admin.candidates.index')
+        ->with('success', 'Candidate updated successfully!');
+}
 
     /**
      * Remove the specified candidate from storage.

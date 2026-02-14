@@ -20,10 +20,30 @@ class CandidatePhotoUploadTest extends TestCase
     {
         Storage::fake('public');
 
-        // Create required records
-        $party = Party::factory()->create();
-        $election = Election::factory()->create();
-        $position = Position::factory()->create(['election_id' => $election->id]);
+        // Create required records without relying on model factories
+        $party = Party::create([
+            'name' => 'Test Party',
+            'acronym' => 'TP',
+            'color' => '#000000',
+            'description' => 'Test party',
+        ]);
+
+        $election = Election::create([
+            'title' => 'Test Election',
+            'description' => 'Test election',
+            'is_active' => false,
+            'start_date' => now()->subDay(),
+            'end_date' => now()->addDay(),
+            'allow_abstain' => true,
+            'show_live_results' => false,
+        ]);
+
+        $position = Position::create([
+            'election_id' => $election->id,
+            'name' => 'President',
+            'max_winners' => 1,
+            'order' => 0,
+        ]);
 
         $candidate = Candidate::create([
             'first_name' => 'Test',

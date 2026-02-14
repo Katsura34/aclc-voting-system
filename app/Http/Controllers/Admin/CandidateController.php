@@ -27,7 +27,7 @@ class CandidateController extends Controller
     {
         // Validate the file was uploaded successfully
         if (!$photo->isValid()) {
-            throw new \Exception('Photo upload failed. Please ensure the file is a valid image (JPG, PNG) and is less than 2MB in size.');
+            throw new \Exception('Photo upload failed. Please ensure the file is a valid image and within the allowed size limit.');
         }
         
         $photoPath = $photo->store('candidates', 'public');

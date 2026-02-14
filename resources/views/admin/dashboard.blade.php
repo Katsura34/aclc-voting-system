@@ -1,6 +1,5 @@
 <x-admin-layout title="Admin Dashboard">
-@vite(['resources/css/admin_layout.css', 'resources/js/app.js'])
-@vite(['resources/css/dashboard.css'])
+
 
     <!-- Page Header -->
     <div class="page-header">

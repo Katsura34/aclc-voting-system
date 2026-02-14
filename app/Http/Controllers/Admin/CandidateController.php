@@ -193,8 +193,9 @@ class CandidateController extends Controller
                     }
                 }
                 
-                // Remove the remove_photo flag before updating
-                $updateData = collect($validated)->except('remove_photo')->toArray();
+                // Remove the remove_photo flag and photo file from validated data before updating
+                // Only photo_path should be used for database updates
+                $updateData = collect($validated)->except(['remove_photo', 'photo'])->toArray();
                 
                 $candidate->update($updateData);
                 

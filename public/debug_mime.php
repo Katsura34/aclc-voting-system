@@ -46,6 +46,7 @@ require_once __DIR__ . '/../vendor/autoload.php';
 use Symfony\Component\Mime\MimeTypes;
 use Symfony\Component\Mime\FileinfoMimeTypeGuesser;
 use Symfony\Component\Mime\FileBinaryMimeTypeGuesser;
+use App\Support\ExtensionMimeTypeGuesser;
 
 $fileinfoGuesser = new FileinfoMimeTypeGuesser();
 $fileBinaryGuesser = new FileBinaryMimeTypeGuesser();
@@ -54,6 +55,21 @@ echo "<p><strong>FileinfoMimeTypeGuesser->isGuesserSupported():</strong> " .
     ($fileinfoGuesser->isGuesserSupported() ? '<span style="color:green">YES</span>' : '<span style="color:red">NO</span>') . "</p>";
 echo "<p><strong>FileBinaryMimeTypeGuesser->isGuesserSupported():</strong> " . 
     ($fileBinaryGuesser->isGuesserSupported() ? '<span style="color:green">YES</span>' : '<span style="color:red">NO (expected on Windows)</span>') . "</p>";
+
+// Test custom extension-based guesser
+if (class_exists(ExtensionMimeTypeGuesser::class)) {
+    $extensionGuesser = new ExtensionMimeTypeGuesser();
+    echo "<p><strong>ExtensionMimeTypeGuesser->isGuesserSupported():</strong> " . 
+        ($extensionGuesser->isGuesserSupported() ? '<span style="color:green">YES (FALLBACK AVAILABLE)</span>' : '<span style="color:red">NO</span>') . "</p>";
+    
+    // Register it if fileinfo is not available
+    if (!extension_loaded('fileinfo')) {
+        MimeTypes::getDefault()->registerGuesser($extensionGuesser);
+        echo "<p><em>Registered ExtensionMimeTypeGuesser as fallback</em></p>";
+    }
+} else {
+    echo "<p><strong>ExtensionMimeTypeGuesser:</strong> <span style='color:orange'>Not found - run composer dump-autoload</span></p>";
+}
 
 $mimeTypes = MimeTypes::getDefault();
 echo "<p><strong>MimeTypes->isGuesserSupported():</strong> " . 

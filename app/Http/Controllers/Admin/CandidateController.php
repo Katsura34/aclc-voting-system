@@ -126,7 +126,6 @@ class CandidateController extends Controller
                 'course' => 'nullable|string|max:255',
                 'year_level' => 'nullable|integer|min:1|max:12',
                 'bio' => 'nullable|string',
-                'platform' => 'nullable|string',
                 'photo' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
             ]);
 
@@ -220,7 +219,6 @@ class CandidateController extends Controller
                 'course' => 'nullable|string|max:255',
                 'year_level' => 'nullable|integer|min:1|max:12',
                 'bio' => 'nullable|string',
-                'platform' => 'nullable|string',
                 'photo' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
                 'remove_photo' => 'nullable|boolean',
             ]);

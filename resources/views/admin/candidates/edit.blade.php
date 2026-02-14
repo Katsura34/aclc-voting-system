@@ -251,21 +251,7 @@
                             @enderror
                         </div>
 
-                        <!-- Platform -->
-                        <div class="mb-4">
-                            <label for="platform" class="form-label fw-bold">
-                                Platform
-                            </label>
-                            <textarea class="form-control @error('platform') is-invalid @enderror" 
-                                      id="platform" 
-                                      name="platform" 
-                                      rows="4"
-                                      placeholder="Campaign promises and platform...">{{ old('platform', $candidate->platform) }}</textarea>
-                            <small class="text-muted">Candidate's campaign platform and promises</small>
-                            @error('platform')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
+                        <!-- Platform removed (no DB column) -->
 
                         <!-- Submit Buttons -->
                         <div class="d-flex gap-2">
@@ -315,9 +301,7 @@
                                     {{ $candidate->bio ?: 'Biography will appear here...' }}
                                 </p>
                                 <hr>
-                                <p class="text-muted small mb-0" id="previewPlatform">
-                                    {{ $candidate->platform ?: 'Platform will appear here...' }}
-                                </p>
+                                <!-- Platform preview removed -->
                             </div>
                         </div>
                     </div>
@@ -333,7 +317,6 @@
             const previewPosition = document.getElementById('previewPosition');
             const previewParty = document.getElementById('previewParty');
             const previewBio = document.getElementById('previewBio');
-            const previewPlatform = document.getElementById('previewPlatform');
             const previewAvatar = document.getElementById('previewAvatar');
             const previewImage = document.getElementById('previewImage');
 
@@ -343,7 +326,7 @@
             const positionSelect = document.getElementById('position_id');
             const partySelect = document.getElementById('party_id');
             const bioInput = document.getElementById('bio');
-            const platformInput = document.getElementById('platform');
+            // platform removed
             const electionFilter = document.getElementById('election_filter');
             const photoInput = document.getElementById('photo');
             const removePhotoCheckbox = document.getElementById('remove_photo');
@@ -438,10 +421,7 @@
                 previewBio.textContent = this.value || 'Biography will appear here...';
             });
 
-            // Update platform preview
-            platformInput.addEventListener('input', function() {
-                previewPlatform.textContent = this.value || 'Platform will appear here...';
-            });
+            // platform-related preview removed
 
             // Election filter
             electionFilter.addEventListener('change', function() {

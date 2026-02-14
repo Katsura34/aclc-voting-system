@@ -367,7 +367,7 @@
                     
                     <!-- ACLC Ormoc City Logo -->
                     <div class="org-logo">
-                        <img src="/storage/logos/aclc-ormoc-logo.png" alt="ACLC Ormoc City" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 200 200%27%3E%3Ccircle cx=%27100%27 cy=%27100%27 r=%2790%27 fill=%27%23003366%27/%3E%3Ctext x=%27100%27 y=%27110%27 text-anchor=%27middle%27 fill=%27white%27 font-size=%2748%27 font-weight=%27bold%27%3E🗳️%3C/text%3E%3C/svg%3E'">
+                        <img src="/storage/public/logos/aclc-ormoc-logo.png" alt="ACLC Ormoc City" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 200 200%27%3E%3Ccircle cx=%27100%27 cy=%27100%27 r=%2790%27 fill=%27%23003366%27/%3E%3Ctext x=%27100%27 y=%27110%27 text-anchor=%27middle%27 fill=%27white%27 font-size=%2748%27 font-weight=%27bold%27%3E🗳️%3C/text%3E%3C/svg%3E'">
                     </div>
                 </div>
             </div>

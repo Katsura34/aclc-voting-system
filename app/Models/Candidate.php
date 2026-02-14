@@ -14,7 +14,6 @@ class Candidate extends Model
         'course',
         'year_level',
         'bio',
-        'platform',
         'photo_path',
     ];
 

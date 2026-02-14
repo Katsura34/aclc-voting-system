@@ -1,5 +1,5 @@
 <x-admin-layout title="{{ $election->title }}">
-  @vite([])
+  @vite(['resources/css/show_election.css'])
 
     <!-- Page Header -->
     <div class="page-header">

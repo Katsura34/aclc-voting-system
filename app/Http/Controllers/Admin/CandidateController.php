@@ -157,7 +157,7 @@ class CandidateController extends Controller
      */
     public function update(Request $request, Candidate $candidate)
     {
-        dd('Update method reached');
+dd($request->hasFile('photo'));
 
         try {
             $validated = $request->validate([

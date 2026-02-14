@@ -224,21 +224,7 @@
                             @enderror
                         </div>
 
-                        <!-- Platform -->
-                        <div class="mb-4">
-                            <label for="platform" class="form-label fw-bold">
-                                Platform
-                            </label>
-                            <textarea class="form-control @error('platform') is-invalid @enderror" 
-                                      id="platform" 
-                                      name="platform" 
-                                      rows="4"
-                                      placeholder="Campaign promises and platform...">{{ old('platform') }}</textarea>
-                            <small class="text-muted">Candidate's campaign platform and promises</small>
-                            @error('platform')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
+                        <!-- Platform removed (no DB column) -->
 
                         <!-- Submit Buttons -->
                         <div class="d-flex gap-2">

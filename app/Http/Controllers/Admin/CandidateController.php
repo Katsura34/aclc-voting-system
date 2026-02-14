@@ -43,16 +43,42 @@ class CandidateController extends Controller
             throw new \Exception('Image exceeds maximum allowed size of 2MB.');
         }
 
-        // Build a safe filename and store
+        // Build a safe filename
         $extension = $photo->getClientOriginalExtension() ?: ($mime === 'image/png' ? 'png' : 'jpg');
         $filename = uniqid('candidate_', true) . '.' . $extension;
 
-        $photoPath = $photo->storeAs('candidates', $filename, 'public');
-
-        if (!$photoPath) {
-            Log::error('Failed to store candidate photo - storage may be misconfigured', ['mime' => $mime, 'size' => $size]);
-            throw new \Exception('Unable to save photo. Please try again or contact support if the problem persists.');
+        // Ensure candidates directory exists on the public disk
+        try {
+            if (!Storage::disk('public')->exists('candidates')) {
+                Storage::disk('public')->makeDirectory('candidates');
+                Log::info('Created "candidates" directory on public disk');
+            }
+        } catch (\Exception $e) {
+            Log::error('Failed to ensure candidates directory exists', ['error' => $e->getMessage()]);
+            // Proceed — storeAs may still work or will throw its own exception
         }
+
+        // Attempt to store the uploaded file and provide detailed logs on failure
+        try {
+            $photoPath = $photo->storeAs('candidates', $filename, 'public');
+        } catch (\Exception $e) {
+            Log::error('Exception while storing candidate photo', [
+                'message' => $e->getMessage(),
+                'original_name' => $photo->getClientOriginalName(),
+                'mime' => $mime,
+                'size' => $size,
+            ]);
+            throw new \Exception('Unable to save photo. Storage exception: ' . $e->getMessage());
+        }
+
+        // Confirm file exists and log
+        $exists = Storage::disk('public')->exists($photoPath);
+        if (!$exists) {
+            Log::error('Photo was stored but file not found in storage after storeAs', ['photo_path' => $photoPath]);
+            throw new \Exception('Unable to verify saved photo. Please try again.');
+        }
+
+        Log::info('Candidate photo stored successfully', ['photo_path' => $photoPath, 'mime' => $mime, 'size' => $size]);
 
         return $photoPath;
     }
@@ -136,9 +162,12 @@ class CandidateController extends Controller
                 if ($request->hasFile('photo')) {
                     try {
                         $photo = $request->file('photo');
+                        Log::info('Received photo upload in store()', ['original_name' => $photo->getClientOriginalName(), 'mime' => $photo->getClientMimeType(), 'size' => $photo->getSize()]);
                         $photoPath = $this->handlePhotoUpload($photo);
                         $validated['photo_path'] = $photoPath;
+                        Log::info('After handlePhotoUpload in store()', ['photo_path' => $photoPath, 'exists' => Storage::disk('public')->exists($photoPath)]);
                     } catch (\Exception $e) {
+                        Log::error('Photo upload error in store()', ['error' => $e->getMessage()]);
                         return redirect()->back()
                             ->withErrors(['photo' => $e->getMessage()])
                             ->withInput();
@@ -237,14 +266,18 @@ class CandidateController extends Controller
                 elseif ($request->hasFile('photo')) {
                     try {
                         $photo = $request->file('photo');
+                        Log::info('Received photo upload in update()', ['original_name' => $photo->getClientOriginalName(), 'mime' => $photo->getClientMimeType(), 'size' => $photo->getSize(), 'candidate_id' => $candidate->id]);
                         $photoPath = $this->handlePhotoUpload($photo);
                         $validated['photo_path'] = $photoPath;
+                        Log::info('After handlePhotoUpload in update()', ['photo_path' => $photoPath, 'exists' => Storage::disk('public')->exists($photoPath), 'candidate_id' => $candidate->id]);
 
                         // Delete old photo
                         if ($candidate->photo_path && Storage::disk('public')->exists($candidate->photo_path)) {
                             Storage::disk('public')->delete($candidate->photo_path);
+                            Log::info('Deleted old candidate photo', ['old_path' => $candidate->photo_path, 'candidate_id' => $candidate->id]);
                         }
                     } catch (\Exception $e) {
+                        Log::error('Photo upload error in update()', ['error' => $e->getMessage(), 'candidate_id' => $candidate->id]);
                         return redirect()->back()
                             ->withErrors(['photo' => $e->getMessage()])
                             ->withInput();

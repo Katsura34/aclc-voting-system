@@ -15,6 +15,31 @@ use Illuminate\Support\Facades\Validator;
 class CandidateController extends Controller
 {
     /**
+     * Handle photo upload for a candidate.
+     *
+     * @param \Illuminate\Http\UploadedFile $photo
+     * @return string The path where the photo was stored
+     * @throws \Exception If upload or storage fails
+     */
+    private function handlePhotoUpload($photo)
+    {
+        // Validate the file was uploaded successfully
+        if (!$photo->isValid()) {
+            throw new \Exception('Photo upload failed. Please ensure the file is a valid image (JPG, PNG) and is less than 2MB in size.');
+        }
+        
+        $photoPath = $photo->store('candidates', 'public');
+        
+        // Ensure the file was actually stored
+        if (!$photoPath) {
+            \Log::error('Failed to store candidate photo - storage may be misconfigured');
+            throw new \Exception('Unable to save photo. Please try again or contact support if the problem persists.');
+        }
+        
+        return $photoPath;
+    }
+
+    /**
      * Display a listing of the candidates.
      */
     public function index(Request $request)
@@ -93,19 +118,7 @@ class CandidateController extends Controller
                 // Handle photo upload
                 if ($request->hasFile('photo')) {
                     $photo = $request->file('photo');
-                    
-                    // Validate the file was uploaded successfully
-                    if (!$photo->isValid()) {
-                        throw new \Exception('Photo upload failed. Please try again.');
-                    }
-                    
-                    $photoPath = $photo->store('candidates', 'public');
-                    
-                    // Ensure the file was actually stored
-                    if (!$photoPath) {
-                        throw new \Exception('Failed to store photo. Please check server configuration.');
-                    }
-                    
+                    $photoPath = $this->handlePhotoUpload($photo);
                     $validated['photo_path'] = $photoPath;
                 }
 
@@ -200,19 +213,7 @@ class CandidateController extends Controller
                 // Handle photo upload
                 elseif ($request->hasFile('photo')) {
                     $photo = $request->file('photo');
-                    
-                    // Validate the file was uploaded successfully
-                    if (!$photo->isValid()) {
-                        throw new \Exception('Photo upload failed. Please try again.');
-                    }
-                    
-                    $photoPath = $photo->store('candidates', 'public');
-                    
-                    // Ensure the file was actually stored
-                    if (!$photoPath) {
-                        throw new \Exception('Failed to store photo. Please check server configuration.');
-                    }
-                    
+                    $photoPath = $this->handlePhotoUpload($photo);
                     $validated['photo_path'] = $photoPath;
                     
                     // Delete old photo

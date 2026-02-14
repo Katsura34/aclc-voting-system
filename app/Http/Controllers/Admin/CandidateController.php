@@ -198,7 +198,8 @@ class CandidateController extends Controller
                 $updateData = collect($validated)->except(['remove_photo', 'photo'])->toArray();
                 
                 $candidate->update($updateData);
-                
+                dd($updateData);
+
                 DB::commit();
 
                 \Log::info('Candidate updated', ['candidate_id' => $candidate->id]);

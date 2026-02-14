@@ -11,7 +11,7 @@ export default defineConfig({
                     'resources/css/login.css',
                     'resources/css/dashboard.css',
                     'resources/css/admin_layout..css',
-                    'resources\css\admin_layout..css'
+                    'resources/css/show_election.css'
                 ],
                 refresh: true, // Hot reload for dev
             }),

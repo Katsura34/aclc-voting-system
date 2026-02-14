@@ -97,7 +97,11 @@ class CandidateController extends Controller
                     $validated['photo_path'] = $photoPath;
                 }
 
-                Candidate::create($validated);
+                // Remove the photo file from validated data before creating
+                // Only photo_path should be used for database inserts
+                $createData = collect($validated)->except(['photo'])->toArray();
+
+                Candidate::create($createData);
                 
                 DB::commit();
 

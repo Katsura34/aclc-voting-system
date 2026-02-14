@@ -1,5 +1,5 @@
 <x-admin-layout title="Elections Management">
-@vite(['resouces/css/election.css'])
+{{-- @vite(['resouces/css/election.css']) --}}
 
     <!-- Page Header -->
     <div class="page-header">

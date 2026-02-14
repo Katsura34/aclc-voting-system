@@ -93,7 +93,19 @@ class CandidateController extends Controller
                 // Handle photo upload
                 if ($request->hasFile('photo')) {
                     $photo = $request->file('photo');
+                    
+                    // Validate the file was uploaded successfully
+                    if (!$photo->isValid()) {
+                        throw new \Exception('Photo upload failed. Please try again.');
+                    }
+                    
                     $photoPath = $photo->store('candidates', 'public');
+                    
+                    // Ensure the file was actually stored
+                    if (!$photoPath) {
+                        throw new \Exception('Failed to store photo. Please check server configuration.');
+                    }
+                    
                     $validated['photo_path'] = $photoPath;
                 }
 
@@ -188,7 +200,19 @@ class CandidateController extends Controller
                 // Handle photo upload
                 elseif ($request->hasFile('photo')) {
                     $photo = $request->file('photo');
+                    
+                    // Validate the file was uploaded successfully
+                    if (!$photo->isValid()) {
+                        throw new \Exception('Photo upload failed. Please try again.');
+                    }
+                    
                     $photoPath = $photo->store('candidates', 'public');
+                    
+                    // Ensure the file was actually stored
+                    if (!$photoPath) {
+                        throw new \Exception('Failed to store photo. Please check server configuration.');
+                    }
+                    
                     $validated['photo_path'] = $photoPath;
                     
                     // Delete old photo

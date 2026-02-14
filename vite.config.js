@@ -4,10 +4,16 @@ import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
     plugins: [
-        laravel({
-            input: ['resources/css/app.css', 'resources/js/app.js'],
-            refresh: true, // Hot reload for dev
-        }),
+            laravel({
+                input: [
+                    'resources/css/app.css',
+                    'resources/js/app.js',
+                    'resources/css/login.css',
+                    'resources/css/dashboard.css',
+                    'resources/css/admin_layout..css'
+                ],
+                refresh: true, // Hot reload for dev
+            }),
         tailwindcss(),
     ],
     build: {

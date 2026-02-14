@@ -57,7 +57,8 @@ class CandidatePhotoUploadTest extends TestCase
 
         $this->actingAs($admin);
 
-        $file = UploadedFile::fake()->image('photo.png', 100, 100)->size(500);
+        // Use create() with mime type to avoid GD dependency in test environment
+        $file = UploadedFile::fake()->create('photo.png', 500, 'image/png');
 
         $response = $this->put(route('admin.candidates.update', $candidate), [
             'first_name' => 'Test',

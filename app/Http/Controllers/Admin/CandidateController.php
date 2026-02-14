@@ -32,19 +32,62 @@ class CandidateController extends Controller
 
         // Allowed mime types and max size (2MB)
         $allowedMimes = ['image/jpeg', 'image/jpg', 'image/png'];
-        $mime = $photo->getClientMimeType();
-        $size = $photo->getSize();
 
-        if (!in_array($mime, $allowedMimes, true)) {
-            throw new \Exception('Unsupported image type. Allowed types: JPG, JPEG, PNG.');
+        // Try a few fallbacks for mime detection to be more resilient across environments
+        try {
+            $mime = $photo->getClientMimeType() ?: $photo->getMimeType();
+        } catch (\Throwable $e) {
+            $mime = null;
+        }
+
+        if (!$mime && method_exists($photo, 'getRealPath')) {
+            try {
+                $real = $photo->getRealPath();
+                if ($real && file_exists($real)) {
+                    $mime = mime_content_type($real) ?: null;
+                }
+            } catch (\Throwable $e) {
+                $mime = null;
+            }
+        }
+
+        $size = null;
+        try {
+            $size = $photo->getSize();
+        } catch (\Throwable $_) {
+            // leave size null and skip strict size check if unavailable
+        }
+
+        if ($mime && !in_array($mime, $allowedMimes, true)) {
+            throw new \Exception('Unsupported image type. Allowed types: JPG, JPEG, PNG. Detected: ' . ($mime ?: 'unknown'));
         }
 
         if ($size !== null && $size > 2 * 1024 * 1024) {
             throw new \Exception('Image exceeds maximum allowed size of 2MB.');
         }
 
-        // Build a safe filename
-        $extension = $photo->getClientOriginalExtension() ?: ($mime === 'image/png' ? 'png' : 'jpg');
+        // Build a safe filename and choose extension from multiple fallbacks
+        $extension = null;
+        try {
+            $extension = $photo->getClientOriginalExtension();
+        } catch (\Throwable $_) {
+            $extension = null;
+        }
+        if (!$extension) {
+            if ($mime === 'image/png') {
+                $extension = 'png';
+            } elseif ($mime === 'image/jpeg' || $mime === 'image/jpg') {
+                $extension = 'jpg';
+            } else {
+                // try guessExtension if available
+                try {
+                    $extension = method_exists($photo, 'guessExtension') ? $photo->guessExtension() : null;
+                } catch (\Throwable $_) {
+                    $extension = 'jpg';
+                }
+            }
+        }
+
         $filename = uniqid('candidate_', true) . '.' . $extension;
 
         // Ensure candidates directory exists on the public disk
@@ -315,9 +358,11 @@ class CandidateController extends Controller
                 'candidate_id' => $candidate->id,
                 'trace' => $e->getTraceAsString()
             ]);
-            
+
+            $msg = 'Failed to update candidate. ' . $e->getMessage();
+
             return redirect()->back()
-                ->with('error', 'Failed to update candidate. Please try again.')
+                ->with('error', $msg)
                 ->withInput();
         }
     }

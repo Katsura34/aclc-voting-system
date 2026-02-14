@@ -111,14 +111,7 @@
                 </div>
 
                 <!-- Platform -->
-                <div class="info-card">
-                    <h4 class="mb-3"><i class="bi bi-megaphone-fill"></i> Campaign Platform</h4>
-                    @if($candidate->platform)
-                        <p class="mb-0" style="white-space: pre-wrap;">{{ $candidate->platform }}</p>
-                    @else
-                        <p class="text-muted mb-0">No platform provided.</p>
-                    @endif
-                </div>
+                    <!-- Platform removed (no DB column) -->
             </div>
 
             <!-- Right Column -->

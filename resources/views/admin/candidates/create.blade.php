@@ -282,7 +282,6 @@
             const previewPosition = document.getElementById('previewPosition');
             const previewParty = document.getElementById('previewParty');
             const previewBio = document.getElementById('previewBio');
-            const previewPlatform = document.getElementById('previewPlatform');
             const previewAvatar = document.getElementById('previewAvatar');
             const previewImage = document.getElementById('previewImage');
 
@@ -292,7 +291,7 @@
             const positionSelect = document.getElementById('position_id');
             const partySelect = document.getElementById('party_id');
             const bioInput = document.getElementById('bio');
-            const platformInput = document.getElementById('platform');
+            // platform removed
             const electionFilter = document.getElementById('election_filter');
             const photoInput = document.getElementById('photo');
 
@@ -349,10 +348,7 @@
                 previewBio.textContent = this.value || 'Biography will appear here...';
             });
 
-            // Update platform preview
-            platformInput.addEventListener('input', function() {
-                previewPlatform.textContent = this.value || 'Platform will appear here...';
-            });
+            // platform-related preview removed
 
             // Election filter
             electionFilter.addEventListener('change', function() {

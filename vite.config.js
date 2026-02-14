@@ -10,7 +10,7 @@ export default defineConfig({
                     'resources/js/app.js',
                     'resources/css/login.css',
                     'resources/css/dashboard.css',
-                    'resources/css/admin_layout.css'
+                    'resources/css/admin_layout..css'
                 ],
                 refresh: true, // Hot reload for dev
             }),

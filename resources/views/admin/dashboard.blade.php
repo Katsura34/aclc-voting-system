@@ -1,5 +1,5 @@
 <x-admin-layout title="Admin Dashboard">
-
+   @
 
     <!-- Page Header -->
     <div class="page-header">

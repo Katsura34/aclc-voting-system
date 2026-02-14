@@ -25,19 +25,35 @@ class CandidateController extends Controller
      */
     private function handlePhotoUpload($photo)
     {
-        // Validate the file was uploaded successfully
-        if (!$photo->isValid()) {
+        // Basic upload checks
+        if (!$photo || !$photo->isValid()) {
             throw new \Exception('Photo upload failed. Please ensure the file is a valid image and within the allowed size limit.');
         }
-        
-        $photoPath = $photo->store('candidates', 'public');
-        
-        // Ensure the file was actually stored
+
+        // Allowed mime types and max size (2MB)
+        $allowedMimes = ['image/jpeg', 'image/jpg', 'image/png'];
+        $mime = $photo->getClientMimeType();
+        $size = $photo->getSize();
+
+        if (!in_array($mime, $allowedMimes, true)) {
+            throw new \Exception('Unsupported image type. Allowed types: JPG, JPEG, PNG.');
+        }
+
+        if ($size !== null && $size > 2 * 1024 * 1024) {
+            throw new \Exception('Image exceeds maximum allowed size of 2MB.');
+        }
+
+        // Build a safe filename and store
+        $extension = $photo->getClientOriginalExtension() ?: ($mime === 'image/png' ? 'png' : 'jpg');
+        $filename = uniqid('candidate_', true) . '.' . $extension;
+
+        $photoPath = $photo->storeAs('candidates', $filename, 'public');
+
         if (!$photoPath) {
-            Log::error('Failed to store candidate photo - storage may be misconfigured');
+            Log::error('Failed to store candidate photo - storage may be misconfigured', ['mime' => $mime, 'size' => $size]);
             throw new \Exception('Unable to save photo. Please try again or contact support if the problem persists.');
         }
-        
+
         return $photoPath;
     }
 
@@ -119,9 +135,15 @@ class CandidateController extends Controller
             try {
                 // Handle photo upload
                 if ($request->hasFile('photo')) {
-                    $photo = $request->file('photo');
-                    $photoPath = $this->handlePhotoUpload($photo);
-                    $validated['photo_path'] = $photoPath;
+                    try {
+                        $photo = $request->file('photo');
+                        $photoPath = $this->handlePhotoUpload($photo);
+                        $validated['photo_path'] = $photoPath;
+                    } catch (\Exception $e) {
+                        return redirect()->back()
+                            ->withErrors(['photo' => $e->getMessage()])
+                            ->withInput();
+                    }
                 }
 
                 // Remove the photo file from validated data before creating
@@ -215,13 +237,19 @@ class CandidateController extends Controller
                 }
                 // Handle photo upload
                 elseif ($request->hasFile('photo')) {
-                    $photo = $request->file('photo');
-                    $photoPath = $this->handlePhotoUpload($photo);
-                    $validated['photo_path'] = $photoPath;
-                    
-                    // Delete old photo
-                    if ($candidate->photo_path && Storage::disk('public')->exists($candidate->photo_path)) {
-                        Storage::disk('public')->delete($candidate->photo_path);
+                    try {
+                        $photo = $request->file('photo');
+                        $photoPath = $this->handlePhotoUpload($photo);
+                        $validated['photo_path'] = $photoPath;
+
+                        // Delete old photo
+                        if ($candidate->photo_path && Storage::disk('public')->exists($candidate->photo_path)) {
+                            Storage::disk('public')->delete($candidate->photo_path);
+                        }
+                    } catch (\Exception $e) {
+                        return redirect()->back()
+                            ->withErrors(['photo' => $e->getMessage()])
+                            ->withInput();
                     }
                 }
                 

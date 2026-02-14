@@ -8,12 +8,39 @@ use App\Models\Election;
 use App\Models\Position;
 use App\Models\Party;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class CandidateController extends Controller
 {
+    /**
+     * Handle photo upload for a candidate.
+     *
+     * @param \Illuminate\Http\UploadedFile $photo
+     * @return string The path where the photo was stored
+     * @throws \Exception If upload or storage fails
+     */
+    private function handlePhotoUpload($photo)
+    {
+        // Validate the file was uploaded successfully
+        if (!$photo->isValid()) {
+            throw new \Exception('Photo upload failed. Please ensure the file is a valid image and within the allowed size limit.');
+        }
+        
+        $photoPath = $photo->store('candidates', 'public');
+        
+        // Ensure the file was actually stored
+        if (!$photoPath) {
+            Log::error('Failed to store candidate photo - storage may be misconfigured');
+            throw new \Exception('Unable to save photo. Please try again or contact support if the problem persists.');
+        }
+        
+        return $photoPath;
+    }
+
     /**
      * Display a listing of the candidates.
      */
@@ -93,15 +120,19 @@ class CandidateController extends Controller
                 // Handle photo upload
                 if ($request->hasFile('photo')) {
                     $photo = $request->file('photo');
-                    $photoPath = $photo->store('candidates', 'public');
+                    $photoPath = $this->handlePhotoUpload($photo);
                     $validated['photo_path'] = $photoPath;
                 }
 
-                Candidate::create($validated);
+                // Remove the photo file from validated data before creating
+                // Only photo_path should be used for database inserts
+                $createData = Arr::except($validated, ['photo']);
+
+                Candidate::create($createData);
                 
                 DB::commit();
 
-                \Log::info('Candidate created', ['name' => $validated['first_name'] . ' ' . $validated['last_name']]);
+                Log::info('Candidate created', ['name' => $validated['first_name'] . ' ' . $validated['last_name']]);
 
                 return redirect()->route('admin.candidates.index')
                     ->with('success', 'Candidate created successfully!');
@@ -120,7 +151,7 @@ class CandidateController extends Controller
                 ->withErrors($e->errors())
                 ->withInput();
         } catch (\Exception $e) {
-            \Log::error('Candidate creation error: ' . $e->getMessage(), [
+            Log::error('Candidate creation error: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
             
@@ -184,7 +215,7 @@ class CandidateController extends Controller
                 // Handle photo upload
                 elseif ($request->hasFile('photo')) {
                     $photo = $request->file('photo');
-                    $photoPath = $photo->store('candidates', 'public');
+                    $photoPath = $this->handlePhotoUpload($photo);
                     $validated['photo_path'] = $photoPath;
                     
                     // Delete old photo
@@ -195,13 +226,13 @@ class CandidateController extends Controller
                 
                 // Remove the remove_photo flag and photo file from validated data before updating
                 // Only photo_path should be used for database updates
-                $updateData = collect($validated)->except(['remove_photo', 'photo'])->toArray();
+                $updateData = Arr::except($validated, ['remove_photo', 'photo']);
                 
                 $candidate->update($updateData);
                 
                 DB::commit();
 
-                \Log::info('Candidate updated', ['candidate_id' => $candidate->id]);
+                Log::info('Candidate updated', ['candidate_id' => $candidate->id]);
 
                 return redirect()->route('admin.candidates.index')
                     ->with('success', 'Candidate updated successfully!');
@@ -220,7 +251,7 @@ class CandidateController extends Controller
                 ->withErrors($e->errors())
                 ->withInput();
         } catch (\Exception $e) {
-            \Log::error('Candidate update error: ' . $e->getMessage(), [
+            Log::error('Candidate update error: ' . $e->getMessage(), [
                 'candidate_id' => $candidate->id,
                 'trace' => $e->getTraceAsString()
             ]);
@@ -255,7 +286,7 @@ class CandidateController extends Controller
                 
                 DB::commit();
 
-                \Log::info('Candidate deleted', ['candidate_id' => $candidate->id]);
+                Log::info('Candidate deleted', ['candidate_id' => $candidate->id]);
 
                 return redirect()->route('admin.candidates.index')
                     ->with('success', 'Candidate deleted successfully!');
@@ -264,7 +295,7 @@ class CandidateController extends Controller
                 throw $e;
             }
         } catch (\Exception $e) {
-            \Log::error('Candidate deletion error: ' . $e->getMessage(), [
+            Log::error('Candidate deletion error: ' . $e->getMessage(), [
                 'candidate_id' => $candidate->id,
                 'trace' => $e->getTraceAsString()
             ]);
@@ -426,7 +457,7 @@ class CandidateController extends Controller
                     session()->flash('import_errors', $errors);
                 }
 
-                \Log::info('Candidates imported', [
+                Log::info('Candidates imported', [
                     'imported' => $importedCount,
                     'skipped' => $skippedCount
                 ]);
@@ -441,7 +472,7 @@ class CandidateController extends Controller
             return redirect()->route('admin.candidates.index')
                 ->withErrors($e->errors());
         } catch (\Exception $e) {
-            \Log::error('Candidate import error: ' . $e->getMessage(), [
+            Log::error('Candidate import error: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
             

@@ -11,6 +11,7 @@
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"> --}}
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
 
 </head>

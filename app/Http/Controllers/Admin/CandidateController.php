@@ -157,7 +157,6 @@ class CandidateController extends Controller
      */
     public function update(Request $request, Candidate $candidate)
     {
-dd($request->hasFile('photo'));
 
         try {
             $validated = $request->validate([
@@ -200,7 +199,6 @@ dd($request->hasFile('photo'));
                 $updateData = collect($validated)->except(['remove_photo', 'photo'])->toArray();
                 
                 $candidate->update($updateData);
-                dd($updateData);
 
                 DB::commit();
 

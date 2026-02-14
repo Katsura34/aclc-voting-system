@@ -9,7 +9,9 @@
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet"> --}}
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <php
+    <?php 
+    include resource_path('css/login.css');
+    ?>
 
     
     {{-- <style>

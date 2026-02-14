@@ -33,22 +33,11 @@ class CandidateController extends Controller
         // Allowed mime types and max size (2MB)
         $allowedMimes = ['image/jpeg', 'image/jpg', 'image/png'];
 
-        // Try a few fallbacks for mime detection to be more resilient across environments
+        // Prefer the client-provided mime type; avoid using guessers requiring php_fileinfo
         try {
-            $mime = $photo->getClientMimeType() ?: $photo->getMimeType();
+            $mime = $photo->getClientMimeType() ?: null;
         } catch (\Throwable $e) {
             $mime = null;
-        }
-
-        if (!$mime && method_exists($photo, 'getRealPath')) {
-            try {
-                $real = $photo->getRealPath();
-                if ($real && file_exists($real)) {
-                    $mime = mime_content_type($real) ?: null;
-                }
-            } catch (\Throwable $e) {
-                $mime = null;
-            }
         }
 
         $size = null;
@@ -66,25 +55,32 @@ class CandidateController extends Controller
             throw new \Exception('Image exceeds maximum allowed size of 2MB.');
         }
 
-        // Build a safe filename and choose extension from multiple fallbacks
+        // Build a safe filename and choose extension from multiple fallbacks without relying on guessers
         $extension = null;
         try {
             $extension = $photo->getClientOriginalExtension();
         } catch (\Throwable $_) {
             $extension = null;
         }
+
+        if (!$extension) {
+            // Try extension from the original client filename
+            try {
+                $originalName = $photo->getClientOriginalName();
+                $extFromName = pathinfo($originalName, PATHINFO_EXTENSION);
+                if ($extFromName) {
+                    $extension = $extFromName;
+                }
+            } catch (\Throwable $_) {
+                // ignore
+            }
+        }
+
         if (!$extension) {
             if ($mime === 'image/png') {
                 $extension = 'png';
-            } elseif ($mime === 'image/jpeg' || $mime === 'image/jpg') {
-                $extension = 'jpg';
             } else {
-                // try guessExtension if available
-                try {
-                    $extension = method_exists($photo, 'guessExtension') ? $photo->guessExtension() : null;
-                } catch (\Throwable $_) {
-                    $extension = 'jpg';
-                }
+                $extension = 'jpg';
             }
         }
 

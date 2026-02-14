@@ -248,7 +248,7 @@ class CandidateController extends Controller
                 'course' => 'nullable|string|max:255',
                 'year_level' => 'nullable|integer|min:1|max:12',
                 'bio' => 'nullable|string',
-                'photo' => 'nullable|file|max:2048',
+                'photo' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
                 'remove_photo' => 'nullable|boolean',
             ]);
 

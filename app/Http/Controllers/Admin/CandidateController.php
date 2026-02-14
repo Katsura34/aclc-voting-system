@@ -157,6 +157,8 @@ class CandidateController extends Controller
      */
     public function update(Request $request, Candidate $candidate)
     {
+        dd('Update method reached');
+
         try {
             $validated = $request->validate([
                 'first_name' => 'required|string|max:255',

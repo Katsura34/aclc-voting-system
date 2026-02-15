@@ -286,7 +286,7 @@
         </div>
     </div>
 
-    <!-- Loading Spinner and Progress Bar Overlay -->
+    <!-- Loading Spinner and Progress Bar Overlay (moved to end of body for reliability) -->
     <style>
 #import-loading-overlay {
     display: none;
@@ -319,7 +319,6 @@
     </div>
 </div>
 
-@push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     var importForm = document.querySelector('#importModal form');
@@ -352,7 +351,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 overlay.style.display = 'none';
                 progressBarContainer.style.display = 'none';
                 if (xhr.status === 200) {
-                    // Try to parse JSON, fallback to alert
                     try {
                         var response = JSON.parse(xhr.responseText);
                         if(response.success) {
@@ -383,6 +381,5 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
-@endpush
 
 </x-admin-layout>

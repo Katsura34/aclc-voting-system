@@ -286,69 +286,39 @@
         </div>
     </div>
 
-
-    <!-- Floating Import Indicator (Top Right) -->
+    <!-- Loading Spinner Overlay with Numeric Progress -->
     <style>
-    #import-floating-indicator {
-        display: none;
-        position: fixed;
-        top: 24px;
-        right: 32px;
-        z-index: 2000;
-        background: #fff;
-        border-radius: 50%;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.12);
-        width: 56px;
-        height: 56px;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: box-shadow 0.2s;
-    }
-    #import-floating-indicator:hover {
-        box-shadow: 0 4px 16px rgba(0,0,0,0.18);
-    }
-    #import-floating-progress {
-        display: none;
-        position: absolute;
-        top: 60px;
-        right: 0;
-        min-width: 180px;
-        background: #fff;
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.12);
-        padding: 16px;
-        text-align: center;
-        font-size: 1rem;
-        font-weight: 500;
-        color: #222;
-    }
-    #import-floating-indicator .spinner-border {
-        width: 2rem;
-        height: 2rem;
-    }
-    </style>
-    <div id="import-floating-indicator">
-        <div class="spinner-border text-success" role="status" style="margin:0 auto;">
-            <span class="visually-hidden">Importing...</span>
+#import-loading-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(255,255,255,0.8);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+</style>
+<div id="import-loading-overlay">
+    <div style="text-align:center;">
+        <div class="spinner-border text-success" style="width:4rem;height:4rem;" role="status">
+            <span class="visually-hidden">Loading...</span>
         </div>
+        <div class="mt-3 fw-bold text-success">Importing users, please wait...</div>
+        <div id="import-progress-numeric" class="mt-2 fw-bold text-dark" style="font-size:1.2rem;">0/0</div>
     </div>
-    <div id="import-floating-progress">
-        <div class="fw-bold text-success mb-1">Importing users...</div>
-        <div id="import-progress-numeric" class="fw-bold text-dark" style="font-size:1.1rem;">0/0</div>
-    </div>
+</div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     var importForm = document.querySelector('#importModal form');
-    var floatingIndicator = document.getElementById('import-floating-indicator');
-    var floatingProgress = document.getElementById('import-floating-progress');
+    var overlay = document.getElementById('import-loading-overlay');
     var progressNumeric = document.getElementById('import-progress-numeric');
     if(importForm) {
         importForm.addEventListener('submit', function(e) {
             e.preventDefault();
-            floatingIndicator.style.display = 'flex';
-            floatingProgress.style.display = 'none';
+            overlay.style.display = 'flex';
             // Try to get the number of rows in the CSV file
             var fileInput = document.getElementById('csv_file');
             var file = fileInput.files[0];
@@ -366,8 +336,7 @@ document.addEventListener('DOMContentLoaded', function() {
             xhr.open('POST', importForm.action, true);
             xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
             xhr.onload = function() {
-                floatingIndicator.style.display = 'none';
-                floatingProgress.style.display = 'none';
+                overlay.style.display = 'none';
                 if (xhr.status === 200) {
                     try {
                         var response = JSON.parse(xhr.responseText);
@@ -388,31 +357,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             };
             xhr.onerror = function() {
-                floatingIndicator.style.display = 'none';
-                floatingProgress.style.display = 'none';
+                overlay.style.display = 'none';
                 alert('An error occurred during import.');
             };
             xhr.send(formData);
         });
     }
-
-    // Floating indicator hover logic
-    if(floatingIndicator && floatingProgress) {
-        floatingIndicator.addEventListener('mouseenter', function() {
-            floatingProgress.style.display = 'block';
-        });
-        floatingIndicator.addEventListener('mouseleave', function() {
-            floatingProgress.style.display = 'none';
-        });
-        floatingProgress.addEventListener('mouseenter', function() {
-            floatingProgress.style.display = 'block';
-        });
-        floatingProgress.addEventListener('mouseleave', function() {
-            floatingProgress.style.display = 'none';
-        });
-    }
 });
-</script>
 </script>
 
 </x-admin-layout>

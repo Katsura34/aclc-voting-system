@@ -311,12 +311,18 @@ class UserController extends Controller
     public function import(Request $request)
     {
         try {
+            // Start debug message container
+            echo '<div id="debug-messages" style="position:fixed;top:10px;left:10px;z-index:9999;background:#fff;border:2px solid #333;padding:16px;max-width:600px;max-height:400px;overflow:auto;box-shadow:0 2px 8px #0003;">';
+            flush();
             try {
                 $request->validate([
                     'csv_file' => 'required|file|mimes:csv,txt|max:2048',
                 ]);
             } catch (\Illuminate\Validation\ValidationException $e) {
                 echo '<div style="color:red;">Validation error: ' . htmlspecialchars(json_encode($e->errors())) . '</div>';
+                flush();
+                // End debug message container and add JS to hide after 10s
+                echo '</div><script>setTimeout(function(){var d=document.getElementById("debug-messages");if(d)d.style.display="none";},10000);</script>';
                 flush();
                 throw $e;
             }
@@ -343,6 +349,9 @@ class UserController extends Controller
                 $expectedHeader = ['usn', 'lastname', 'firstname', 'strand', 'year', 'gender', 'password'];
                 if ($header !== $expectedHeader) {
                     echo '<div style="color:red;">Header error: Invalid CSV format. Expected columns: ' . implode(', ', $expectedHeader) . '</div>';
+                    flush();
+                    // End debug message container and add JS to hide after 10s
+                    echo '</div><script>setTimeout(function(){var d=document.getElementById("debug-messages");if(d)d.style.display="none";},10000);</script>';
                     flush();
                     return redirect()->back()
                         ->with('error', 'Invalid CSV format. Expected columns: ' . implode(', ', $expectedHeader));
@@ -467,6 +476,9 @@ class UserController extends Controller
                     }
                 }
                 
+                // End debug message container and add JS to hide after 10s
+                echo '</div><script>setTimeout(function(){var d=document.getElementById("debug-messages");if(d)d.style.display="none";},10000);</script>';
+                flush();
                 return redirect()->route('admin.users.index')
                     ->with(count($errors) > 0 ? 'error' : 'success', $message);
                     
@@ -479,6 +491,9 @@ class UserController extends Controller
         } catch (\Illuminate\Validation\ValidationException $e) {
             echo '<div style="color:red;">Validation error (outer): ' . htmlspecialchars(json_encode($e->errors())) . '</div>';
             flush();
+            // End debug message container and add JS to hide after 10s
+            echo '</div><script>setTimeout(function(){var d=document.getElementById("debug-messages");if(d)d.style.display="none";},10000);</script>';
+            flush();
             return redirect()->back()
                 ->withErrors($e->errors());
         } catch (\Exception $e) {
@@ -486,6 +501,9 @@ class UserController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
             echo '<div style="color:red;">Unknown error (outer): ' . htmlspecialchars($e->getMessage()) . '</div>';
+            flush();
+            // End debug message container and add JS to hide after 10s
+            echo '</div><script>setTimeout(function(){var d=document.getElementById("debug-messages");if(d)d.style.display="none";},10000);</script>';
             flush();
             return redirect()->back()
                 ->with('error', 'Failed to import users. Please check the CSV format and try again.');

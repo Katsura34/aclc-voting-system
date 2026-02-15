@@ -17,6 +17,17 @@
                 background: #f8f9fa;
                 border-left: 4px solid var(--aclc-red);
             }
+            #import-loading-overlay {
+                display: none;
+                position: fixed;
+                top: 0; left: 0;
+                width: 100vw; height: 100vh;
+                background: rgba(255,255,255,0.8);
+                z-index: 2000;
+                align-items: center;
+                justify-content: center;
+                flex-direction: column;
+            }
         </style>
     </x-slot>
 
@@ -275,26 +286,43 @@
         </div>
     </div>
 
-    <!-- Loading Spinner Overlay -->
-    <div id="import-loading-overlay" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(255,255,255,0.8);z-index:2000;align-items:center;justify-content:center;">
-        <div style="text-align:center;">
-            <div class="spinner-border text-success" style="width:4rem;height:4rem;" role="status">
-                <span class="visually-hidden">Loading...</span>
-            </div>
-            <div class="mt-3 fw-bold text-success">Importing users, please wait...</div>
+    <!-- Loading Spinner Overlay (fixed and improved) -->
+    <style>
+#import-loading-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(255,255,255,0.8);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+</style>
+<div id="import-loading-overlay">
+    <div style="text-align:center;">
+        <div class="spinner-border text-success" style="width:4rem;height:4rem;" role="status">
+            <span class="visually-hidden">Loading...</span>
         </div>
+        <div class="mt-3 fw-bold text-success">Importing users, please wait...</div>
     </div>
+</div>
 
-    @push('scripts')
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            var importForm = document.querySelector('#importModal form');
-            if(importForm) {
-                importForm.addEventListener('submit', function() {
-                    document.getElementById('import-loading-overlay').style.display = 'flex';
-                });
-            }
-        });
-    </script>
-    @endpush
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var importForm = document.querySelector('#importModal form');
+        if(importForm) {
+            importForm.addEventListener('submit', function() {
+                var overlay = document.getElementById('import-loading-overlay');
+                if(overlay) {
+                    overlay.style.display = 'flex';
+                }
+            });
+        }
+    });
+</script>
+@endpush
+
 </x-admin-layout>

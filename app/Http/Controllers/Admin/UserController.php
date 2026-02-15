@@ -317,9 +317,13 @@ class UserController extends Controller
 
             $file = $request->file('csv_file');
             $path = $file->getRealPath();
-            
+
+            // Debug: Display message when file is being processed
+            echo '<div style="color:blue;">Processing CSV file...</div>';
+            flush();
+
             DB::beginTransaction();
-            
+
             try {
                 $csv = array_map('str_getcsv', file($path));
                 $header = array_shift($csv); // Remove header row
@@ -341,20 +345,24 @@ class UserController extends Controller
                 
                 foreach ($csv as $index => $row) {
                     $lineNumber = $index + 2; // +2 because we removed header and arrays are 0-indexed
-                    
+
+                    // Debug: Display message for each row being processed
+                    echo '<div style="color:green;">Processing row ' . $lineNumber . '...</div>';
+                    flush();
+
                     // Skip empty rows
                     if (empty(array_filter($row))) {
                         continue;
                     }
-                    
+
                     // Validate row has correct number of columns
                     if (count($row) !== 7) {
                         $errors[] = "Line {$lineNumber}: Invalid number of columns";
                         continue;
                     }
-                    
+
                     list($usn, $lastname, $firstname, $strand, $year, $gender, $password) = $row;
-                    
+
                     // Trim all values
                     $usn = trim($usn);
                     $lastname = trim($lastname);
@@ -391,6 +399,10 @@ class UserController extends Controller
                     }
                     
                     try {
+                        // Debug: Display message before sending data to database
+                        echo '<div style="color:orange;">Sending row ' . $lineNumber . ' to database...</div>';
+                        flush();
+
                         // Create user
                         User::create([
                             'usn' => $usn,
@@ -404,7 +416,7 @@ class UserController extends Controller
                             'user_type' => 'student',
                             'has_voted' => false,
                         ]);
-                        
+
                         $imported++;
                     } catch (\Exception $e) {
                         // Handle database constraint violations and other errors

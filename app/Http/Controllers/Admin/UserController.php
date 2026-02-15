@@ -311,14 +311,13 @@ class UserController extends Controller
     public function import(Request $request)
     {
         try {
-            // Debug output will use JS alert and console
+            // ...existing code...
             try {
                 $request->validate([
                     'csv_file' => 'required|file|mimes:csv,txt|max:2048',
                 ]);
             } catch (\Illuminate\Validation\ValidationException $e) {
-                echo '<script>console.error("Validation error: ' . addslashes(json_encode($e->errors())) . '");alert("Validation error: see console for details");</script>';
-                flush();
+                // ...existing code...
                 throw $e;
             }
 
@@ -326,8 +325,7 @@ class UserController extends Controller
             $path = $file->getRealPath();
 
             // Debug: Display message when file is being processed
-            echo '<script>console.log("Processing CSV file...");</script>';
-            flush();
+            // ...existing code...
 
             DB::beginTransaction();
 
@@ -343,8 +341,7 @@ class UserController extends Controller
                 // Validate header format
                 $expectedHeader = ['usn', 'lastname', 'firstname', 'strand', 'year', 'gender', 'password'];
                 if ($header !== $expectedHeader) {
-                    echo '<script>console.error("Header error: Invalid CSV format. Expected columns: ' . implode(', ', $expectedHeader) . '");alert("Header error: see console for details");</script>';
-                    flush();
+                    // ...existing code...
                     return redirect()->back()
                         ->with('error', 'Invalid CSV format. Expected columns: ' . implode(', ', $expectedHeader));
                 }
@@ -356,21 +353,18 @@ class UserController extends Controller
                     $lineNumber = $index + 2; // +2 because we removed header and arrays are 0-indexed
 
                     // Debug: Display message for each row being processed
-                    echo '<script>console.log("Processing row ' . $lineNumber . '...");</script>';
-                    flush();
+                    // ...existing code...
 
                     // Skip empty rows
                     if (empty(array_filter($row))) {
-                        echo '<script>console.log("Row ' . $lineNumber . ' skipped (empty row)");</script>';
-                        flush();
+                        // ...existing code...
                         continue;
                     }
 
                     // Validate row has correct number of columns
                     if (count($row) !== 7) {
                         $errors[] = "Line {$lineNumber}: Invalid number of columns";
-                        echo '<script>console.error("Row error: Line ' . $lineNumber . ' has invalid number of columns");alert("Row error: see console for details");</script>';
-                        flush();
+                        // ...existing code...
                         continue;
                     }
 
@@ -388,8 +382,7 @@ class UserController extends Controller
                     // Basic validation
                     if (empty($usn) || empty($lastname) || empty($firstname) || empty($password)) {
                         $errors[] = "Line {$lineNumber}: USN, lastname, firstname, and password are required";
-                        echo '<script>console.error("Row error: Line ' . $lineNumber . ' missing required fields");alert("Row error: see console for details");</script>';
-                        flush();
+                        // ...existing code...
                         continue;
                     }
 
@@ -399,30 +392,26 @@ class UserController extends Controller
                     // Check if user already exists by USN or email
                     if (User::where('usn', $usn)->exists()) {
                         $errors[] = "Line {$lineNumber}: USN '{$usn}' already exists";
-                        echo '<script>console.error("Row error: Line ' . $lineNumber . ' USN already exists");alert("Row error: see console for details");</script>';
-                        flush();
+                        // ...existing code...
                         continue;
                     }
 
                     if (User::where('email', $email)->exists()) {
                         $errors[] = "Line {$lineNumber}: Email '{$email}' already exists";
-                        echo '<script>console.error("Row error: Line ' . $lineNumber . ' email already exists");alert("Row error: see console for details");</script>';
-                        flush();
+                        // ...existing code...
                         continue;
                     }
 
                     // Validate gender
                     if (!empty($gender) && !in_array($gender, ['Male', 'Female', 'Other'])) {
                         $errors[] = "Line {$lineNumber}: Invalid gender value. Must be Male, Female, or Other";
-                        echo '<script>console.error("Row error: Line ' . $lineNumber . ' invalid gender value");alert("Row error: see console for details");</script>';
-                        flush();
+                        // ...existing code...
                         continue;
                     }
                     
                     try {
                         // Debug: Display message before sending data to database
-                        echo '<script>console.log("Sending row ' . $lineNumber . ' to database...");</script>';
-                        flush();
+                        // ...existing code...
 
                         // Create user
                         User::create([
@@ -444,12 +433,12 @@ class UserController extends Controller
                         $errorMessage = $e->getMessage();
                         if (strpos($errorMessage, 'Duplicate entry') !== false) {
                             $errors[] = "Line {$lineNumber}: Duplicate entry detected (USN or email already exists)";
-                            echo '<script>console.error("Database error: Line ' . $lineNumber . ' duplicate entry");alert("Database error: see console for details");</script>';
+                            // ...existing code...
                         } else {
                             $errors[] = "Line {$lineNumber}: " . $errorMessage;
-                            echo '<script>console.error("Database error: Line ' . $lineNumber . ' ' . addslashes($errorMessage) . '");alert("Database error: see console for details");</script>';
+                            // ...existing code...
                         }
-                        flush();
+                        // ...existing code...
                     }
                 }
                 
@@ -476,21 +465,18 @@ class UserController extends Controller
                     
             } catch (\Exception $e) {
                 DB::rollBack();
-                echo '<script>console.error("Unknown error: ' . addslashes($e->getMessage()) . '");alert("Unknown error: see console for details");</script>';
-                flush();
+                // ...existing code...
                 throw $e;
             }
         } catch (\Illuminate\Validation\ValidationException $e) {
-            echo '<script>console.error("Validation error (outer): ' . addslashes(json_encode($e->errors())) . '");alert("Validation error: see console for details");</script>';
-            flush();
+            // ...existing code...
             return redirect()->back()
                 ->withErrors($e->errors());
         } catch (\Exception $e) {
             \Log::error('CSV import error: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
-            echo '<script>console.error("Unknown error (outer): ' . addslashes($e->getMessage()) . '");alert("Unknown error: see console for details");</script>';
-            flush();
+            // ...existing code...
             return redirect()->back()
                 ->with('error', 'Failed to import users. Please check the CSV format and try again.');
         }

@@ -274,4 +274,27 @@
             </div>
         </div>
     </div>
+
+    <!-- Loading Spinner Overlay -->
+    <div id="import-loading-overlay" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(255,255,255,0.8);z-index:2000;align-items:center;justify-content:center;">
+        <div style="text-align:center;">
+            <div class="spinner-border text-success" style="width:4rem;height:4rem;" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <div class="mt-3 fw-bold text-success">Importing users, please wait...</div>
+        </div>
+    </div>
+
+    @push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var importForm = document.querySelector('#importModal form');
+            if(importForm) {
+                importForm.addEventListener('submit', function() {
+                    document.getElementById('import-loading-overlay').style.display = 'flex';
+                });
+            }
+        });
+    </script>
+    @endpush
 </x-admin-layout>

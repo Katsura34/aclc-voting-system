@@ -216,8 +216,21 @@ class ImportUsersJob implements ShouldQueue
      */
     protected function countCsvRows(SplFileObject $file): int
     {
-        $file->seek(PHP_INT_MAX);
-        return $file->key() + 1 - 1; // Subtract header row
+        $count = 0;
+        $file->rewind();
+        $file->current(); // Read header
+        $file->next(); // Skip header
+        
+        while (!$file->eof()) {
+            $row = $file->current();
+            // Only count non-empty rows
+            if ($row !== false && !empty($row) && !empty(array_filter($row))) {
+                $count++;
+            }
+            $file->next();
+        }
+        
+        return $count;
     }
 
     /**

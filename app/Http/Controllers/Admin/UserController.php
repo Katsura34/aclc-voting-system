@@ -311,9 +311,15 @@ class UserController extends Controller
     public function import(Request $request)
     {
         try {
-            $request->validate([
-                'csv_file' => 'required|file|mimes:csv,txt|max:2048',
-            ]);
+            try {
+                $request->validate([
+                    'csv_file' => 'required|file|mimes:csv,txt|max:2048',
+                ]);
+            } catch (\Illuminate\Validation\ValidationException $e) {
+                echo '<div style="color:red;">Validation error: ' . htmlspecialchars(json_encode($e->errors())) . '</div>';
+                flush();
+                throw $e;
+            }
 
             $file = $request->file('csv_file');
             $path = $file->getRealPath();
@@ -336,6 +342,8 @@ class UserController extends Controller
                 // Validate header format
                 $expectedHeader = ['usn', 'lastname', 'firstname', 'strand', 'year', 'gender', 'password'];
                 if ($header !== $expectedHeader) {
+                    echo '<div style="color:red;">Header error: Invalid CSV format. Expected columns: ' . implode(', ', $expectedHeader) . '</div>';
+                    flush();
                     return redirect()->back()
                         ->with('error', 'Invalid CSV format. Expected columns: ' . implode(', ', $expectedHeader));
                 }
@@ -352,12 +360,16 @@ class UserController extends Controller
 
                     // Skip empty rows
                     if (empty(array_filter($row))) {
+                        echo '<div style="color:gray;">Row ' . $lineNumber . ' skipped (empty row)</div>';
+                        flush();
                         continue;
                     }
 
                     // Validate row has correct number of columns
                     if (count($row) !== 7) {
                         $errors[] = "Line {$lineNumber}: Invalid number of columns";
+                        echo '<div style="color:red;">Row error: Line ' . $lineNumber . ' has invalid number of columns</div>';
+                        flush();
                         continue;
                     }
 
@@ -375,26 +387,34 @@ class UserController extends Controller
                     // Basic validation
                     if (empty($usn) || empty($lastname) || empty($firstname) || empty($password)) {
                         $errors[] = "Line {$lineNumber}: USN, lastname, firstname, and password are required";
+                        echo '<div style="color:red;">Row error: Line ' . $lineNumber . ' missing required fields</div>';
+                        flush();
                         continue;
                     }
-                    
+
                     // Generate email from USN
                     $email = $usn . '@aclc.edu.ph';
-                    
+
                     // Check if user already exists by USN or email
                     if (User::where('usn', $usn)->exists()) {
                         $errors[] = "Line {$lineNumber}: USN '{$usn}' already exists";
+                        echo '<div style="color:red;">Row error: Line ' . $lineNumber . ' USN already exists</div>';
+                        flush();
                         continue;
                     }
-                    
+
                     if (User::where('email', $email)->exists()) {
                         $errors[] = "Line {$lineNumber}: Email '{$email}' already exists";
+                        echo '<div style="color:red;">Row error: Line ' . $lineNumber . ' email already exists</div>';
+                        flush();
                         continue;
                     }
-                    
+
                     // Validate gender
                     if (!empty($gender) && !in_array($gender, ['Male', 'Female', 'Other'])) {
                         $errors[] = "Line {$lineNumber}: Invalid gender value. Must be Male, Female, or Other";
+                        echo '<div style="color:red;">Row error: Line ' . $lineNumber . ' invalid gender value</div>';
+                        flush();
                         continue;
                     }
                     
@@ -423,9 +443,12 @@ class UserController extends Controller
                         $errorMessage = $e->getMessage();
                         if (strpos($errorMessage, 'Duplicate entry') !== false) {
                             $errors[] = "Line {$lineNumber}: Duplicate entry detected (USN or email already exists)";
+                            echo '<div style="color:red;">Database error: Line ' . $lineNumber . ' duplicate entry</div>';
                         } else {
                             $errors[] = "Line {$lineNumber}: " . $errorMessage;
+                            echo '<div style="color:red;">Database error: Line ' . $lineNumber . ' ' . htmlspecialchars($errorMessage) . '</div>';
                         }
+                        flush();
                     }
                 }
                 
@@ -449,16 +472,21 @@ class UserController extends Controller
                     
             } catch (\Exception $e) {
                 DB::rollBack();
+                echo '<div style="color:red;">Unknown error: ' . htmlspecialchars($e->getMessage()) . '</div>';
+                flush();
                 throw $e;
             }
         } catch (\Illuminate\Validation\ValidationException $e) {
+            echo '<div style="color:red;">Validation error (outer): ' . htmlspecialchars(json_encode($e->errors())) . '</div>';
+            flush();
             return redirect()->back()
                 ->withErrors($e->errors());
         } catch (\Exception $e) {
             \Log::error('CSV import error: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
-            
+            echo '<div style="color:red;">Unknown error (outer): ' . htmlspecialchars($e->getMessage()) . '</div>';
+            flush();
             return redirect()->back()
                 ->with('error', 'Failed to import users. Please check the CSV format and try again.');
         }

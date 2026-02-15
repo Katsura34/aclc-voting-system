@@ -524,4 +524,4 @@ class UserController extends Controller
                         $message .= " (and " . (count($errors) - 5) . " more)";
                     }
                 }
-                return response()->json(['success' => true, 'message' => $message]);
+                return response()->json(['success' => true, 'message' => $message, 'importId' => $importId]);

@@ -367,19 +367,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (xhr.status === 200) {
                     try {
                         var response = JSON.parse(xhr.responseText);
-                        if(response.success) {
-                            // Get importId from session cookie (Laravel default)
-                            fetch('/session').then(r => r.json()).then(sess => {
-                                var importId = sess.import_id;
-                                if(importId) {
-                                    pollProgress(importId);
-                                } else {
-                                    overlay.style.display = 'none';
-                                    progressBarContainer.style.display = 'none';
-                                    alert('Import completed.');
-                                    window.location.reload();
-                                }
-                            });
+                        if(response.success && response.importId) {
+                            pollProgress(response.importId);
+                        } else if(response.success) {
+                            overlay.style.display = 'none';
+                            progressBarContainer.style.display = 'none';
+                            alert('Import completed.');
+                            window.location.reload();
                         } else if(response.error) {
                             overlay.style.display = 'none';
                             progressBarContainer.style.display = 'none';

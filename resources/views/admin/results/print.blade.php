@@ -35,36 +35,36 @@
 
         .header {
             text-align: center;
-            border-bottom: 3px solid #003366;
+            border-bottom: 2px solid #000;
             padding-bottom: 10px;
             margin-bottom: 20px;
         }
 
         .header h1 {
-            color: #003366;
+            color: #000;
             font-size: 20pt;
             font-weight: bold;
             margin-bottom: 5px;
         }
 
         .header h2 {
-            color: #CC0000;
+            color: #000;
             font-size: 16pt;
             margin-bottom: 5px;
         }
 
         .header p {
-            color: #666;
+            color: #000;
             font-size: 10pt;
             margin: 2px 0;
         }
 
         .stats-box {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
+            background: #fff;
+            border: 1px solid #000;
             padding: 10px;
             margin-bottom: 20px;
-            border-radius: 5px;
+            border-radius: 0;
         }
 
         .stats-box table {
@@ -83,12 +83,13 @@
         }
 
         .position-header {
-            background: #003366;
-            color: white;
+            background: #fff;
+            color: #000;
             padding: 8px 12px;
             font-size: 13pt;
             font-weight: bold;
             margin-bottom: 10px;
+            border-bottom: 1px solid #000;
         }
 
         .results-table {
@@ -98,70 +99,73 @@
         }
 
         .results-table th {
-            background: #e9ecef;
+            background: #fff;
             padding: 8px;
             text-align: left;
-            border: 1px solid #dee2e6;
+            border: 1px solid #000;
             font-weight: bold;
         }
 
         .results-table td {
             padding: 8px;
-            border: 1px solid #dee2e6;
+            border: 1px solid #000;
         }
 
         .results-table tr:nth-child(even) {
-            background: #f8f9fa;
+            background: #fff;
         }
 
         .winner-row {
-            background: #fff3cd !important;
+            background: #fff !important;
             font-weight: bold;
+            border-top: 2px double #000;
         }
 
         .winner-badge {
-            background: #ffc107;
+            background: #fff;
             color: #000;
             padding: 2px 8px;
-            border-radius: 3px;
+            border-radius: 0;
             font-size: 9pt;
             font-weight: bold;
+            border: 1px solid #000;
         }
 
         .rank-badge {
-            background: #6c757d;
-            color: white;
+            background: #fff;
+            color: #000;
             padding: 2px 8px;
             border-radius: 50%;
             font-weight: bold;
             display: inline-block;
             min-width: 25px;
             text-align: center;
+            border: 1px solid #000;
         }
 
-        .rank-1 { background: #FFD700; color: #000; }
-        .rank-2 { background: #C0C0C0; color: #000; }
-        .rank-3 { background: #CD7F32; color: #fff; }
+        .rank-1, .rank-2, .rank-3 { background: #fff; color: #000; }
 
         .party-badge {
             padding: 2px 8px;
-            border-radius: 3px;
-            color: white;
+            border-radius: 0;
+            color: #000;
             font-size: 9pt;
             font-weight: 500;
+            border: 1px solid #000;
+            background: #fff;
         }
 
         .abstain-row {
-            background: #fff3cd !important;
+            background: #fff !important;
         }
 
         .footer {
             text-align: center;
             margin-top: 30px;
             padding-top: 10px;
-            border-top: 1px solid #dee2e6;
+            border-top: 1px solid #000;
             font-size: 9pt;
-            color: #666;
+            color: #000;
         }
 
         .signature-section {
@@ -261,7 +265,7 @@
                                 </td>
                                 <td>
                                     @if($candidateResult['candidate']->party)
-                                        <span class="party-badge" style="background-color: {{ $candidateResult['candidate']->party->color }};">
+                                        <span class="party-badge">
                                             {{ $candidateResult['candidate']->party->acronym }} - {{ $candidateResult['candidate']->party->name }}
                                         </span>
                                     @else

@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
 {
@@ -80,7 +81,7 @@ class UserController extends Controller
                 
                 DB::commit();
 
-                \Log::info('User created', ['usn' => $validated['usn']]);
+                Log::info('User created', ['usn' => $validated['usn']]);
 
                 return redirect()->route('admin.users.index')
                     ->with('success', 'User created successfully!');
@@ -93,7 +94,7 @@ class UserController extends Controller
                 ->withErrors($e->errors())
                 ->withInput();
         } catch (\Exception $e) {
-            \Log::error('User creation error: ' . $e->getMessage(), [
+            Log::error('User creation error: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
             
@@ -154,7 +155,7 @@ class UserController extends Controller
                 
                 DB::commit();
 
-                \Log::info('User updated', ['user_id' => $user->id, 'usn' => $user->usn]);
+                Log::info('User updated', ['user_id' => $user->id, 'usn' => $user->usn]);
 
                 return redirect()->route('admin.users.index')
                     ->with('success', 'User updated successfully!');
@@ -167,7 +168,7 @@ class UserController extends Controller
                 ->withErrors($e->errors())
                 ->withInput();
         } catch (\Exception $e) {
-            \Log::error('User update error: ' . $e->getMessage(), [
+            Log::error('User update error: ' . $e->getMessage(), [
                 'user_id' => $user->id,
                 'trace' => $e->getTraceAsString()
             ]);
@@ -197,7 +198,7 @@ class UserController extends Controller
                 
                 DB::commit();
 
-                \Log::info('User deleted', ['user_id' => $user->id]);
+                Log::info('User deleted', ['user_id' => $user->id]);
 
                 return redirect()->route('admin.users.index')
                     ->with('success', 'User deleted successfully!');
@@ -206,7 +207,7 @@ class UserController extends Controller
                 throw $e;
             }
         } catch (\Exception $e) {
-            \Log::error('User deletion error: ' . $e->getMessage(), [
+            Log::error('User deletion error: ' . $e->getMessage(), [
                 'user_id' => $user->id,
                 'trace' => $e->getTraceAsString()
             ]);
@@ -229,7 +230,7 @@ class UserController extends Controller
                 
                 DB::commit();
 
-                \Log::info('User vote reset', ['user_id' => $user->id]);
+                Log::info('User vote reset', ['user_id' => $user->id]);
 
                 return redirect()->route('admin.users.index')
                     ->with('success', 'Voting status reset successfully!');
@@ -238,7 +239,7 @@ class UserController extends Controller
                 throw $e;
             }
         } catch (\Exception $e) {
-            \Log::error('Vote reset error: ' . $e->getMessage(), [
+            Log::error('Vote reset error: ' . $e->getMessage(), [
                 'user_id' => $user->id,
                 'trace' => $e->getTraceAsString()
             ]);
@@ -261,7 +262,7 @@ class UserController extends Controller
                 
                 DB::commit();
 
-                \Log::info('All votes reset', ['count' => $count]);
+                Log::info('All votes reset', ['count' => $count]);
 
                 return redirect()->route('admin.users.index')
                     ->with('success', 'All voting statuses have been reset!');
@@ -270,7 +271,7 @@ class UserController extends Controller
                 throw $e;
             }
         } catch (\Exception $e) {
-            \Log::error('All votes reset error: ' . $e->getMessage(), [
+            Log::error('All votes reset error: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
             
@@ -418,7 +419,7 @@ class UserController extends Controller
                 
                 DB::commit();
                 
-                \Log::info('Users imported from CSV', [
+                Log::info('Users imported from CSV', [
                     'imported' => $imported,
                     'errors' => count($errors)
                 ]);
@@ -447,7 +448,7 @@ class UserController extends Controller
             return redirect()->back()
                 ->withErrors($e->errors());
         } catch (\Exception $e) {
-            \Log::error('CSV import error: ' . $e->getMessage(), [
+            Log::error('CSV import error: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
             // ...existing code...

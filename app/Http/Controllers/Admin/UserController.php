@@ -348,29 +348,18 @@ class UserController extends Controller
                 
                 $imported = 0;
                 $errors = [];
-                
+                $batch = [];
+                $batchSize = 500;
                 foreach ($csv as $index => $row) {
-                    $lineNumber = $index + 2; // +2 because we removed header and arrays are 0-indexed
-
-                    // Debug: Display message for each row being processed
-                    // ...existing code...
-
-                    // Skip empty rows
+                    $lineNumber = $index + 2;
                     if (empty(array_filter($row))) {
-                        // ...existing code...
                         continue;
                     }
-
-                    // Validate row has correct number of columns
                     if (count($row) !== 7) {
                         $errors[] = "Line {$lineNumber}: Invalid number of columns";
-                        // ...existing code...
                         continue;
                     }
-
                     list($usn, $lastname, $firstname, $strand, $year, $gender, $password) = $row;
-
-                    // Trim all values
                     $usn = trim($usn);
                     $lastname = trim($lastname);
                     $firstname = trim($firstname);
@@ -378,67 +367,54 @@ class UserController extends Controller
                     $year = trim($year);
                     $gender = trim($gender);
                     $password = trim($password);
-                    
-                    // Basic validation
                     if (empty($usn) || empty($lastname) || empty($firstname) || empty($password)) {
                         $errors[] = "Line {$lineNumber}: USN, lastname, firstname, and password are required";
-                        // ...existing code...
                         continue;
                     }
-
-                    // Generate email from USN
                     $email = $usn . '@aclc.edu.ph';
-
-                    // Check if user already exists by USN or email
                     if (User::where('usn', $usn)->exists()) {
                         $errors[] = "Line {$lineNumber}: USN '{$usn}' already exists";
-                        // ...existing code...
                         continue;
                     }
-
                     if (User::where('email', $email)->exists()) {
                         $errors[] = "Line {$lineNumber}: Email '{$email}' already exists";
-                        // ...existing code...
                         continue;
                     }
-
-                    // Validate gender
                     if (!empty($gender) && !in_array($gender, ['Male', 'Female', 'Other'])) {
                         $errors[] = "Line {$lineNumber}: Invalid gender value. Must be Male, Female, or Other";
-                        // ...existing code...
                         continue;
                     }
-                    
-                    try {
-                        // Debug: Display message before sending data to database
-                        // ...existing code...
-
-                        // Create user
-                        User::create([
-                            'usn' => $usn,
-                            'lastname' => $lastname,
-                            'firstname' => $firstname,
-                            'strand' => $strand ?: null,
-                            'year' => $year ?: null,
-                            'gender' => $gender ?: null,
-                            'email' => $email,
-                            'password' => Hash::make($password),
-                            'user_type' => 'student',
-                            'has_voted' => false,
-                        ]);
-
-                        $imported++;
-                    } catch (\Exception $e) {
-                        // Handle database constraint violations and other errors
-                        $errorMessage = $e->getMessage();
-                        if (strpos($errorMessage, 'Duplicate entry') !== false) {
-                            $errors[] = "Line {$lineNumber}: Duplicate entry detected (USN or email already exists)";
-                            // ...existing code...
-                        } else {
-                            $errors[] = "Line {$lineNumber}: " . $errorMessage;
-                            // ...existing code...
+                    $batch[] = [
+                        'usn' => $usn,
+                        'lastname' => $lastname,
+                        'firstname' => $firstname,
+                        'strand' => $strand ?: null,
+                        'year' => $year ?: null,
+                        'gender' => $gender ?: null,
+                        'email' => $email,
+                        'password' => Hash::make($password),
+                        'user_type' => 'student',
+                        'has_voted' => false,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
+                    if (count($batch) >= $batchSize) {
+                        try {
+                            User::insert($batch);
+                            $imported += count($batch);
+                        } catch (\Exception $e) {
+                            $errors[] = "Batch insert error at line {$lineNumber}: " . $e->getMessage();
                         }
-                        // ...existing code...
+                        $batch = [];
+                    }
+                }
+                // Insert any remaining users
+                if (count($batch) > 0) {
+                    try {
+                        User::insert($batch);
+                        $imported += count($batch);
+                    } catch (\Exception $e) {
+                        $errors[] = "Final batch insert error: " . $e->getMessage();
                     }
                 }
                 

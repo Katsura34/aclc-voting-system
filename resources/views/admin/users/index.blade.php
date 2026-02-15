@@ -338,6 +338,7 @@
         <div id="import-progress-numeric" class="fw-bold text-dark" style="font-size:1.1rem;">0/0</div>
     </div>
 
+<script>
 document.addEventListener('DOMContentLoaded', function() {
     var importForm = document.querySelector('#importModal form');
     var floatingIndicator = document.getElementById('import-floating-indicator');
@@ -411,6 +412,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+</script>
 </script>
 
 </x-admin-layout>

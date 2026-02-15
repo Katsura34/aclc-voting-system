@@ -311,21 +311,17 @@ class UserController extends Controller
     public function import(Request $request)
     {
         try {
-            // ...existing code...
             try {
                 $request->validate([
                     'csv_file' => 'required|file|mimes:csv,txt|max:2048',
                 ]);
             } catch (\Illuminate\Validation\ValidationException $e) {
-                // ...existing code...
                 throw $e;
             }
 
             $file = $request->file('csv_file');
             $path = $file->getRealPath();
 
-            // Debug: Display message when file is being processed
-            // ...existing code...
 
             DB::beginTransaction();
 
@@ -341,7 +337,6 @@ class UserController extends Controller
                 // Validate header format
                 $expectedHeader = ['usn', 'lastname', 'firstname', 'strand', 'year', 'gender', 'password'];
                 if ($header !== $expectedHeader) {
-                    // ...existing code...
                     return redirect()->back()
                         ->with('error', 'Invalid CSV format. Expected columns: ' . implode(', ', $expectedHeader));
                 }

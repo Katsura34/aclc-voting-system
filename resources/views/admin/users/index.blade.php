@@ -301,69 +301,110 @@
 }
 </style>
 <div id="import-loading-overlay">
-    <div style="text-align:center;">
-        <div class="spinner-border text-success" style="width:4rem;height:4rem;" role="status">
-            <span class="visually-hidden">Loading...</span>
-        </div>
-        <div class="mt-3 fw-bold text-success">Importing users, please wait...</div>
-        <div id="import-progress-numeric" class="mt-2 fw-bold text-dark" style="font-size:1.2rem;">0/0</div>
+  <div style="text-align:center; width:420px;">
+    <div class="spinner-border text-success" style="width:4rem;height:4rem;" role="status">
+      <span class="visually-hidden">Loading...</span>
     </div>
+
+    <div class="mt-3 fw-bold text-success">Importing users, please wait...</div>
+
+    <div class="progress mt-3" style="height: 22px;">
+      <div id="import-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated"
+           role="progressbar" style="width:0%">0%</div>
+    </div>
+
+    <div id="import-progress-numeric" class="mt-2 fw-bold text-dark" style="font-size:1.2rem;">0/0</div>
+  </div>
 </div>
+
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    var importForm = document.querySelector('#importModal form');
-    var overlay = document.getElementById('import-loading-overlay');
-    var progressNumeric = document.getElementById('import-progress-numeric');
-    if(importForm) {
-        importForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            overlay.style.display = 'flex';
-            // Try to get the number of rows in the CSV file
-            var fileInput = document.getElementById('csv_file');
-            var file = fileInput.files[0];
-            if (file) {
-                var reader = new FileReader();
-                reader.onload = function(evt) {
-                    var lines = evt.target.result.split(/\r?\n/).filter(Boolean);
-                    var total = lines.length - 1; // minus header
-                    progressNumeric.textContent = '0/' + total;
-                };
-                reader.readAsText(file);
-            }
-            var formData = new FormData(importForm);
-            var xhr = new XMLHttpRequest();
-            xhr.open('POST', importForm.action, true);
-            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-            xhr.onload = function() {
-                overlay.style.display = 'none';
-                if (xhr.status === 200) {
-                    try {
-                        var response = JSON.parse(xhr.responseText);
-                        if(response.success) {
-                            window.location.reload();
-                        } else if(response.error) {
-                            alert(response.error);
-                        } else {
-                            alert('Import completed.');
-                            window.location.reload();
-                        }
-                    } catch (err) {
-                        alert('Import completed.');
-                        window.location.reload();
-                    }
-                } else {
-                    alert('Import failed. Please check your CSV and try again.');
-                }
-            };
-            xhr.onerror = function() {
-                overlay.style.display = 'none';
-                alert('An error occurred during import.');
-            };
-            xhr.send(formData);
-        });
+  const importForm = document.querySelector('#importModal form');
+  const overlay = document.getElementById('import-loading-overlay');
+  const progressNumeric = document.getElementById('import-progress-numeric');
+  const progressBar = document.getElementById('import-progress-bar');
+
+  let pollTimer = null;
+
+  function setProgress(done, total) {
+    const pct = total > 0 ? Math.floor((done / total) * 100) : 0;
+    progressNumeric.textContent = `${done}/${total}`;
+    progressBar.style.width = pct + '%';
+    progressBar.textContent = pct + '%';
+  }
+
+  async function pollProgress(token) {
+    try {
+      const res = await fetch(`/admin/users/import-progress/${token}`, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      });
+      const data = await res.json();
+
+      setProgress(data.processed ?? 0, data.total ?? 0);
+
+      if (data.status === 'done') {
+        clearInterval(pollTimer);
+        pollTimer = null;
+        overlay.style.display = 'none';
+        window.location.reload();
+      }
+
+      if (data.status === 'error') {
+        clearInterval(pollTimer);
+        pollTimer = null;
+        overlay.style.display = 'none';
+        alert(data.message || 'Import failed.');
+      }
+    } catch (e) {
+      // keep polling; transient errors happen
     }
+  }
+
+  if (importForm) {
+    importForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      overlay.style.display = 'flex';
+      setProgress(0, 0);
+
+      const fileInput = document.getElementById('csv_file');
+      const file = fileInput?.files?.[0];
+      if (!file) {
+        overlay.style.display = 'none';
+        alert('Please choose a CSV file.');
+        return;
+      }
+
+      // Count total rows client-side (optional, UX only)
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const lines = evt.target.result.split(/\r?\n/).filter(l => l.trim() !== '');
+        const total = Math.max(0, lines.length - 1); // minus header
+        setProgress(0, total);
+      };
+      reader.readAsText(file);
+
+      const formData = new FormData(importForm);
+
+      fetch(importForm.action, {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (!data.token) throw new Error('No token returned.');
+        // Start polling every 1 second
+        pollTimer = setInterval(() => pollProgress(data.token), 1000);
+      })
+      .catch(err => {
+        overlay.style.display = 'none';
+        alert('Import start failed. Please check your CSV and try again.');
+      });
+    });
+  }
 });
 </script>
+
 
 </x-admin-layout>

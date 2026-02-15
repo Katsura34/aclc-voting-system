@@ -286,7 +286,7 @@
         </div>
     </div>
 
-    <!-- Loading Spinner Overlay (fixed and improved) -->
+    <!-- Loading Spinner and Progress Bar Overlay -->
     <style>
 #import-loading-overlay {
     display: none;
@@ -299,6 +299,11 @@
     justify-content: center;
     flex-direction: column;
 }
+#progress-bar-container {
+    width: 350px;
+    margin-top: 2rem;
+    display: none;
+}
 </style>
 <div id="import-loading-overlay">
     <div style="text-align:center;">
@@ -306,22 +311,77 @@
             <span class="visually-hidden">Loading...</span>
         </div>
         <div class="mt-3 fw-bold text-success">Importing users, please wait...</div>
+        <div id="progress-bar-container">
+            <div class="progress">
+                <div id="import-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 0%">0%</div>
+            </div>
+        </div>
     </div>
 </div>
 
 @push('scripts')
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        var importForm = document.querySelector('#importModal form');
-        if(importForm) {
-            importForm.addEventListener('submit', function() {
-                var overlay = document.getElementById('import-loading-overlay');
-                if(overlay) {
-                    overlay.style.display = 'flex';
+document.addEventListener('DOMContentLoaded', function() {
+    var importForm = document.querySelector('#importModal form');
+    var overlay = document.getElementById('import-loading-overlay');
+    var progressBar = document.getElementById('import-progress-bar');
+    var progressBarContainer = document.getElementById('progress-bar-container');
+
+    if(importForm) {
+        importForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            overlay.style.display = 'flex';
+            progressBarContainer.style.display = 'block';
+            progressBar.style.width = '0%';
+            progressBar.textContent = '0%';
+
+            var formData = new FormData(importForm);
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', importForm.action, true);
+            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+
+            xhr.upload.onprogress = function(e) {
+                if (e.lengthComputable) {
+                    var percent = Math.round((e.loaded / e.total) * 100);
+                    progressBar.style.width = percent + '%';
+                    progressBar.textContent = percent + '%';
                 }
-            });
-        }
-    });
+            };
+
+            xhr.onload = function() {
+                overlay.style.display = 'none';
+                progressBarContainer.style.display = 'none';
+                if (xhr.status === 200) {
+                    // Try to parse JSON, fallback to alert
+                    try {
+                        var response = JSON.parse(xhr.responseText);
+                        if(response.success) {
+                            window.location.reload();
+                        } else if(response.error) {
+                            alert(response.error);
+                        } else {
+                            alert('Import completed.');
+                            window.location.reload();
+                        }
+                    } catch (err) {
+                        alert('Import completed.');
+                        window.location.reload();
+                    }
+                } else {
+                    alert('Import failed. Please check your CSV and try again.');
+                }
+            };
+
+            xhr.onerror = function() {
+                overlay.style.display = 'none';
+                progressBarContainer.style.display = 'none';
+                alert('An error occurred during import.');
+            };
+
+            xhr.send(formData);
+        });
+    }
+});
 </script>
 @endpush
 

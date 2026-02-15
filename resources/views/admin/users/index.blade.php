@@ -306,7 +306,6 @@
             <span class="visually-hidden">Loading...</span>
         </div>
         <div class="mt-3 fw-bold text-success">Importing users, please wait...</div>
-        <div id="import-progress-numeric" class="mt-2 fw-bold text-dark" style="font-size:1.2rem;">0/0</div>
     </div>
 </div>
 

@@ -21,8 +21,6 @@ return new class extends Migration
             $table->text('errors')->nullable();
             $table->string('status')->default('processing'); // processing, completed, failed
             $table->timestamps();
-            
-            $table->index('job_id');
         });
     }
 

@@ -413,3 +413,4 @@
             @endif
         </script>
     </x-slot>
+</x-admin-layout>

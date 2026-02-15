@@ -125,8 +125,8 @@ class UserImportTest extends TestCase
 
         // Create CSV with duplicate USN
         $csvContent = "usn,lastname,firstname,strand,year,gender,password\n";
-        $csvContent .= "2024-001,Doe,John,STEM,1st Year,Male,password123\n";
-        $csvContent .= "2024-002,Smith,Jane,ABM,2nd Year,Female,password456\n";
+        $csvContent .= "2024-001,Doe,John,STEM,1,Male,password123\n";
+        $csvContent .= "2024-002,Smith,Jane,ABM,2,Female,password456\n";
 
         $tempFile = tempnam(sys_get_temp_dir(), 'test_import_');
         file_put_contents($tempFile, $csvContent);

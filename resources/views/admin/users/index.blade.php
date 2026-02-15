@@ -313,51 +313,60 @@
 document.addEventListener('DOMContentLoaded', function() {
     var importForm = document.querySelector('#importModal form');
     var overlay = document.getElementById('import-loading-overlay');
-    var progressNumeric = document.getElementById('import-progress-numeric');
     if(importForm) {
         importForm.addEventListener('submit', function(e) {
             e.preventDefault();
             overlay.style.display = 'flex';
-            // Try to get the number of rows in the CSV file
-            var fileInput = document.getElementById('csv_file');
-            var file = fileInput.files[0];
-            if (file) {
-                var reader = new FileReader();
-                reader.onload = function(evt) {
-                    var lines = evt.target.result.split(/\r?\n/).filter(Boolean);
-                    var total = lines.length - 1; // minus header
-                    progressNumeric.textContent = '0/' + total;
-                };
-                reader.readAsText(file);
-            }
+            // Remove progress number logic
             var formData = new FormData(importForm);
             var xhr = new XMLHttpRequest();
             xhr.open('POST', importForm.action, true);
             xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
             xhr.onload = function() {
                 overlay.style.display = 'none';
+                var messageBox = document.getElementById('import-message-box');
+                if (!messageBox) {
+                    messageBox = document.createElement('div');
+                    messageBox.id = 'import-message-box';
+                    messageBox.className = 'alert mt-3';
+                    importForm.parentNode.insertBefore(messageBox, importForm);
+                }
                 if (xhr.status === 200) {
                     try {
                         var response = JSON.parse(xhr.responseText);
                         if(response.success) {
-                            window.location.reload();
+                            messageBox.className = 'alert alert-success mt-3';
+                            messageBox.innerHTML = '<i class="bi bi-check-circle"></i> Import completed successfully!';
+                            setTimeout(function(){ window.location.reload(); }, 1500);
                         } else if(response.error) {
-                            alert(response.error);
+                            messageBox.className = 'alert alert-danger mt-3';
+                            messageBox.innerHTML = '<i class="bi bi-exclamation-triangle"></i> ' + response.error;
                         } else {
-                            alert('Import completed.');
-                            window.location.reload();
+                            messageBox.className = 'alert alert-success mt-3';
+                            messageBox.innerHTML = '<i class="bi bi-check-circle"></i> Import completed.';
+                            setTimeout(function(){ window.location.reload(); }, 1500);
                         }
                     } catch (err) {
-                        alert('Import completed.');
-                        window.location.reload();
+                        messageBox.className = 'alert alert-success mt-3';
+                        messageBox.innerHTML = '<i class="bi bi-check-circle"></i> Import completed.';
+                        setTimeout(function(){ window.location.reload(); }, 1500);
                     }
                 } else {
-                    alert('Import failed. Please check your CSV and try again.');
+                    messageBox.className = 'alert alert-danger mt-3';
+                    messageBox.innerHTML = '<i class="bi bi-exclamation-triangle"></i> Import failed. Please check your CSV and try again.';
                 }
             };
             xhr.onerror = function() {
                 overlay.style.display = 'none';
-                alert('An error occurred during import.');
+                var messageBox = document.getElementById('import-message-box');
+                if (!messageBox) {
+                    messageBox = document.createElement('div');
+                    messageBox.id = 'import-message-box';
+                    messageBox.className = 'alert mt-3';
+                    importForm.parentNode.insertBefore(messageBox, importForm);
+                }
+                messageBox.className = 'alert alert-danger mt-3';
+                messageBox.innerHTML = '<i class="bi bi-exclamation-triangle"></i> An error occurred during import.';
             };
             xhr.send(formData);
         });

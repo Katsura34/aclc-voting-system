@@ -1,24 +1,6 @@
 <x-admin-layout title="Elections Management">
     <x-slot name="styles">
-        .election-card {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-            transition: all 0.3s ease;
-            border-left: 5px solid #e0e0e0;
-        }
-
-        .election-card:hover {
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
-            transform: translateY(-2px);
-        }
-
-        .election-card.active {
-            border-left-color: var(--aclc-red);
-            background: linear-gradient(135deg, rgba(204, 0, 0, 0.02) 0%, rgba(204, 0, 0, 0.05) 100%);
-        }
+        
 
         .election-header {
             display: flex;

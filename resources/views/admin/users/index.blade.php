@@ -325,6 +325,30 @@ document.addEventListener('DOMContentLoaded', function() {
     var overlay = document.getElementById('import-loading-overlay');
     var progressBar = document.getElementById('import-progress-bar');
     var progressBarContainer = document.getElementById('progress-bar-container');
+    var pollingInterval = null;
+
+    function pollProgress(importId) {
+        pollingInterval = setInterval(function() {
+            fetch('/admin/users/import-progress/' + importId)
+                .then(response => response.json())
+                .then(data => {
+                    var percent = Math.round((data.current / data.total) * 100);
+                    progressBar.style.width = percent + '%';
+                    progressBar.textContent = percent + '%';
+                    if (data.done) {
+                        clearInterval(pollingInterval);
+                        overlay.style.display = 'none';
+                        progressBarContainer.style.display = 'none';
+                        if (data.error) {
+                            alert(data.error);
+                        } else {
+                            alert('Import completed.');
+                            window.location.reload();
+                        }
+                    }
+                });
+        }, 1000);
+    }
 
     if(importForm) {
         importForm.addEventListener('submit', function(e) {
@@ -339,33 +363,42 @@ document.addEventListener('DOMContentLoaded', function() {
             xhr.open('POST', importForm.action, true);
             xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
 
-            xhr.upload.onprogress = function(e) {
-                if (e.lengthComputable) {
-                    var percent = Math.round((e.loaded / e.total) * 100);
-                    progressBar.style.width = percent + '%';
-                    progressBar.textContent = percent + '%';
-                }
-            };
-
             xhr.onload = function() {
-                overlay.style.display = 'none';
-                progressBarContainer.style.display = 'none';
                 if (xhr.status === 200) {
                     try {
                         var response = JSON.parse(xhr.responseText);
                         if(response.success) {
-                            window.location.reload();
+                            // Get importId from session cookie (Laravel default)
+                            fetch('/session').then(r => r.json()).then(sess => {
+                                var importId = sess.import_id;
+                                if(importId) {
+                                    pollProgress(importId);
+                                } else {
+                                    overlay.style.display = 'none';
+                                    progressBarContainer.style.display = 'none';
+                                    alert('Import completed.');
+                                    window.location.reload();
+                                }
+                            });
                         } else if(response.error) {
+                            overlay.style.display = 'none';
+                            progressBarContainer.style.display = 'none';
                             alert(response.error);
                         } else {
+                            overlay.style.display = 'none';
+                            progressBarContainer.style.display = 'none';
                             alert('Import completed.');
                             window.location.reload();
                         }
                     } catch (err) {
+                        overlay.style.display = 'none';
+                        progressBarContainer.style.display = 'none';
                         alert('Import completed.');
                         window.location.reload();
                     }
                 } else {
+                    overlay.style.display = 'none';
+                    progressBarContainer.style.display = 'none';
                     alert('Import failed. Please check your CSV and try again.');
                 }
             };

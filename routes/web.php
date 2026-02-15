@@ -1,5 +1,3 @@
-    // AJAX polling for import progress
-    Route::get('users/import-progress/{importId}', [App\Http\Controllers\Admin\UserController::class, 'importProgress'])->name('admin.users.import-progress');
 <?php
 
 use Illuminate\Support\Facades\Route;

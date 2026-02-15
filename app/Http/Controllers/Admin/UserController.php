@@ -1,16 +1,3 @@
-    /**
-     * Get import progress (AJAX polling endpoint)
-     */
-    public function importProgress(Request $request, $importId)
-    {
-        $progress = \Cache::get('import_progress_' . $importId, [
-            'current' => 0,
-            'total' => 1,
-            'done' => false,
-            'error' => null
-        ]);
-        return response()->json($progress);
-    }
 <?php
 
 namespace App\Http\Controllers\Admin;
@@ -324,14 +311,6 @@ class UserController extends Controller
     public function import(Request $request)
     {
         try {
-            // Generate a unique import ID for this session
-            $importId = uniqid('import_', true);
-            \Cache::put('import_progress_' . $importId, [
-                'current' => 0,
-                'total' => 1,
-                'done' => false,
-                'error' => null
-            ], 600); // 10 minutes
             // ...existing code...
             try {
                 $request->validate([
@@ -344,8 +323,6 @@ class UserController extends Controller
 
             $file = $request->file('csv_file');
             $path = $file->getRealPath();
-            // Store importId in session for polling
-            session(['import_id' => $importId]);
 
             // Debug: Display message when file is being processed
             // ...existing code...
@@ -377,57 +354,23 @@ class UserController extends Controller
 
                     // Debug: Display message for each row being processed
                     // ...existing code...
-            try {
-                $csv = array_map('str_getcsv', file($path));
-                $header = array_shift($csv); // Remove header row
-                // Normalize header (trim whitespace and convert to lowercase)
-                $header = array_map(function($col) {
-                    return strtolower(trim($col));
-                }, $header);
-                // Validate header format
-                $expectedHeader = ['usn', 'lastname', 'firstname', 'strand', 'year', 'gender', 'password'];
-                if ($header !== $expectedHeader) {
-                    \Cache::put('import_progress_' . $importId, [
-                        'current' => 0,
-                        'total' => 1,
-                        'done' => true,
-                        'error' => 'Invalid CSV format. Expected columns: ' . implode(', ', $expectedHeader)
-                    ], 600);
-                    return response()->json(['error' => 'Invalid CSV format. Expected columns: ' . implode(', ', $expectedHeader)], 422);
-                }
-                $imported = 0;
-                $errors = [];
-                $totalRows = count($csv);
-                \Cache::put('import_progress_' . $importId, [
-                    'current' => 0,
-                    'total' => $totalRows,
-                    'done' => false,
-                    'error' => null
-                ], 600);
-                foreach ($csv as $index => $row) {
-                    $lineNumber = $index + 2;
+
                     // Skip empty rows
                     if (empty(array_filter($row))) {
-                        \Cache::put('import_progress_' . $importId, [
-                            'current' => $index + 1,
-                            'total' => $totalRows,
-                            'done' => false,
-                            'error' => null
-                        ], 600);
+                        // ...existing code...
                         continue;
                     }
+
                     // Validate row has correct number of columns
                     if (count($row) !== 7) {
                         $errors[] = "Line {$lineNumber}: Invalid number of columns";
-                        \Cache::put('import_progress_' . $importId, [
-                            'current' => $index + 1,
-                            'total' => $totalRows,
-                            'done' => false,
-                            'error' => null
-                        ], 600);
+                        // ...existing code...
                         continue;
                     }
+
                     list($usn, $lastname, $firstname, $strand, $year, $gender, $password) = $row;
+
+                    // Trim all values
                     $usn = trim($usn);
                     $lastname = trim($lastname);
                     $firstname = trim($firstname);
@@ -435,49 +378,42 @@ class UserController extends Controller
                     $year = trim($year);
                     $gender = trim($gender);
                     $password = trim($password);
+                    
                     // Basic validation
                     if (empty($usn) || empty($lastname) || empty($firstname) || empty($password)) {
                         $errors[] = "Line {$lineNumber}: USN, lastname, firstname, and password are required";
-                        \Cache::put('import_progress_' . $importId, [
-                            'current' => $index + 1,
-                            'total' => $totalRows,
-                            'done' => false,
-                            'error' => null
-                        ], 600);
+                        // ...existing code...
                         continue;
                     }
+
+                    // Generate email from USN
                     $email = $usn . '@aclc.edu.ph';
+
+                    // Check if user already exists by USN or email
                     if (User::where('usn', $usn)->exists()) {
                         $errors[] = "Line {$lineNumber}: USN '{$usn}' already exists";
-                        \Cache::put('import_progress_' . $importId, [
-                            'current' => $index + 1,
-                            'total' => $totalRows,
-                            'done' => false,
-                            'error' => null
-                        ], 600);
+                        // ...existing code...
                         continue;
                     }
+
                     if (User::where('email', $email)->exists()) {
                         $errors[] = "Line {$lineNumber}: Email '{$email}' already exists";
-                        \Cache::put('import_progress_' . $importId, [
-                            'current' => $index + 1,
-                            'total' => $totalRows,
-                            'done' => false,
-                            'error' => null
-                        ], 600);
+                        // ...existing code...
                         continue;
                     }
+
+                    // Validate gender
                     if (!empty($gender) && !in_array($gender, ['Male', 'Female', 'Other'])) {
                         $errors[] = "Line {$lineNumber}: Invalid gender value. Must be Male, Female, or Other";
-                        \Cache::put('import_progress_' . $importId, [
-                            'current' => $index + 1,
-                            'total' => $totalRows,
-                            'done' => false,
-                            'error' => null
-                        ], 600);
+                        // ...existing code...
                         continue;
                     }
+                    
                     try {
+                        // Debug: Display message before sending data to database
+                        // ...existing code...
+
+                        // Create user
                         User::create([
                             'usn' => $usn,
                             'lastname' => $lastname,
@@ -490,33 +426,29 @@ class UserController extends Controller
                             'user_type' => 'student',
                             'has_voted' => false,
                         ]);
+
                         $imported++;
                     } catch (\Exception $e) {
+                        // Handle database constraint violations and other errors
                         $errorMessage = $e->getMessage();
                         if (strpos($errorMessage, 'Duplicate entry') !== false) {
                             $errors[] = "Line {$lineNumber}: Duplicate entry detected (USN or email already exists)";
+                            // ...existing code...
                         } else {
                             $errors[] = "Line {$lineNumber}: " . $errorMessage;
+                            // ...existing code...
                         }
+                        // ...existing code...
                     }
-                    \Cache::put('import_progress_' . $importId, [
-                        'current' => $index + 1,
-                        'total' => $totalRows,
-                        'done' => false,
-                        'error' => null
-                    ], 600);
                 }
+                
                 DB::commit();
+                
                 \Log::info('Users imported from CSV', [
                     'imported' => $imported,
                     'errors' => count($errors)
                 ]);
-                \Cache::put('import_progress_' . $importId, [
-                    'current' => $totalRows,
-                    'total' => $totalRows,
-                    'done' => true,
-                    'error' => null
-                ], 600);
+                
                 $message = "Successfully imported {$imported} user(s)";
                 if (count($errors) > 0) {
                     $message .= ". " . count($errors) . " error(s) occurred: " . implode('; ', array_slice($errors, 0, 5));
@@ -524,4 +456,29 @@ class UserController extends Controller
                         $message .= " (and " . (count($errors) - 5) . " more)";
                     }
                 }
-                return response()->json(['success' => true, 'message' => $message, 'importId' => $importId]);
+                
+                // End debug message container and add JS to hide after 10s
+                echo '</div><script>setTimeout(function(){var d=document.getElementById("debug-messages");if(d)d.style.display="none";},10000);</script>';
+                flush();
+                return redirect()->route('admin.users.index')
+                    ->with(count($errors) > 0 ? 'error' : 'success', $message);
+                    
+            } catch (\Exception $e) {
+                DB::rollBack();
+                // ...existing code...
+                throw $e;
+            }
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // ...existing code...
+            return redirect()->back()
+                ->withErrors($e->errors());
+        } catch (\Exception $e) {
+            \Log::error('CSV import error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            // ...existing code...
+            return redirect()->back()
+                ->with('error', 'Failed to import users. Please check the CSV format and try again.');
+        }
+    }
+}

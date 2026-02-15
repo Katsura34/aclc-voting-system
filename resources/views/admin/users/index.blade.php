@@ -286,7 +286,7 @@
         </div>
     </div>
 
-    <!-- Loading Spinner Overlay (no progress bar) -->
+    <!-- Loading Spinner Overlay with Numeric Progress -->
     <style>
 #import-loading-overlay {
     display: none;
@@ -306,6 +306,7 @@
             <span class="visually-hidden">Loading...</span>
         </div>
         <div class="mt-3 fw-bold text-success">Importing users, please wait...</div>
+        <div id="import-progress-numeric" class="mt-2 fw-bold text-dark" style="font-size:1.2rem;">0/0</div>
     </div>
 </div>
 
@@ -313,10 +314,23 @@
 document.addEventListener('DOMContentLoaded', function() {
     var importForm = document.querySelector('#importModal form');
     var overlay = document.getElementById('import-loading-overlay');
+    var progressNumeric = document.getElementById('import-progress-numeric');
     if(importForm) {
         importForm.addEventListener('submit', function(e) {
             e.preventDefault();
             overlay.style.display = 'flex';
+            // Try to get the number of rows in the CSV file
+            var fileInput = document.getElementById('csv_file');
+            var file = fileInput.files[0];
+            if (file) {
+                var reader = new FileReader();
+                reader.onload = function(evt) {
+                    var lines = evt.target.result.split(/\r?\n/).filter(Boolean);
+                    var total = lines.length - 1; // minus header
+                    progressNumeric.textContent = '0/' + total;
+                };
+                reader.readAsText(file);
+            }
             var formData = new FormData(importForm);
             var xhr = new XMLHttpRequest();
             xhr.open('POST', importForm.action, true);

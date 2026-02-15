@@ -7,12 +7,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
-use App\Jobs\ImportUsersJob;
-use Illuminate\Support\Str;
-
 
 class UserController extends Controller
 {
@@ -313,63 +308,151 @@ class UserController extends Controller
     /**
      * Import users from CSV file.
      */
-   public function import(Request $request)
-{
-    try {
-        // 1) Validate upload
-        $validated = $request->validate([
-            'csv_file' => 'required|file|mimes:csv,txt|max:2048',
-        ]);
+    public function import(Request $request)
+    {
+        try {
+            try {
+                $request->validate([
+                    'csv_file' => 'required|file|mimes:csv,txt|max:2048',
+                ]);
+            } catch (\Illuminate\Validation\ValidationException $e) {
+                throw $e;
+            }
 
-        // 2) Store file (storage/app/imports/xxxx.csv)
-        $file = $request->file('csv_file');
+            $file = $request->file('csv_file');
+            $path = $file->getRealPath();
 
-        // Optional: keep original name but still unique
-        $storedPath = $file->storeAs(
-            'imports',
-            now()->format('Ymd_His') . '_' . Str::random(10) . '_' . $file->getClientOriginalName()
-        );
+            // Debug: Display message when file is being processed
 
-        // 3) Create progress token
-        $token = (string) Str::uuid();
 
-        // 4) Initialize progress in cache (1 hour expiry)
-        Cache::put("import:{$token}", [
-            'status'    => 'running',
-            'message'   => null,
-            'total'     => 0,
-            'processed' => 0,
-            'imported'  => 0,
-            'errors'    => 0,
-        ], now()->addHour());
+            DB::beginTransaction();
 
-        // 5) Dispatch background job
-        ImportUsersJob::dispatch($storedPath, $token, auth()->id());
-
-        // 6) Return JSON (AJAX expects this)
-        return response()->json([
-            'success' => true,
-            'token'   => $token,
-        ]);
-
-    } catch (\Illuminate\Validation\ValidationException $e) {
-        // Return validation errors as JSON for AJAX
-        return response()->json([
-            'success' => false,
-            'error'   => 'Validation failed.',
-            'errors'  => $e->errors(),
-        ], 422);
-
-    } catch (\Throwable $e) {
-        Log::error('CSV import start error: ' . $e->getMessage(), [
-            'trace' => $e->getTraceAsString(),
-        ]);
-
-        return response()->json([
-            'success' => false,
-            'error'   => 'Failed to start import. Please check the CSV file and try again.',
-        ], 500);
+            try {
+                $csv = array_map('str_getcsv', file($path));
+                $header = array_shift($csv); // Remove header row
+                
+                // Normalize header (trim whitespace and convert to lowercase)
+                $header = array_map(function($col) {
+                    return strtolower(trim($col));
+                }, $header);
+                
+                // Validate header format
+                $expectedHeader = ['usn', 'lastname', 'firstname', 'strand', 'year', 'gender', 'password'];
+                if ($header !== $expectedHeader) {
+                    // ...existing code...
+                    return redirect()->back()
+                        ->with('error', 'Invalid CSV format. Expected columns: ' . implode(', ', $expectedHeader));
+                }
+                
+                $imported = 0;
+                $errors = [];
+                $batch = [];
+                $batchSize = 500;
+                foreach ($csv as $index => $row) {
+                    $lineNumber = $index + 2;
+                    if (empty(array_filter($row))) {
+                        continue;
+                    }
+                    if (count($row) !== 7) {
+                        $errors[] = "Line {$lineNumber}: Invalid number of columns";
+                        continue;
+                    }
+                    list($usn, $lastname, $firstname, $strand, $year, $gender, $password) = $row;
+                    $usn = trim($usn);
+                    $lastname = trim($lastname);
+                    $firstname = trim($firstname);
+                    $strand = trim($strand);
+                    $year = trim($year);
+                    $gender = trim($gender);
+                    $password = trim($password);
+                    if (empty($usn) || empty($lastname) || empty($firstname) || empty($password)) {
+                        $errors[] = "Line {$lineNumber}: USN, lastname, firstname, and password are required";
+                        continue;
+                    }
+                    $email = $usn . '@aclc.edu.ph';
+                    if (User::where('usn', $usn)->exists()) {
+                        $errors[] = "Line {$lineNumber}: USN '{$usn}' already exists";
+                        continue;
+                    }
+                    if (User::where('email', $email)->exists()) {
+                        $errors[] = "Line {$lineNumber}: Email '{$email}' already exists";
+                        continue;
+                    }
+                    if (!empty($gender) && !in_array($gender, ['Male', 'Female', 'Other'])) {
+                        $errors[] = "Line {$lineNumber}: Invalid gender value. Must be Male, Female, or Other";
+                        continue;
+                    }
+                    $batch[] = [
+                        'usn' => $usn,
+                        'lastname' => $lastname,
+                        'firstname' => $firstname,
+                        'strand' => $strand ?: null,
+                        'year' => $year ?: null,
+                        'gender' => $gender ?: null,
+                        'email' => $email,
+                        'password' => Hash::make($password),
+                        'user_type' => 'student',
+                        'has_voted' => false,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
+                    if (count($batch) >= $batchSize) {
+                        try {
+                            User::insert($batch);
+                            $imported += count($batch);
+                        } catch (\Exception $e) {
+                            $errors[] = "Batch insert error at line {$lineNumber}: " . $e->getMessage();
+                        }
+                        $batch = [];
+                    }
+                }
+                // Insert any remaining users
+                if (count($batch) > 0) {
+                    try {
+                        User::insert($batch);
+                        $imported += count($batch);
+                    } catch (\Exception $e) {
+                        $errors[] = "Final batch insert error: " . $e->getMessage();
+                    }
+                }
+                
+                DB::commit();
+                
+                \Log::info('Users imported from CSV', [
+                    'imported' => $imported,
+                    'errors' => count($errors)
+                ]);
+                
+                $message = "Successfully imported {$imported} user(s)";
+                if (count($errors) > 0) {
+                    $message .= ". " . count($errors) . " error(s) occurred: " . implode('; ', array_slice($errors, 0, 5));
+                    if (count($errors) > 5) {
+                        $message .= " (and " . (count($errors) - 5) . " more)";
+                    }
+                }
+                
+                // End debug message container and add JS to hide after 10s
+                echo '</div><script>setTimeout(function(){var d=document.getElementById("debug-messages");if(d)d.style.display="none";},10000);</script>';
+                flush();
+                return redirect()->route('admin.users.index')
+                    ->with(count($errors) > 0 ? 'error' : 'success', $message);
+                    
+            } catch (\Exception $e) {
+                DB::rollBack();
+                // ...existing code...
+                throw $e;
+            }
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // ...existing code...
+            return redirect()->back()
+                ->withErrors($e->errors());
+        } catch (\Exception $e) {
+            \Log::error('CSV import error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            // ...existing code...
+            return redirect()->back()
+                ->with('error', 'Failed to import users. Please check the CSV format and try again.');
+        }
     }
-}
-
 }

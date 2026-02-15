@@ -102,12 +102,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Route::get('audit-logs/export', [AuditLogController::class, 'export'])->name('admin.audit-logs.export');
     Route::get('audit-logs/print', [AuditLogController::class, 'print'])->name('admin.audit-logs.print');
     
-    // routes/web.php
-    Route::post('/admin/users/import', [UserController::class, 'import'])->name('admin.users.import');
-    Route::get('/admin/users/import-progress/{token}', [UserController::class, 'importProgress'])
-        ->name('admin.users.import.progress');
 
-
+    
     // User Management
     Route::get('users/download-template', [UserController::class, 'downloadTemplate'])
         ->name('admin.users.download-template');

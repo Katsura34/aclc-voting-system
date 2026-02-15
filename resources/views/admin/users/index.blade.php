@@ -324,49 +324,26 @@ document.addEventListener('DOMContentLoaded', function() {
             xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
             xhr.onload = function() {
                 overlay.style.display = 'none';
-                var messageBox = document.getElementById('import-message-box');
-                if (!messageBox) {
-                    messageBox = document.createElement('div');
-                    messageBox.id = 'import-message-box';
-                    messageBox.className = 'alert mt-3';
-                    importForm.parentNode.insertBefore(messageBox, importForm);
-                }
                 if (xhr.status === 200) {
                     try {
                         var response = JSON.parse(xhr.responseText);
                         if(response.success) {
-                            messageBox.className = 'alert alert-success mt-3';
-                            messageBox.innerHTML = '<i class="bi bi-check-circle"></i> Import completed successfully!';
-                            setTimeout(function(){ window.location.reload(); }, 1500);
+                            window.location.reload();
                         } else if(response.error) {
-                            messageBox.className = 'alert alert-danger mt-3';
-                            messageBox.innerHTML = '<i class="bi bi-exclamation-triangle"></i> ' + response.error;
+                            // Do nothing, rely on server-side error message
                         } else {
-                            messageBox.className = 'alert alert-success mt-3';
-                            messageBox.innerHTML = '<i class="bi bi-check-circle"></i> Import completed.';
-                            setTimeout(function(){ window.location.reload(); }, 1500);
+                            window.location.reload();
                         }
                     } catch (err) {
-                        messageBox.className = 'alert alert-success mt-3';
-                        messageBox.innerHTML = '<i class="bi bi-check-circle"></i> Import completed.';
-                        setTimeout(function(){ window.location.reload(); }, 1500);
+                        window.location.reload();
                     }
                 } else {
-                    messageBox.className = 'alert alert-danger mt-3';
-                    messageBox.innerHTML = '<i class="bi bi-exclamation-triangle"></i> Import failed. Please check your CSV and try again.';
+                    // Do nothing, rely on server-side error message
                 }
             };
             xhr.onerror = function() {
                 overlay.style.display = 'none';
-                var messageBox = document.getElementById('import-message-box');
-                if (!messageBox) {
-                    messageBox = document.createElement('div');
-                    messageBox.id = 'import-message-box';
-                    messageBox.className = 'alert mt-3';
-                    importForm.parentNode.insertBefore(messageBox, importForm);
-                }
-                messageBox.className = 'alert alert-danger mt-3';
-                messageBox.innerHTML = '<i class="bi bi-exclamation-triangle"></i> An error occurred during import.';
+                // Do nothing, rely on server-side error message
             };
             xhr.send(formData);
         });

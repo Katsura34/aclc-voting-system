@@ -316,130 +316,41 @@ class UserController extends Controller
             ]);
 
             $file = $request->file('csv_file');
-            $path = $file->getRealPath();
             
-            DB::beginTransaction();
+            // Generate a unique job ID
+            $jobId = uniqid('import_', true);
             
-            try {
-                $csv = array_map('str_getcsv', file($path));
-                $header = array_shift($csv); // Remove header row
-                
-                // Normalize header (trim whitespace and convert to lowercase)
-                $header = array_map(function($col) {
-                    return strtolower(trim($col));
-                }, $header);
-                
-                // Validate header format
-                $expectedHeader = ['usn', 'lastname', 'firstname', 'strand', 'year', 'gender', 'password'];
-                if ($header !== $expectedHeader) {
-                    return redirect()->back()
-                        ->with('error', 'Invalid CSV format. Expected columns: ' . implode(', ', $expectedHeader));
-                }
-                
-                $imported = 0;
-                $errors = [];
-                
-                foreach ($csv as $index => $row) {
-                    $lineNumber = $index + 2; // +2 because we removed header and arrays are 0-indexed
-                    
-                    // Skip empty rows
-                    if (empty(array_filter($row))) {
-                        continue;
-                    }
-                    
-                    // Validate row has correct number of columns
-                    if (count($row) !== 7) {
-                        $errors[] = "Line {$lineNumber}: Invalid number of columns";
-                        continue;
-                    }
-                    
-                    list($usn, $lastname, $firstname, $strand, $year, $gender, $password) = $row;
-                    
-                    // Trim all values
-                    $usn = trim($usn);
-                    $lastname = trim($lastname);
-                    $firstname = trim($firstname);
-                    $strand = trim($strand);
-                    $year = trim($year);
-                    $gender = trim($gender);
-                    $password = trim($password);
-                    
-                    // Basic validation
-                    if (empty($usn) || empty($lastname) || empty($firstname) || empty($password)) {
-                        $errors[] = "Line {$lineNumber}: USN, lastname, firstname, and password are required";
-                        continue;
-                    }
-                    
-                    // Generate email from USN
-                    $email = $usn . '@aclc.edu.ph';
-                    
-                    // Check if user already exists by USN or email
-                    if (User::where('usn', $usn)->exists()) {
-                        $errors[] = "Line {$lineNumber}: USN '{$usn}' already exists";
-                        continue;
-                    }
-                    
-                    if (User::where('email', $email)->exists()) {
-                        $errors[] = "Line {$lineNumber}: Email '{$email}' already exists";
-                        continue;
-                    }
-                    
-                    // Validate gender
-                    if (!empty($gender) && !in_array($gender, ['Male', 'Female', 'Other'])) {
-                        $errors[] = "Line {$lineNumber}: Invalid gender value. Must be Male, Female, or Other";
-                        continue;
-                    }
-                    
-                    try {
-                        // Create user
-                        User::create([
-                            'usn' => $usn,
-                            'lastname' => $lastname,
-                            'firstname' => $firstname,
-                            'strand' => $strand ?: null,
-                            'year' => $year ?: null,
-                            'gender' => $gender ?: null,
-                            'email' => $email,
-                            'password' => Hash::make($password),
-                            'user_type' => 'student',
-                            'has_voted' => false,
-                        ]);
-                        
-                        $imported++;
-                    } catch (\Exception $e) {
-                        // Handle database constraint violations and other errors
-                        $errorMessage = $e->getMessage();
-                        if (strpos($errorMessage, 'Duplicate entry') !== false) {
-                            $errors[] = "Line {$lineNumber}: Duplicate entry detected (USN or email already exists)";
-                        } else {
-                            $errors[] = "Line {$lineNumber}: " . $errorMessage;
-                        }
-                    }
-                }
-                
-                DB::commit();
-                
-                \Log::info('Users imported from CSV', [
-                    'imported' => $imported,
-                    'errors' => count($errors)
+            // Store the CSV file temporarily
+            $path = $file->storeAs('imports', $jobId . '.csv');
+            $fullPath = storage_path('app/' . $path);
+            
+            // Dispatch the import job
+            \App\Jobs\ImportUsersJob::dispatch($jobId, $fullPath);
+            
+            \Log::info('User import job dispatched', ['job_id' => $jobId]);
+            
+            // Return JSON for AJAX requests
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'job_id' => $jobId,
+                    'message' => 'Import job started successfully'
                 ]);
-                
-                $message = "Successfully imported {$imported} user(s)";
-                if (count($errors) > 0) {
-                    $message .= ". " . count($errors) . " error(s) occurred: " . implode('; ', array_slice($errors, 0, 5));
-                    if (count($errors) > 5) {
-                        $message .= " (and " . (count($errors) - 5) . " more)";
-                    }
-                }
-                
-                return redirect()->route('admin.users.index')
-                    ->with(count($errors) > 0 ? 'error' : 'success', $message);
-                    
-            } catch (\Exception $e) {
-                DB::rollBack();
-                throw $e;
             }
+            
+            return redirect()->route('admin.users.index')
+                ->with('success', 'Import started! Job ID: ' . $jobId)
+                ->with('import_job_id', $jobId);
+                
         } catch (\Illuminate\Validation\ValidationException $e) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $e->errors()
+                ], 422);
+            }
+            
             return redirect()->back()
                 ->withErrors($e->errors());
         } catch (\Exception $e) {
@@ -447,8 +358,71 @@ class UserController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
             
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to start import. Please try again.'
+                ], 500);
+            }
+            
             return redirect()->back()
-                ->with('error', 'Failed to import users. Please check the CSV format and try again.');
+                ->with('error', 'Failed to start import. Please check the CSV format and try again.');
+        }
+    }
+
+    /**
+     * Get import progress for a job.
+     */
+    public function importProgress(Request $request, string $jobId)
+    {
+        $progress = DB::table('import_progress')
+            ->where('job_id', $jobId)
+            ->first();
+
+        if (!$progress) {
+            return response()->json([
+                'status' => 'not_found',
+                'percentage' => 0,
+                'message' => 'Import job not found',
+            ], 404);
+        }
+
+        $percentage = $progress->total_rows > 0
+            ? round(($progress->processed_rows / $progress->total_rows) * 100, 2)
+            : 0;
+
+        $errors = $progress->errors ? json_decode($progress->errors, true) : [];
+
+        return response()->json([
+            'status' => $progress->status,
+            'percentage' => $percentage,
+            'total_rows' => $progress->total_rows,
+            'processed_rows' => $progress->processed_rows,
+            'imported_count' => $progress->imported_count,
+            'error_count' => $progress->error_count,
+            'errors' => array_slice($errors, 0, 5), // Return first 5 errors
+            'message' => $this->getProgressMessage($progress, $percentage),
+        ]);
+    }
+
+    /**
+     * Get progress message based on status.
+     */
+    protected function getProgressMessage($progress, $percentage): string
+    {
+        switch ($progress->status) {
+            case 'processing':
+                return "Processing... {$percentage}% complete ({$progress->processed_rows}/{$progress->total_rows} rows)";
+            case 'completed':
+                $message = "Import completed! {$progress->imported_count} user(s) imported successfully.";
+                if ($progress->error_count > 0) {
+                    $message .= " {$progress->error_count} error(s) occurred.";
+                }
+                return $message;
+            case 'failed':
+                return "Import failed. Please check the error messages.";
+            default:
+                return "Unknown status";
         }
     }
 }

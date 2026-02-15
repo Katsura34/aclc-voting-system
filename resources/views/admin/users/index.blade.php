@@ -242,7 +242,7 @@
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <form action="{{ route('admin.users.import') }}" method="POST" enctype="multipart/form-data">
+                <form action="{{ route('admin.users.import') }}" method="POST" enctype="multipart/form-data" id="importForm">
                     @csrf
                     <div class="modal-body">
                         <div class="alert alert-info">
@@ -263,10 +263,26 @@
                             <i class="bi bi-exclamation-triangle"></i> 
                             Make sure your CSV file follows the template format. Download the template if you haven't already.
                         </div>
+                        
+                        <!-- Progress Bar (hidden by default) -->
+                        <div id="importProgressContainer" style="display: none;">
+                            <hr>
+                            <h6><i class="bi bi-hourglass-split"></i> Import Progress</h6>
+                            <div class="progress mb-2" style="height: 25px;">
+                                <div id="importProgressBar" 
+                                     class="progress-bar progress-bar-striped progress-bar-animated" 
+                                     role="progressbar" 
+                                     style="width: 0%"
+                                     aria-valuenow="0" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100">0%</div>
+                            </div>
+                            <p id="importProgressMessage" class="text-muted mb-0">Initializing...</p>
+                        </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-success">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="cancelBtn">Cancel</button>
+                        <button type="submit" class="btn btn-success" id="importBtn">
                             <i class="bi bi-upload"></i> Import Users
                         </button>
                     </div>
@@ -274,4 +290,126 @@
             </div>
         </div>
     </div>
-</x-admin-layout>
+
+    <x-slot name="scripts">
+        <script>
+            let importJobId = null;
+            let progressInterval = null;
+
+            // Handle form submission
+            document.getElementById('importForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(this);
+                const importBtn = document.getElementById('importBtn');
+                const cancelBtn = document.getElementById('cancelBtn');
+                
+                // Disable buttons
+                importBtn.disabled = true;
+                importBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Starting...';
+                
+                // Show progress container
+                document.getElementById('importProgressContainer').style.display = 'block';
+                
+                // Submit form via fetch
+                fetch('{{ route("admin.users.import") }}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.job_id) {
+                        importJobId = data.job_id;
+                        startProgressPolling();
+                    } else {
+                        alert(data.message || 'Failed to start import');
+                        resetImportModal();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to start import. Please try again.');
+                    resetImportModal();
+                });
+            });
+
+            // Start polling for progress updates
+            function startProgressPolling() {
+                if (!importJobId) return;
+                
+                // Poll every 1 second
+                progressInterval = setInterval(function() {
+                    fetch(`/admin/users/import-progress/${importJobId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            updateProgressBar(data);
+                            
+                            // Stop polling when completed or failed
+                            if (data.status === 'completed' || data.status === 'failed') {
+                                clearInterval(progressInterval);
+                                setTimeout(function() {
+                                    location.reload(); // Reload to show updated users list
+                                }, 2000);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Progress fetch error:', error);
+                        });
+                }, 1000); // Poll every 1 second
+            }
+
+            // Update progress bar
+            function updateProgressBar(data) {
+                const progressBar = document.getElementById('importProgressBar');
+                const progressMessage = document.getElementById('importProgressMessage');
+                const percentage = data.percentage || 0;
+                
+                progressBar.style.width = percentage + '%';
+                progressBar.setAttribute('aria-valuenow', percentage);
+                progressBar.textContent = percentage + '%';
+                progressMessage.textContent = data.message || 'Processing...';
+                
+                // Change color based on status
+                if (data.status === 'completed') {
+                    progressBar.classList.remove('progress-bar-animated', 'bg-danger');
+                    progressBar.classList.add('bg-success');
+                } else if (data.status === 'failed') {
+                    progressBar.classList.remove('progress-bar-animated');
+                    progressBar.classList.add('bg-danger');
+                }
+            }
+
+            // Reset modal to initial state
+            function resetImportModal() {
+                const importBtn = document.getElementById('importBtn');
+                importBtn.disabled = false;
+                importBtn.innerHTML = '<i class="bi bi-upload"></i> Import Users';
+                document.getElementById('importProgressContainer').style.display = 'none';
+                document.getElementById('importProgressBar').style.width = '0%';
+                document.getElementById('importProgressMessage').textContent = 'Initializing...';
+            }
+
+            // Clean up on modal close
+            document.getElementById('importModal').addEventListener('hidden.bs.modal', function() {
+                if (progressInterval) {
+                    clearInterval(progressInterval);
+                }
+                resetImportModal();
+            });
+
+            // Check if there's an active import job from session
+            @if(session('import_job_id'))
+                importJobId = '{{ session("import_job_id") }}';
+                // Show modal and start polling
+                const importModal = new bootstrap.Modal(document.getElementById('importModal'));
+                importModal.show();
+                document.getElementById('importProgressContainer').style.display = 'block';
+                document.getElementById('importBtn').disabled = true;
+                startProgressPolling();
+            @endif
+        </script>
+    </x-slot>

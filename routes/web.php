@@ -107,6 +107,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
         ->name('admin.users.download-template');
     Route::post('users/import', [UserController::class, 'import'])
         ->name('admin.users.import');
+    Route::get('users/import-progress/{jobId}', [UserController::class, 'importProgress'])
+        ->name('admin.users.import-progress');
     Route::patch('users/{user}/reset-vote', [UserController::class, 'resetVote'])
         ->name('admin.users.reset-vote');
     Route::post('users/reset-all-votes', [UserController::class, 'resetAllVotes'])

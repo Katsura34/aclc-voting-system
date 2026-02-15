@@ -315,6 +315,24 @@ document.addEventListener('DOMContentLoaded', function() {
     var importForm = document.querySelector('#importModal form');
     var overlay = document.getElementById('import-loading-overlay');
     var progressNumeric = document.getElementById('import-progress-numeric');
+    var importId = null;
+    var pollInterval = null;
+
+    function pollProgress() {
+        if (!importId) return;
+        fetch('/admin/users/import-progress?import_id=' + encodeURIComponent(importId))
+            .then(res => res.json())
+            .then(data => {
+                progressNumeric.textContent = data.done + '/' + data.total;
+                if (data.finished) {
+                    clearInterval(pollInterval);
+                    overlay.style.display = 'none';
+                    alert('Import completed.');
+                    window.location.reload();
+                }
+            });
+    }
+
     if(importForm) {
         importForm.addEventListener('submit', function(e) {
             e.preventDefault();
@@ -332,29 +350,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 reader.readAsText(file);
             }
             var formData = new FormData(importForm);
+            // Generate a unique import ID for this session
+            importId = 'import_' + Date.now() + '_' + Math.floor(Math.random()*100000);
+            formData.append('import_id', importId);
             var xhr = new XMLHttpRequest();
             xhr.open('POST', importForm.action, true);
             xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
             xhr.onload = function() {
-                overlay.style.display = 'none';
-                if (xhr.status === 200) {
-                    try {
-                        var response = JSON.parse(xhr.responseText);
-                        if(response.success) {
-                            window.location.reload();
-                        } else if(response.error) {
-                            alert(response.error);
-                        } else {
-                            alert('Import completed.');
-                            window.location.reload();
-                        }
-                    } catch (err) {
-                        alert('Import completed.');
-                        window.location.reload();
-                    }
-                } else {
-                    alert('Import failed. Please check your CSV and try again.');
-                }
+                // Start polling for progress
+                pollInterval = setInterval(pollProgress, 1000);
             };
             xhr.onerror = function() {
                 overlay.style.display = 'none';

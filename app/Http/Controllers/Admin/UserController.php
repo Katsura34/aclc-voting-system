@@ -1,3 +1,16 @@
+    /**
+     * Return import progress as JSON (for AJAX polling)
+     */
+    public function importProgress(Request $request)
+    {
+        $importId = $request->query('import_id');
+        $progress = cache()->get('import_progress_' . $importId, [
+            'done' => 0,
+            'total' => 0,
+            'finished' => false
+        ]);
+        return response()->json($progress);
+    }
 <?php
 
 namespace App\Http\Controllers\Admin;
@@ -350,6 +363,12 @@ class UserController extends Controller
                 $errors = [];
                 $batch = [];
                 $batchSize = 500;
+                $importId = uniqid('import_', true);
+                cache()->put('import_progress_' . $importId, [
+                    'done' => 0,
+                    'total' => count($csv),
+                    'finished' => false
+                ], 600);
                 foreach ($csv as $index => $row) {
                     $lineNumber = $index + 2;
                     if (empty(array_filter($row))) {
@@ -407,6 +426,12 @@ class UserController extends Controller
                         }
                         $batch = [];
                     }
+                    // Update progress in cache
+                    cache()->put('import_progress_' . $importId, [
+                        'done' => $imported + count($batch),
+                        'total' => count($csv),
+                        'finished' => false
+                    ], 600);
                 }
                 // Insert any remaining users
                 if (count($batch) > 0) {
@@ -417,6 +442,12 @@ class UserController extends Controller
                         $errors[] = "Final batch insert error: " . $e->getMessage();
                     }
                 }
+                // Mark as finished
+                cache()->put('import_progress_' . $importId, [
+                    'done' => $imported,
+                    'total' => count($csv),
+                    'finished' => true
+                ], 600);
                 
                 DB::commit();
                 

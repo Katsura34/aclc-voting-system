@@ -230,6 +230,7 @@
                                                 'abstain_votes' => 0,
                                             ];
                                         })->toArray();
+                                    }
                                 @endphp
                                 @foreach($groups as $groupKey => $group)
                                     <h5 class="mt-4 mb-2">{{ $group['course'] }} {{ $group['year'] }}</h5>

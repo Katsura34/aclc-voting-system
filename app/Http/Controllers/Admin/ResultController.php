@@ -257,8 +257,6 @@ class ResultController extends Controller
                         ];
                     }
 
-                    // No abstain votes in database; skip abstain counting
-                    $abstainVotes = 0;
 
                     // Sort candidates by votes (descending)
                     usort($candidateResults, function($a, $b) {
@@ -284,16 +282,10 @@ class ResultController extends Controller
                         ];
                     }
 
-                    $abstainPercentage = $totalVotes > 0 
-                        ? round(($abstainVotes / $totalVotes) * 100, 2) 
-                        : 0;
-
                     $formattedResults[] = [
                         'position_id' => $position->id,
                         'position_name' => $position->name,
                         'total_votes' => $totalVotes,
-                        'abstain_votes' => $abstainVotes,
-                        'abstain_percentage' => $abstainPercentage,
                         'candidates' => $candidates,
                     ];
                 }

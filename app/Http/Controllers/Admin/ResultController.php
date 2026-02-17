@@ -201,67 +201,156 @@ class ResultController extends Controller
             $formattedResults = [];
 
             foreach ($selectedElection->positions as $position) {
-                $candidateResults = [];
                 $totalVotes = 0;
 
-                foreach ($position->candidates as $candidate) {
-                    // Fresh vote count from database
-                    $voteCount = Vote::where('position_id', $position->id)
-                        ->where('candidate_id', $candidate->id)
+                // Representative special handling: group by course+year and only count users matching candidate's course/year
+                if (strtolower(trim($position->name)) === 'representative') {
+                    $groups = [];
+
+                    foreach ($position->candidates as $candidate) {
+                        $course = $candidate->course ?? 'Unknown';
+                        $year = $candidate->year_level ?? 'Unknown';
+                        $groupKey = $course . ' ' . $year;
+
+                        $voteCount = Vote::where('position_id', $position->id)
+                            ->where('election_id', $electionId)
+                            ->where('candidate_id', $candidate->id)
+                            ->whereHas('user', function($query) use ($candidate) {
+                                $query->where('strand', $candidate->course)
+                                      ->where('year', $candidate->year_level);
+                            })
+                            ->count();
+
+                        if (!isset($groups[$groupKey])) {
+                            $groups[$groupKey] = [
+                                'course' => $course,
+                                'year' => $year,
+                                'candidates' => [],
+                                'group_total_votes' => 0,
+                                'abstain_votes' => 0,
+                            ];
+                        }
+
+                        $groups[$groupKey]['candidates'][] = [
+                            'id' => $candidate->id,
+                            'name' => $candidate->full_name,
+                            'party' => $candidate->party->name ?? 'No Party',
+                            'votes' => $voteCount,
+                        ];
+
+                        $groups[$groupKey]['group_total_votes'] += $voteCount;
+                        $totalVotes += $voteCount;
+                    }
+
+                    // Abstain per group
+                    foreach ($groups as $key => $group) {
+                        $firstCandidateId = $group['candidates'][0]['id'] ?? null;
+                        $firstCandidate = $position->candidates->first(function($c) use ($firstCandidateId) {
+                            return $c->id == $firstCandidateId;
+                        });
+
+                        if ($firstCandidate) {
+                            $groupAbstain = Vote::where('position_id', $position->id)
+                                ->where('election_id', $electionId)
+                                ->whereNull('candidate_id')
+                                ->whereHas('user', function($query) use ($firstCandidate) {
+                                    $query->where('strand', $firstCandidate->course)
+                                          ->where('year', $firstCandidate->year_level);
+                                })
+                                ->count();
+                        } else {
+                            $groupAbstain = 0;
+                        }
+
+                        $groups[$key]['abstain_votes'] = $groupAbstain;
+                        $groups[$key]['group_total_votes'] += $groupAbstain;
+                        $totalVotes += $groupAbstain;
+
+                        // compute percentages and rank for candidates in group
+                        usort($groups[$key]['candidates'], function($a, $b) {
+                            return $b['votes'] - $a['votes'];
+                        });
+
+                        $rank = 1;
+                        foreach ($groups[$key]['candidates'] as &$cand) {
+                            $cand['percentage'] = $groups[$key]['group_total_votes'] > 0
+                                ? round(($cand['votes'] / $groups[$key]['group_total_votes']) * 100, 2)
+                                : 0;
+                            $cand['rank'] = $rank++;
+                        }
+                        unset($cand);
+                    }
+
+                    $formattedResults[] = [
+                        'position_id' => $position->id,
+                        'position_name' => $position->name,
+                        'total_votes' => $totalVotes,
+                        'groups' => array_values($groups),
+                    ];
+                } else {
+                    $candidateResults = [];
+                    $totalVotes = 0;
+
+                    foreach ($position->candidates as $candidate) {
+                        // Fresh vote count from database
+                        $voteCount = Vote::where('position_id', $position->id)
+                            ->where('election_id', $electionId)
+                            ->where('candidate_id', $candidate->id)
+                            ->count();
+                        
+                        $totalVotes += $voteCount;
+                        
+                        $candidateResults[] = [
+                            'candidate' => $candidate,
+                            'votes' => $voteCount,
+                        ];
+                    }
+
+                    // Fresh abstain votes count from database
+                    $abstainVotes = Vote::where('position_id', $position->id)
+                        ->where('election_id', $electionId)
+                        ->whereNull('candidate_id')
                         ->count();
                     
-                    $totalVotes += $voteCount;
-                    
-                    $candidateResults[] = [
-                        'candidate' => $candidate,
-                        'votes' => $voteCount,
-                    ];
-                }
+                    $totalVotes += $abstainVotes;
 
-                // Fresh abstain votes count from database
-                $abstainVotes = Vote::where('position_id', $position->id)
-                    ->where('election_id', $electionId)
-                    ->whereNull('candidate_id')
-                    ->count();
-                
-                $totalVotes += $abstainVotes;
+                    // Sort candidates by votes (descending)
+                    usort($candidateResults, function($a, $b) {
+                        return $b['votes'] - $a['votes'];
+                    });
 
-                // Sort candidates by votes (descending)
-                usort($candidateResults, function($a, $b) {
-                    return $b['votes'] - $a['votes'];
-                });
+                    // Format candidates with rankings
+                    $candidates = [];
+                    $rank = 1;
 
-                // Format candidates with rankings
-                $candidates = [];
-                $rank = 1;
+                    foreach ($candidateResults as $candidateData) {
+                        $percentage = $totalVotes > 0 
+                            ? round(($candidateData['votes'] / $totalVotes) * 100, 2) 
+                            : 0;
 
-                foreach ($candidateResults as $candidateData) {
-                    $percentage = $totalVotes > 0 
-                        ? round(($candidateData['votes'] / $totalVotes) * 100, 2) 
+                        $candidates[] = [
+                            'id' => $candidateData['candidate']->id,
+                            'name' => $candidateData['candidate']->full_name,
+                            'party' => $candidateData['candidate']->party->name ?? 'No Party',
+                            'votes' => $candidateData['votes'],
+                            'percentage' => $percentage,
+                            'rank' => $rank++,
+                        ];
+                    }
+
+                    $abstainPercentage = $totalVotes > 0 
+                        ? round(($abstainVotes / $totalVotes) * 100, 2) 
                         : 0;
 
-                    $candidates[] = [
-                        'id' => $candidateData['candidate']->id,
-                        'name' => $candidateData['candidate']->full_name,
-                        'party' => $candidateData['candidate']->party->name ?? 'No Party',
-                        'votes' => $candidateData['votes'],
-                        'percentage' => $percentage,
-                        'rank' => $rank++,
+                    $formattedResults[] = [
+                        'position_id' => $position->id,
+                        'position_name' => $position->name,
+                        'total_votes' => $totalVotes,
+                        'abstain_votes' => $abstainVotes,
+                        'abstain_percentage' => $abstainPercentage,
+                        'candidates' => $candidates,
                     ];
                 }
-
-                $abstainPercentage = $totalVotes > 0 
-                    ? round(($abstainVotes / $totalVotes) * 100, 2) 
-                    : 0;
-
-                $formattedResults[] = [
-                    'position_id' => $position->id,
-                    'position_name' => $position->name,
-                    'total_votes' => $totalVotes,
-                    'abstain_votes' => $abstainVotes,
-                    'abstain_percentage' => $abstainPercentage,
-                    'candidates' => $candidates,
-                ];
             }
 
             // Fresh statistics from database

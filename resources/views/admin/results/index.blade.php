@@ -518,25 +518,7 @@
                     }
                 });
 
-                // Update abstain votes if present
-                const abstainRow = tbody.querySelector('tr:last-child');
-                if (abstainRow && result.abstain_votes > 0) {
-                    const abstainVotesCell = abstainRow.querySelectorAll('td')[1];
-                    if (abstainVotesCell) {
-                        updateWithAnimation(abstainVotesCell, result.abstain_votes);
-                    }
-
-                    const abstainPercentageCell = abstainRow.querySelectorAll('td')[2];
-                    if (abstainPercentageCell) {
-                        abstainPercentageCell.textContent = result.abstain_percentage + '%';
-                    }
-
-                    const abstainProgressBar = abstainRow.querySelector('.progress-bar');
-                    if (abstainProgressBar) {
-                        abstainProgressBar.style.width = result.abstain_percentage + '%';
-                        abstainProgressBar.setAttribute('aria-valuenow', result.abstain_percentage);
-                    }
-                }
+                // Abstain removed from DB; no abstain updates
             });
         }
 

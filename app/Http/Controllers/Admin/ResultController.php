@@ -118,7 +118,7 @@ class ResultController extends Controller
                                 'position' => $position,
                                 'candidates' => $candidateResults,
                                 'total_votes' => $totalVotes,
-                                'abstain_votes' => $abstainVotes,
+                                'abstain_votes' => 0,
                             ];
                         }
                     }
@@ -421,11 +421,7 @@ class ResultController extends Controller
                         ];
                     }
 
-                    // Get abstain votes
-                    $abstainVotes = Vote::where('position_id', $position->id)
-                        ->whereNull('candidate_id')
-                        ->count();
-                    $totalVotes += $abstainVotes;
+                    // No abstain votes in database; skip abstain counting
 
                     // Sort by votes
                     usort($candidateResults, function($a, $b) {
@@ -441,12 +437,6 @@ class ResultController extends Controller
                             $result['votes'],
                             $percentage . '%'
                         ]);
-                    }
-
-                    // Abstain row
-                    if ($abstainVotes > 0) {
-                        $percentage = $totalVotes > 0 ? round(($abstainVotes / $totalVotes) * 100, 2) : 0;
-                        fputcsv($file, ['Abstain', '-', $abstainVotes, $percentage . '%']);
                     }
 
                     fputcsv($file, ['Total Votes', '', $totalVotes, '100%']);

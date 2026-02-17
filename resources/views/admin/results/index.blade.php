@@ -36,19 +36,7 @@
             .rank-3 { background: #CD7F32; color: #fff; }
             .rank-other { background: #6c757d; color: #fff; }
             
-            /* Live update animations */
-            #live-indicator {
-                animation: pulse 2s infinite;
-            }
-            
-            @keyframes pulse {
-                0%, 100% { opacity: 1; }
-                50% { opacity: 0.7; }
-            }
-            
-            .text-success.fw-bold {
-                transition: all 0.3s ease;
-            }
+            /* Small helpers */
         </style>
     </x-slot>
 
@@ -58,19 +46,11 @@
             <div>
                 <h2>
                     <i class="bi bi-bar-chart-fill"></i> Election Results
-                    <span id="live-indicator" class="badge bg-success ms-2" style="display: none;">
-                        <span class="spinner-border spinner-border-sm me-1"></span> LIVE
-                    </span>
-                    <small id="last-updated" class="text-muted ms-3" style="font-weight:600; display:none;">Last updated: --</small>
-                    <small id="debug-info" class="text-muted ms-3" style="font-weight:600; display:inline-block;">Debug: </small>
                 </h2>
-                <p class="text-muted mb-0">View voting results and statistics • Auto-refreshes every 10 seconds</p>
+                <p class="text-muted mb-0">View voting results and statistics</p>
             </div>
             @if($selectedElection)
-                <div class="btn-group">
-                    <button type="button" id="toggleAutoRefresh" class="btn btn-info" onclick="toggleAutoRefresh()">
-                        <i class="bi bi-arrow-repeat"></i> <span id="autoRefreshText">Disable</span> Auto-Refresh
-                    </button>
+                    <div class="btn-group">
                     <a href="{{ route('admin.results.print', ['election_id' => $selectedElection->id]) }}" 
                        class="btn btn-primary"
                        target="_blank">

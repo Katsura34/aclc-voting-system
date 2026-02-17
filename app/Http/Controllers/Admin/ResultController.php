@@ -69,70 +69,84 @@ class ResultController extends Controller
                                     // Use first candidate as reference for course/year
                                     $firstCandidate = $position->candidates->first();
                                     if ($firstCandidate) {
-                                        $query->where('strand', $firstCandidate->course)
-                                              ->where('year', $firstCandidate->year_level);
-                                    }
-                                })
-                                ->count();
-                            $totalVotes += $abstainVotes;
-                        } else {
-                            foreach ($position->candidates as $candidate) {
-                                $voteCount = $candidate->votes()->where('position_id', $position->id)->count();
-                                $totalVotes += $voteCount;
-                                $candidateResults[] = [
-                                    'candidate' => $candidate,
-                                    'votes' => $voteCount,
-                                ];
-                            }
-                            // Get abstain votes for this position
-                            $abstainVotes = Vote::where('position_id', $position->id)
-                                ->where('election_id', $selectedElection->id)
-                                ->whereNull('candidate_id')
-                                ->count();
-                            $totalVotes += $abstainVotes;
-                        }
-
-                        // Sort candidates by votes (descending)
-                        usort($candidateResults, function($a, $b) {
-                            return $b['votes'] - $a['votes'];
-                        });
-
-                        $results[] = [
-                            'position' => $position,
-                            'candidates' => $candidateResults,
-                            'total_votes' => $totalVotes,
-                            'abstain_votes' => $abstainVotes,
-                        ];
-                    }
-                }
-            }
-
-            // Get total voters and votes cast
-            $totalVoters = \App\Models\User::where('user_type', 'student')->count();
-            $votedCount = 0;
-            
-            if ($selectedElection) {
-                $votedCount = \App\Models\User::where('user_type', 'student')
-                    ->where('has_voted', true)
-                    ->count();
-            }
-
-            return view('admin.results.index', compact(
-                'elections',
-                'selectedElection',
-                'results',
-                'totalVoters',
-                'votedCount'
-            ));
-        } catch (\Exception $e) {
-            \Log::error('Results display error: ' . $e->getMessage(), [
-                'election_id' => $request->election_id ?? null,
-                'trace' => $e->getTraceAsString()
-            ]);
-            
-            return redirect()->back()
-                ->with('error', 'Failed to load results. Please try again.');
-        }
+                                            foreach ($selectedElection->positions as $position) {
+                                                if (strtolower(trim($position->name)) === 'representative') {
+                                                    // Group by strand and year_level
+                                                    $groups = $position->candidates->groupBy(function($candidate) {
+                                                        return $candidate->course . ' - ' . $candidate->year_level;
+                                                    });
+                                                    foreach ($groups as $groupKey => $groupCandidates) {
+                                                        $candidateResults = [];
+                                                        $totalVotes = 0;
+                                                        $abstainVotes = 0;
+                                                        foreach ($groupCandidates as $candidate) {
+                                                            $voteCount = Vote::where('position_id', $position->id)
+                                                                ->where('candidate_id', $candidate->id)
+                                                                ->whereHas('user', function($query) use ($candidate) {
+                                                                    $query->where('strand', $candidate->course)
+                                                                          ->where('year', $candidate->year_level);
+                                                                })
+                                                                ->count();
+                                                            $totalVotes += $voteCount;
+                                                            $candidateResults[] = [
+                                                                'candidate' => $candidate,
+                                                                'votes' => $voteCount,
+                                                            ];
+                                                        }
+                                                        // Abstain votes for this group
+                                                        $abstainVotes = Vote::where('position_id', $position->id)
+                                                            ->where('election_id', $selectedElection->id)
+                                                            ->whereNull('candidate_id')
+                                                            ->whereHas('user', function($query) use ($groupCandidates) {
+                                                                $firstCandidate = $groupCandidates->first();
+                                                                if ($firstCandidate) {
+                                                                    $query->where('strand', $firstCandidate->course)
+                                                                          ->where('year', $firstCandidate->year_level);
+                                                                }
+                                                            })
+                                                            ->count();
+                                                        $totalVotes += $abstainVotes;
+                                                        // Sort candidates by votes (descending)
+                                                        usort($candidateResults, function($a, $b) {
+                                                            return $b['votes'] - $a['votes'];
+                                                        });
+                                                        $results[] = [
+                                                            'position' => $position,
+                                                            'group' => $groupKey,
+                                                            'candidates' => $candidateResults,
+                                                            'total_votes' => $totalVotes,
+                                                            'abstain_votes' => $abstainVotes,
+                                                        ];
+                                                    }
+                                                } else {
+                                                    $candidateResults = [];
+                                                    $totalVotes = 0;
+                                                    $abstainVotes = 0;
+                                                    foreach ($position->candidates as $candidate) {
+                                                        $voteCount = $candidate->votes()->where('position_id', $position->id)->count();
+                                                        $totalVotes += $voteCount;
+                                                        $candidateResults[] = [
+                                                            'candidate' => $candidate,
+                                                            'votes' => $voteCount,
+                                                        ];
+                                                    }
+                                                    // Get abstain votes for this position
+                                                    $abstainVotes = Vote::where('position_id', $position->id)
+                                                        ->where('election_id', $selectedElection->id)
+                                                        ->whereNull('candidate_id')
+                                                        ->count();
+                                                    $totalVotes += $abstainVotes;
+                                                    // Sort candidates by votes (descending)
+                                                    usort($candidateResults, function($a, $b) {
+                                                        return $b['votes'] - $a['votes'];
+                                                    });
+                                                    $results[] = [
+                                                        'position' => $position,
+                                                        'candidates' => $candidateResults,
+                                                        'total_votes' => $totalVotes,
+                                                        'abstain_votes' => $abstainVotes,
+                                                    ];
+                                                }
     }
 
     /**

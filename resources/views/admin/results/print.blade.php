@@ -29,14 +29,56 @@
     @foreach($results as $result)
         <h3>{{ $result['position']->name }}</h3>
         @php
-            $grouped = collect($result['candidates'])->groupBy(function($item) {
-                $course = $item['candidate']->course ?? 'No Course';
-                $year = $item['candidate']->year_level ?? 'N/A';
-                return $course . ' - Year ' . $year;
-            });
+            $isRep = strtolower(trim($result['position']->name)) === 'representative';
+            if ($isRep) {
+                $groups = $result['groups'] ?? [];
+            } else {
+                $candidates = $result['candidates'] ?? [];
+            }
         @endphp
-        @foreach($grouped as $groupKey => $candidates)
-            <h4 style="margin-bottom:2px;">{{ $groupKey }}</h4>
+
+        @if($isRep)
+            @foreach($groups as $group)
+                <h4 style="margin-bottom:2px;">{{ $group['course'] ?? 'Unknown' }} - Year {{ $group['year'] ?? 'N/A' }}</h4>
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="center">Rank</th>
+                            <th>Candidate Name</th>
+                            <th>Party</th>
+                            <th class="center">Votes</th>
+                            <th class="center">%</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if(empty($group['candidates']))
+                            <tr><td colspan="5" class="center">No votes cast for this group</td></tr>
+                        @else
+                            @foreach($group['candidates'] as $i => $candidateResult)
+                                @php
+                                    $groupTotal = $group['group_total_votes'] ?? array_sum(array_map(function($it){ return $it['votes']; }, $group['candidates']));
+                                    $percentage = $groupTotal > 0 ? round((($candidateResult['votes'] ?? 0) / $groupTotal) * 100, 2) : 0;
+                                @endphp
+                                <tr class="{{ $i === 0 && ($candidateResult['votes'] ?? 0) > 0 ? 'winner-row' : '' }}">
+                                    <td class="center">{{ $i + 1 }}</td>
+                                    <td>{{ $candidateResult['candidate']->full_name ?? $candidateResult['name'] }}</td>
+                                    <td>{{ $candidateResult['candidate']->party ? $candidateResult['candidate']->party->acronym : ($candidateResult['party'] ?? 'No Party') }}</td>
+                                    <td class="center">{{ $candidateResult['votes'] ?? 0 }}</td>
+                                    <td class="center">{{ $percentage }}%</td>
+                                </tr>
+                            @endforeach
+                        @endif
+                    </tbody>
+                </table>
+            @endforeach
+            <table>
+                <tr style="font-weight:bold; background:#eee;">
+                    <td colspan="3" class="center">TOTAL VOTES</td>
+                    <td class="center">{{ $result['total_votes'] }}</td>
+                    <td class="center">100%</td>
+                </tr>
+            </table>
+        @else
             <table>
                 <thead>
                     <tr>
@@ -48,8 +90,8 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @if($candidates->isEmpty() && $result['abstain_votes'] == 0)
-                        <tr><td colspan="5" class="center">No votes cast for this group</td></tr>
+                    @if(empty($candidates))
+                        <tr><td colspan="5" class="center">No votes cast for this position</td></tr>
                     @else
                         @foreach($candidates as $i => $candidateResult)
                             @php
@@ -65,25 +107,6 @@
                         @endforeach
                     @endif
                 </tbody>
-            </table>
-        @endforeach
-        @if($result['abstain_votes'] > 0)
-            @php
-                $abstainPercentage = $result['total_votes'] > 0 ? round(($result['abstain_votes'] / $result['total_votes']) * 100, 2) : 0;
-            @endphp
-            <table>
-                <tr>
-                    <td class="center">-</td>
-                    <td><strong>ABSTAIN</strong></td>
-                    <td>-</td>
-                    <td class="center">{{ $result['abstain_votes'] }}</td>
-                    <td class="center">{{ $abstainPercentage }}%</td>
-                </tr>
-                <tr style="font-weight:bold; background:#eee;">
-                    <td colspan="3" class="center">TOTAL VOTES</td>
-                    <td class="center">{{ $result['total_votes'] }}</td>
-                    <td class="center">100%</td>
-                </tr>
             </table>
         @endif
     @endforeach

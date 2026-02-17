@@ -412,13 +412,20 @@
             if (refreshInterval) {
                 clearInterval(refreshInterval);
             }
-            
-            // Start auto-refresh (every 10 seconds)
+            // Run one immediate fetch and then start interval (every 10 seconds)
+            try {
+                console.debug('Auto-refresh starting: fetching results immediately');
+                fetchResults();
+            } catch (e) {
+                console.error('Error on initial fetchResults():', e);
+            }
+
             refreshInterval = setInterval(() => {
                 if (autoRefreshEnabled) {
+                    console.debug('Auto-refresh: fetching results');
                     fetchResults();
                 }
-            }, 3000);
+            }, 10000);
         }
 
         function stopAutoRefresh() {

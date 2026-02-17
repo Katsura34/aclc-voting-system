@@ -213,14 +213,26 @@
                         @else
                             @if(strtolower(trim($result['position']->name)) === 'representative')
                                 @php
-                                    $grouped = collect($result['candidates'])->groupBy(function($c) {
-                                        $course = $c['candidate']->course ?? 'Unknown';
-                                        $year = $c['candidate']->year_level ?? 'Unknown';
-                                        return $course . ' ' . $year;
-                                    });
+                                    // Use groups provided by controller when available, otherwise fallback to grouping candidates client-side
+                                    $groups = $result['groups'] ?? [];
+                                    if (empty($groups) && isset($result['candidates'])) {
+                                        $groups = collect($result['candidates'])->groupBy(function($c) {
+                                            $course = $c['candidate']->course ?? 'Unknown';
+                                            $year = $c['candidate']->year_level ?? 'Unknown';
+                                            return $course . ' ' . $year;
+                                        })->map(function($items, $key) {
+                                            $parts = explode(' ', $key);
+                                            return [
+                                                'course' => $parts[0] ?? 'Unknown',
+                                                'year' => $parts[1] ?? 'Unknown',
+                                                'candidates' => $items->values()->all(),
+                                                'group_total_votes' => array_sum(array_map(function($i){ return $i['votes']; }, $items->toArray())),
+                                                'abstain_votes' => 0,
+                                            ];
+                                        })->toArray();
                                 @endphp
-                                @foreach($grouped as $groupKey => $candidates)
-                                    <h5 class="mt-4 mb-2">{{ $groupKey }}</h5>
+                                @foreach($groups as $groupKey => $group)
+                                    <h5 class="mt-4 mb-2">{{ $group['course'] }} {{ $group['year'] }}</h5>
                                     <div class="table-responsive">
                                         <table class="table table-hover align-middle">
                                             <thead class="table-light">
@@ -233,7 +245,7 @@
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                @foreach($candidates as $index => $candidateResult)
+                                                @foreach($group['candidates'] as $index => $candidateResult)
                                                     <tr>
                                                         <td>
                                                             <div class="candidate-rank rank-{{ $index + 1 > 3 ? 'other' : $index + 1 }}">
@@ -241,29 +253,31 @@
                                                             </div>
                                                         </td>
                                                         <td>
-                                                            <strong>{{ $candidateResult['candidate']->full_name }}</strong>
-                                                            @if($index === 0 && $candidateResult['votes'] > 0)
+                                                            <strong>{{ $candidateResult['candidate']->full_name ?? $candidateResult['name'] }}</strong>
+                                                            @if($index === 0 && ($candidateResult['votes'] ?? 0) > 0)
                                                                 <span class="winner-badge">
                                                                     <i class="bi bi-trophy-fill"></i> WINNER
                                                                 </span>
                                                             @endif
                                                         </td>
                                                         <td>
-                                                            @if($candidateResult['candidate']->party)
-                                                                <span class="badge" style="background-color: {{ $candidateResult['candidate']->party->color }};">
-                                                                    {{ $candidateResult['candidate']->party->acronym }}
+                                                            @php $party = $candidateResult['candidate']->party ?? null; @endphp
+                                                            @if(isset($party) && $party)
+                                                                <span class="badge" style="background-color: {{ $party->color }};">
+                                                                    {{ $party->acronym }}
                                                                 </span>
                                                             @else
                                                                 <span class="badge bg-secondary">No Party</span>
                                                             @endif
                                                         </td>
                                                         <td>
-                                                            <strong class="fs-5">{{ $candidateResult['votes'] }}</strong>
+                                                            <strong class="fs-5">{{ $candidateResult['votes'] ?? $candidateResult['votes'] }}</strong>
                                                         </td>
                                                         <td>
                                                             @php
-                                                                $percentage = $result['total_votes'] > 0 
-                                                                    ? round(($candidateResult['votes'] / $result['total_votes']) * 100, 2) 
+                                                                $groupTotal = $group['group_total_votes'] ?? array_sum(array_map(function($i){ return $i['votes']; }, $group['candidates']));
+                                                                $percentage = $groupTotal > 0 
+                                                                    ? round((($candidateResult['votes'] ?? 0) / $groupTotal) * 100, 2) 
                                                                     : 0;
                                                             @endphp
                                                             <div class="progress">

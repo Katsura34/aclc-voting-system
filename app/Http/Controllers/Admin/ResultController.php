@@ -522,9 +522,10 @@ class ResultController extends Controller
 
                     fputcsv($file, ['Total Votes', '', $totalVotes, '100%']);
                     fputcsv($file, []); // Empty line between positions
+                    }
                 }
 
-            fclose($file);
+                fclose($file);
         };
 
         return response()->stream($callback, 200, $headers);

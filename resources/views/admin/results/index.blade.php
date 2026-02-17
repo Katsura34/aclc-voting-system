@@ -475,50 +475,77 @@
                     updateWithAnimation(totalVotesBadge, 'Total Votes: ' + result.total_votes);
                 }
 
-                // Update candidate rows
-                const tbody = card.querySelector('tbody');
-                if (!tbody) return;
+                // Update candidate rows or grouped representative tables
+                // Utility to escape HTML
+                function escapeHtml(str) {
+                    return String(str === undefined || str === null ? '' : str)
+                        .replace(/&/g, '&amp;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;')
+                        .replace(/"/g, '&quot;')
+                        .replace(/'/g, '&#039;');
+                }
 
-                result.candidates.forEach((candidate, candIndex) => {
-                    const row = tbody.querySelectorAll('tr')[candIndex];
-                    if (!row) return;
+                if (result.groups && result.groups.length) {
+                    // Representative: update each group table
+                    result.groups.forEach(group => {
+                        const groupLabel = (group.course || 'Unknown') + ' ' + (group.year || 'N/A');
+                        const groupHeaders = Array.from(card.querySelectorAll('h5'));
+                        const header = groupHeaders.find(h => h.textContent.trim() === groupLabel);
+                        if (!header) return;
+                        const table = header.nextElementSibling?.querySelector('table');
+                        if (!table) return;
+                        const tbody = table.querySelector('tbody');
+                        if (!tbody) return;
 
-                    // Update rank badge
-                    const rankBadge = row.querySelector('.badge');
-                    if (rankBadge && candidate.rank) {
-                        rankBadge.className = 'badge ' + getRankBadgeClass(candidate.rank);
-                        rankBadge.textContent = '#' + candidate.rank;
-                    }
+                        const groupTotal = group.group_total_votes ?? (Array.isArray(group.candidates) ? group.candidates.reduce((s, c) => s + (c.votes || 0), 0) : 0);
 
-                    // Update votes
-                    const votesCell = row.querySelectorAll('td')[2];
-                    if (votesCell) {
-                        updateWithAnimation(votesCell, candidate.votes);
-                    }
+                        tbody.innerHTML = (group.candidates || []).map((candidate, idx) => {
+                            const name = candidate.candidate ? (candidate.candidate.full_name || candidate.name || '') : (candidate.name || '');
+                            const votes = candidate.votes ?? 0;
+                            const percentage = groupTotal > 0 ? ((votes / groupTotal) * 100).toFixed(2) : '0.00';
+                            const partyAcr = candidate.candidate && candidate.candidate.party ? candidate.candidate.party.acronym : (candidate.party || 'No Party');
+                            const partyColor = (candidate.candidate && candidate.candidate.party && candidate.candidate.party.color) ? candidate.candidate.party.color : '#0d6efd';
+                            const winnerHtml = (idx === 0 && votes > 0) ? ' <i class="bi bi-trophy-fill text-warning"></i>' : '';
+                            return '\n<tr>' +
+                                '<td><div class="candidate-rank rank-' + (idx + 1 > 3 ? 'other' : (idx + 1)) + '">' + (idx + 1) + '</div></td>' +
+                                '<td><strong>' + escapeHtml(name) + '</strong>' + winnerHtml + '</td>' +
+                                '<td>' + (partyAcr ? ('<span class="badge" style="background-color: ' + escapeHtml(partyColor) + '">' + escapeHtml(partyAcr) + '</span>') : '<span class="badge bg-secondary">No Party</span>') + '</td>' +
+                                '<td><strong class="fs-5">' + votes + '</strong></td>' +
+                                '<td>' +
+                                    '<div class="progress">' +
+                                        '<div class="progress-bar" role="progressbar" style="width: ' + percentage + '%; background-color: ' + escapeHtml(partyColor) + ';" aria-valuenow="' + percentage + '" aria-valuemin="0" aria-valuemax="100">' + percentage + '%</div>' +
+                                    '</div>' +
+                                '</td>' +
+                            '</tr>';
+                        }).join('\n');
+                    });
+                } else {
+                    // Non-representative: rebuild the single table body
+                    const tbody = card.querySelector('tbody');
+                    if (!tbody) return;
 
-                    // Update percentage
-                    const percentageCell = row.querySelectorAll('td')[3];
-                    if (percentageCell) {
-                        percentageCell.textContent = candidate.percentage + '%';
-                    }
-
-                    // Update progress bar
-                    const progressBar = row.querySelector('.progress-bar');
-                    if (progressBar) {
-                        progressBar.style.width = candidate.percentage + '%';
-                        progressBar.setAttribute('aria-valuenow', candidate.percentage);
-                    }
-
-                    // Add winner badge if needed
-                    const nameCell = row.querySelectorAll('td')[1];
-                    if (nameCell && candidate.rank === 1) {
-                        if (!nameCell.querySelector('.bi-trophy-fill')) {
-                            nameCell.innerHTML += ' <i class="bi bi-trophy-fill text-warning"></i>';
-                        }
-                    }
-                });
-
-                // Abstain removed from DB; no abstain updates
+                    const totalVotes = result.total_votes ?? (Array.isArray(result.candidates) ? result.candidates.reduce((s, c) => s + (c.votes || 0), 0) : 0);
+                    tbody.innerHTML = (result.candidates || []).map((candidate, idx) => {
+                        const name = candidate.candidate ? (candidate.candidate.full_name || candidate.name || '') : (candidate.name || '');
+                        const votes = candidate.votes ?? 0;
+                        const percentage = totalVotes > 0 ? ((votes / totalVotes) * 100).toFixed(2) : '0.00';
+                        const partyAcr = candidate.candidate && candidate.candidate.party ? candidate.candidate.party.acronym : (candidate.party || 'No Party');
+                        const partyColor = (candidate.candidate && candidate.candidate.party && candidate.candidate.party.color) ? candidate.candidate.party.color : '#0d6efd';
+                        const winnerHtml = (idx === 0 && votes > 0) ? ' <i class="bi bi-trophy-fill text-warning"></i>' : '';
+                        return '\n<tr>' +
+                            '<td><div class="candidate-rank rank-' + (idx + 1 > 3 ? 'other' : (idx + 1)) + '">' + (idx + 1) + '</div></td>' +
+                            '<td><strong>' + escapeHtml(name) + '</strong>' + winnerHtml + '</td>' +
+                            '<td>' + (partyAcr ? ('<span class="badge" style="background-color: ' + escapeHtml(partyColor) + '">' + escapeHtml(partyAcr) + '</span>') : '<span class="badge bg-secondary">No Party</span>') + '</td>' +
+                            '<td><strong class="fs-5">' + votes + '</strong></td>' +
+                            '<td>' +
+                                '<div class="progress">' +
+                                    '<div class="progress-bar" role="progressbar" style="width: ' + percentage + '%; background-color: ' + escapeHtml(partyColor) + ';" aria-valuenow="' + percentage + '" aria-valuemin="0" aria-valuemax="100">' + percentage + '%</div>' +
+                                '</div>' +
+                            '</td>' +
+                        '</tr>';
+                    }).join('\n');
+                }
             });
         }
 

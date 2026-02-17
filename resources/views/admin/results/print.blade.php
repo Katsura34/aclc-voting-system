@@ -46,6 +46,7 @@
     @foreach($results as $result)
         @php
             $isRep = strtolower(trim($result['position']->name)) === 'representative';
+            $winnersOnly = $winnersOnly ?? request()->boolean('winners');
             if ($isRep) {
                 $groups = $result['groups'] ?? [];
             } else {
@@ -70,12 +71,23 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @if(empty($group['candidates']))
+                        @php
+                            $groupCands = $group['candidates'] ?? [];
+                            $groupTotal = $group['group_total_votes'] ?? array_sum(array_map(function($it){ return $it['votes']; }, $groupCands));
+                            if ($winnersOnly) {
+                                $maxVotes = 0;
+                                foreach($groupCands as $cr) { $maxVotes = max($maxVotes, $cr['votes'] ?? 0); }
+                                $displayCandidates = array_values(array_filter($groupCands, function($cr) use ($maxVotes) { return ($cr['votes'] ?? 0) === $maxVotes && $maxVotes > 0; }));
+                            } else {
+                                $displayCandidates = $groupCands;
+                            }
+                        @endphp
+
+                        @if(empty($displayCandidates))
                             <tr><td colspan="5" class="center">No votes cast for this group</td></tr>
                         @else
-                            @foreach($group['candidates'] as $i => $candidateResult)
+                            @foreach($displayCandidates as $i => $candidateResult)
                                 @php
-                                    $groupTotal = $group['group_total_votes'] ?? array_sum(array_map(function($it){ return $it['votes']; }, $group['candidates']));
                                     $percentage = $groupTotal > 0 ? round((($candidateResult['votes'] ?? 0) / $groupTotal) * 100, 2) : 0;
                                 @endphp
                                 <tr class="{{ $i === 0 && ($candidateResult['votes'] ?? 0) > 0 ? 'winner-row' : '' }}">

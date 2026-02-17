@@ -212,7 +212,14 @@
                             </div>
                         @else
                             @if(strtolower(trim($result['position']->name)) === 'representative')
-                                @foreach($result['candidates'] as $groupKey => $group)
+                                @php
+                                    $grouped = collect($result['candidates'])->groupBy(function($c) {
+                                        $course = $c['candidate']->course ?? 'Unknown';
+                                        $year = $c['candidate']->year_level ?? 'Unknown';
+                                        return $course . ' ' . $year;
+                                    });
+                                @endphp
+                                @foreach($grouped as $groupKey => $candidates)
                                     <h5 class="mt-4 mb-2">{{ $groupKey }}</h5>
                                     <div class="table-responsive">
                                         <table class="table table-hover align-middle">
@@ -226,7 +233,7 @@
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                @foreach($group['candidates'] as $index => $candidateResult)
+                                                @foreach($candidates as $index => $candidateResult)
                                                     <tr>
                                                         <td>
                                                             <div class="candidate-rank rank-{{ $index + 1 > 3 ? 'other' : $index + 1 }}">
@@ -255,8 +262,8 @@
                                                         </td>
                                                         <td>
                                                             @php
-                                                                $percentage = $group['total_votes'] > 0 
-                                                                    ? round(($candidateResult['votes'] / $group['total_votes']) * 100, 2) 
+                                                                $percentage = $result['total_votes'] > 0 
+                                                                    ? round(($candidateResult['votes'] / $result['total_votes']) * 100, 2) 
                                                                     : 0;
                                                             @endphp
                                                             <div class="progress">
@@ -272,31 +279,6 @@
                                                         </td>
                                                     </tr>
                                                 @endforeach
-                                                @if($group['abstain_votes'] > 0)
-                                                    <tr class="table-warning">
-                                                        <td>-</td>
-                                                        <td><strong>Abstain</strong></td>
-                                                        <td>-</td>
-                                                        <td><strong class="fs-5">{{ $group['abstain_votes'] }}</strong></td>
-                                                        <td>
-                                                            @php
-                                                                $abstainPercentage = $group['total_votes'] > 0 
-                                                                    ? round(($group['abstain_votes'] / $group['total_votes']) * 100, 2) 
-                                                                    : 0;
-                                                            @endphp
-                                                            <div class="progress">
-                                                                <div class="progress-bar bg-warning" 
-                                                                     role="progressbar" 
-                                                                     style="width: {{ $abstainPercentage }}%"
-                                                                     aria-valuenow="{{ $abstainPercentage }}" 
-                                                                     aria-valuemin="0" 
-                                                                     aria-valuemax="100">
-                                                                    {{ $abstainPercentage }}%
-                                                                </div>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                @endif
                                             </tbody>
                                         </table>
                                     </div>

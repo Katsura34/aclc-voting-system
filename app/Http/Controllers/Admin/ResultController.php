@@ -468,19 +468,7 @@ class ResultController extends Controller
         foreach ($election->positions as $position) {
             $candidateResults = [];
             $totalVotes = 0;
-            $abstainVotes = 0;
 
-            foreach ($position->candidates as $candidate) {
-                $voteCount = $candidate->votes()->where('position_id', $position->id)->count();
-                $totalVotes += $voteCount;
-                
-                $candidateResults[] = [
-                    'candidate' => $candidate,
-                    'votes' => $voteCount,
-                ];
-            }
-
-            // Get abstain votes for this position
             if (strtolower(trim($position->name)) === 'representative') {
                 // group candidates by course/year
                 $groups = [];
@@ -516,15 +504,18 @@ class ResultController extends Controller
                     'position' => $position,
                     'groups' => $groups,
                     'total_votes' => $totalVotes,
-                    'abstain_votes' => $abstainVotes,
+                    'abstain_votes' => 0,
                 ];
             } else {
-                // Get abstain votes for this position
-                $abstainVotes = Vote::where('position_id', $position->id)
-                    ->whereNull('candidate_id')
-                    ->count();
-                
-                $totalVotes += $abstainVotes;
+                // Non-representative: collect candidate results and totals
+                foreach ($position->candidates as $candidate) {
+                    $voteCount = $candidate->votes()->where('position_id', $position->id)->count();
+                    $totalVotes += $voteCount;
+                    $candidateResults[] = [
+                        'candidate' => $candidate,
+                        'votes' => $voteCount,
+                    ];
+                }
 
                 // Sort candidates by votes (descending)
                 usort($candidateResults, function($a, $b) {
@@ -535,7 +526,7 @@ class ResultController extends Controller
                     'position' => $position,
                     'candidates' => $candidateResults,
                     'total_votes' => $totalVotes,
-                    'abstain_votes' => $abstainVotes,
+                    'abstain_votes' => 0,
                 ];
             }
         }

@@ -61,6 +61,7 @@
                     <span id="live-indicator" class="badge bg-success ms-2" style="display: none;">
                         <span class="spinner-border spinner-border-sm me-1"></span> LIVE
                     </span>
+                    <small id="last-updated" class="text-muted ms-3" style="font-weight:600; display:none;">Last updated: --</small>
                 </h2>
                 <p class="text-muted mb-0">View voting results and statistics • Auto-refreshes every 10 seconds</p>
             </div>
@@ -453,6 +454,15 @@
         }
 
         function updateResults(data) {
+            // Update last-updated timestamp (visible confirmation)
+            try {
+                const lastEl = document.getElementById('last-updated');
+                if (lastEl) {
+                    lastEl.style.display = 'inline-block';
+                    lastEl.textContent = 'Last updated: ' + new Date().toLocaleTimeString();
+                }
+            } catch (e) { console.debug('Failed updating last-updated', e); }
+
             // Update statistics
             const stats = data.statistics;
             const statsCards = document.querySelectorAll('.card.text-center .card-body h3');

@@ -68,14 +68,14 @@ class VotingController extends Controller
                     ->with('error', 'No active election found.');
             }
 
-            // Validate votes - all positions are required
+            // Validate votes - required only if position has candidates
             $positions = Position::where('election_id', $election->id)->get();
-            
             $rules = [];
             foreach ($positions as $position) {
-                $rules["position_{$position->id}"] = 'required|exists:candidates,id';
+                if ($position->candidates()->count() > 0) {
+                    $rules["position_{$position->id}"] = 'required|exists:candidates,id';
+                }
             }
-
             $validated = $request->validate($rules);
 
             // Start transaction

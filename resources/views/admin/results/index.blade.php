@@ -196,94 +196,148 @@
                     <div class="card-header bg-dark text-white">
                         <h4 class="mb-0">
                             <i class="bi bi-award"></i> {{ $result['position']->name }}
-                            <span class="badge bg-light text-dark float-end">
-                                Total Votes: {{ $result['total_votes'] }}
-                            </span>
+                            @if(!empty($result['is_representative']))
+                                <span class="badge bg-light text-dark float-end">
+                                    {{ count($result['group_candidate_results']) }} Group(s)
+                                </span>
+                            @else
+                                <span class="badge bg-light text-dark float-end">
+                                    Total Votes: {{ $result['total_votes'] }}
+                                </span>
+                            @endif
                         </h4>
                         @if($result['position']->description)
                             <small>{{ $result['position']->description }}</small>
                         @endif
                     </div>
                     <div class="card-body">
-                        @if(empty($result['candidates']) && $result['abstain_votes'] == 0)
+                        @if(!empty($result['is_representative']))
+                            @php
+                                $hasAnyVotes = false;
+                                foreach ($result['group_candidate_results'] as $groupKey => $candidates) {
+                                    if ($result['group_total_votes'][$groupKey] > 0) {
+                                        $hasAnyVotes = true;
+                                        break;
+                                    }
+                                }
+                            @endphp
+                            @if(!$hasAnyVotes)
+                                <div class="text-center py-4">
+                                    <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc;"></i>
+                                    <p class="text-muted mt-2">No votes cast for this position</p>
+                                </div>
+                            @else
+                                @foreach($result['group_candidate_results'] as $groupKey => $candidates)
+                                    @php
+                                        list($course, $yearLevel) = explode('|', $groupKey);
+                                        $groupName = $course . ' Year ' . $yearLevel;
+                                        $groupTotal = $result['group_total_votes'][$groupKey];
+                                        $groupAbstain = $result['group_abstain_votes'][$groupKey];
+                                    @endphp
+                                    <div class="mb-4">
+                                        <h5 class="border-bottom pb-2">
+                                            {{ $groupName }}
+                                            <span class="badge bg-primary float-end">Total Votes: {{ $groupTotal }}</span>
+                                        </h5>
+                                        <div class="table-responsive">
+                                            <table class="table table-hover align-middle">
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th width="60">Rank</th>
+                                                        <th>Candidate</th>
+                                                        <th>Party</th>
+                                                        <th>Votes</th>
+                                                        <th width="40%">Percentage</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach($candidates as $index => $candidateResult)
+                                                        <tr>
+                                                            <td>
+                                                                <div class="candidate-rank rank-{{ $index + 1 > 3 ? 'other' : $index + 1 }}">
+                                                                    {{ $index + 1 }}
+                                                                </div>
+                                                            </td>
+                                                            <td>
+                                                                <strong>{{ $candidateResult['candidate']->full_name }}</strong>
+                                                                @if($index === 0 && $candidateResult['votes'] > 0)
+                                                                    <span class="winner-badge">
+                                                                        <i class="bi bi-trophy-fill"></i> WINNER
+                                                                    </span>
+                                                                @endif
+                                                            </td>
+                                                            <td>
+                                                                @if($candidateResult['candidate']->party)
+                                                                    <span class="badge" style="background-color: {{ $candidateResult['candidate']->party->color }};">
+                                                                        {{ $candidateResult['candidate']->party->acronym }}
+                                                                    </span>
+                                                                @else
+                                                                    <span class="badge bg-secondary">No Party</span>
+                                                                @endif
+                                                            </td>
+                                                            <td>
+                                                                <strong class="fs-5">{{ $candidateResult['votes'] }}</strong>
+                                                            </td>
+                                                            <td>
+                                                                @php
+                                                                    $percentage = $groupTotal > 0 
+                                                                        ? round(($candidateResult['votes'] / $groupTotal) * 100, 2) 
+                                                                        : 0;
+                                                                @endphp
+                                                                <div class="progress">
+                                                                    <div class="progress-bar" 
+                                                                         role="progressbar" 
+                                                                         style="width: {{ $percentage }}%; background-color: {{ $candidateResult['candidate']->party->color ?? '#0d6efd' }};"
+                                                                         aria-valuenow="{{ $percentage }}" 
+                                                                         aria-valuemin="0" 
+                                                                         aria-valuemax="100">
+                                                                        {{ $percentage }}%
+                                                                    </div>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    @endforeach
+                                                    @if($groupAbstain > 0)
+                                                        <tr class="table-secondary">
+                                                            <td>
+                                                                <div class="candidate-rank rank-other">-</div>
+                                                            </td>
+                                                            <td><strong>ABSTAIN</strong></td>
+                                                            <td>-</td>
+                                                            <td>
+                                                                <strong class="fs-5">{{ $groupAbstain }}</strong>
+                                                            </td>
+                                                            <td>
+                                                                @php
+                                                                    $abstainPercentage = $groupTotal > 0 
+                                                                        ? round(($groupAbstain / $groupTotal) * 100, 2) 
+                                                                        : 0;
+                                                                @endphp
+                                                                <div class="progress">
+                                                                    <div class="progress-bar bg-secondary" 
+                                                                         role="progressbar" 
+                                                                         style="width: {{ $abstainPercentage }}%;"
+                                                                         aria-valuenow="{{ $abstainPercentage }}" 
+                                                                         aria-valuemin="0" 
+                                                                         aria-valuemax="100">
+                                                                        {{ $abstainPercentage }}%
+                                                                    </div>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    @endif
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            @endif
+                        @elseif(empty($result['candidates']) && $result['abstain_votes'] == 0)
                             <div class="text-center py-4">
                                 <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc;"></i>
                                 <p class="text-muted mt-2">No votes cast for this position</p>
                             </div>
                         @else
-                            @if(strtolower(trim($result['position']->name)) === 'representative')
-                                @php
-                                    $grouped = collect($result['candidates'])->groupBy(function($c) {
-                                        $course = $c['candidate']->course ?? 'Unknown';
-                                        $year = $c['candidate']->year_level ?? 'Unknown';
-                                        return $course . ' ' . $year;
-                                    });
-                                @endphp
-                                @foreach($grouped as $groupKey => $candidates)
-                                    <h5 class="mt-4 mb-2">{{ $groupKey }}</h5>
-                                    <div class="table-responsive">
-                                        <table class="table table-hover align-middle">
-                                            <thead class="table-light">
-                                                <tr>
-                                                    <th width="60">Rank</th>
-                                                    <th>Candidate</th>
-                                                    <th>Party</th>
-                                                    <th>Votes</th>
-                                                    <th width="40%">Percentage</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                @foreach($candidates as $index => $candidateResult)
-                                                    <tr>
-                                                        <td>
-                                                            <div class="candidate-rank rank-{{ $index + 1 > 3 ? 'other' : $index + 1 }}">
-                                                                {{ $index + 1 }}
-                                                            </div>
-                                                        </td>
-                                                        <td>
-                                                            <strong>{{ $candidateResult['candidate']->full_name }}</strong>
-                                                            @if($index === 0 && $candidateResult['votes'] > 0)
-                                                                <span class="winner-badge">
-                                                                    <i class="bi bi-trophy-fill"></i> WINNER
-                                                                </span>
-                                                            @endif
-                                                        </td>
-                                                        <td>
-                                                            @if($candidateResult['candidate']->party)
-                                                                <span class="badge" style="background-color: {{ $candidateResult['candidate']->party->color }};">
-                                                                    {{ $candidateResult['candidate']->party->acronym }}
-                                                                </span>
-                                                            @else
-                                                                <span class="badge bg-secondary">No Party</span>
-                                                            @endif
-                                                        </td>
-                                                        <td>
-                                                            <strong class="fs-5">{{ $candidateResult['votes'] }}</strong>
-                                                        </td>
-                                                        <td>
-                                                            @php
-                                                                $percentage = $result['total_votes'] > 0 
-                                                                    ? round(($candidateResult['votes'] / $result['total_votes']) * 100, 2) 
-                                                                    : 0;
-                                                            @endphp
-                                                            <div class="progress">
-                                                                <div class="progress-bar" 
-                                                                     role="progressbar" 
-                                                                     style="width: {{ $percentage }}%; background-color: {{ $candidateResult['candidate']->party->color ?? '#0d6efd' }};"
-                                                                     aria-valuenow="{{ $percentage }}" 
-                                                                     aria-valuemin="0" 
-                                                                     aria-valuemax="100">
-                                                                    {{ $percentage }}%
-                                                                </div>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                @endforeach
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                @endforeach
-                            @else
                                 <div class="table-responsive">
                                     <table class="table table-hover align-middle">
                                         <thead class="table-light">
@@ -342,6 +396,35 @@
                                                     </td>
                                                 </tr>
                                             @endforeach
+                                            @if($result['abstain_votes'] > 0)
+                                                <tr class="table-secondary">
+                                                    <td>
+                                                        <div class="candidate-rank rank-other">-</div>
+                                                    </td>
+                                                    <td><strong>ABSTAIN</strong></td>
+                                                    <td>-</td>
+                                                    <td>
+                                                        <strong class="fs-5">{{ $result['abstain_votes'] }}</strong>
+                                                    </td>
+                                                    <td>
+                                                        @php
+                                                            $abstainPercentage = $result['total_votes'] > 0 
+                                                                ? round(($result['abstain_votes'] / $result['total_votes']) * 100, 2) 
+                                                                : 0;
+                                                        @endphp
+                                                        <div class="progress">
+                                                            <div class="progress-bar bg-secondary" 
+                                                                 role="progressbar" 
+                                                                 style="width: {{ $abstainPercentage }}%;"
+                                                                 aria-valuenow="{{ $abstainPercentage }}" 
+                                                                 aria-valuemin="0" 
+                                                                 aria-valuemax="100">
+                                                                {{ $abstainPercentage }}%
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            @endif
                                         </tbody>
                                     </table>
                                 </div>

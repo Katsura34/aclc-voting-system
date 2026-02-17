@@ -28,63 +28,121 @@
     </table>
     @foreach($results as $result)
         <h3>{{ $result['position']->name }}</h3>
-        @php
-            $grouped = collect($result['candidates'])->groupBy(function($item) {
-                $course = $item['candidate']->course ?? 'No Course';
-                $year = $item['candidate']->year_level ?? 'N/A';
-                return $course . ' - Year ' . $year;
-            });
-        @endphp
-        @foreach($grouped as $groupKey => $candidates)
-            <h4 style="margin-bottom:2px;">{{ $groupKey }}</h4>
-            <table>
-                <thead>
-                    <tr>
-                        <th class="center">Rank</th>
-                        <th>Candidate Name</th>
-                        <th>Party</th>
-                        <th class="center">Votes</th>
-                        <th class="center">%</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if($candidates->isEmpty() && $result['abstain_votes'] == 0)
-                        <tr><td colspan="5" class="center">No votes cast for this group</td></tr>
-                    @else
-                        @foreach($candidates as $i => $candidateResult)
-                            @php
-                                $percentage = $result['total_votes'] > 0 ? round(($candidateResult['votes'] / $result['total_votes']) * 100, 2) : 0;
-                            @endphp
-                            <tr class="{{ $i === 0 && $candidateResult['votes'] > 0 ? 'winner-row' : '' }}">
-                                <td class="center">{{ $i + 1 }}</td>
-                                <td>{{ $candidateResult['candidate']->full_name }}</td>
-                                <td>{{ $candidateResult['candidate']->party ? $candidateResult['candidate']->party->acronym : 'No Party' }}</td>
-                                <td class="center">{{ $candidateResult['votes'] }}</td>
-                                <td class="center">{{ $percentage }}%</td>
+        @if(!empty($result['is_representative']))
+            @foreach($result['group_candidate_results'] as $groupKey => $candidates)
+                @php
+                    list($course, $yearLevel) = explode('|', $groupKey);
+                    $groupName = $course . ' - Year ' . $yearLevel;
+                    $groupTotal = $result['group_total_votes'][$groupKey];
+                    $groupAbstain = $result['group_abstain_votes'][$groupKey];
+                @endphp
+                <h4 style="margin-bottom:2px;">{{ $groupName }}</h4>
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="center">Rank</th>
+                            <th>Candidate Name</th>
+                            <th>Party</th>
+                            <th class="center">Votes</th>
+                            <th class="center">%</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if(empty($candidates) && $groupAbstain == 0)
+                            <tr><td colspan="5" class="center">No votes cast for this group</td></tr>
+                        @else
+                            @foreach($candidates as $i => $candidateResult)
+                                @php
+                                    $percentage = $groupTotal > 0 ? round(($candidateResult['votes'] / $groupTotal) * 100, 2) : 0;
+                                @endphp
+                                <tr class="{{ $i === 0 && $candidateResult['votes'] > 0 ? 'winner-row' : '' }}">
+                                    <td class="center">{{ $i + 1 }}</td>
+                                    <td>{{ $candidateResult['candidate']->full_name }}</td>
+                                    <td>{{ $candidateResult['candidate']->party ? $candidateResult['candidate']->party->acronym : 'No Party' }}</td>
+                                    <td class="center">{{ $candidateResult['votes'] }}</td>
+                                    <td class="center">{{ $percentage }}%</td>
+                                </tr>
+                            @endforeach
+                            @if($groupAbstain > 0)
+                                @php
+                                    $abstainPercentage = $groupTotal > 0 ? round(($groupAbstain / $groupTotal) * 100, 2) : 0;
+                                @endphp
+                                <tr>
+                                    <td class="center">-</td>
+                                    <td><strong>ABSTAIN</strong></td>
+                                    <td>-</td>
+                                    <td class="center">{{ $groupAbstain }}</td>
+                                    <td class="center">{{ $abstainPercentage }}%</td>
+                                </tr>
+                            @endif
+                            <tr style="font-weight:bold; background:#eee;">
+                                <td colspan="3" class="center">TOTAL VOTES</td>
+                                <td class="center">{{ $groupTotal }}</td>
+                                <td class="center">100%</td>
                             </tr>
-                        @endforeach
-                    @endif
-                </tbody>
-            </table>
-        @endforeach
-        @if($result['abstain_votes'] > 0)
+                        @endif
+                    </tbody>
+                </table>
+            @endforeach
+        @else
             @php
-                $abstainPercentage = $result['total_votes'] > 0 ? round(($result['abstain_votes'] / $result['total_votes']) * 100, 2) : 0;
+                $grouped = collect($result['candidates'])->groupBy(function($item) {
+                    $course = $item['candidate']->course ?? 'No Course';
+                    $year = $item['candidate']->year_level ?? 'N/A';
+                    return $course . ' - Year ' . $year;
+                });
             @endphp
-            <table>
-                <tr>
-                    <td class="center">-</td>
-                    <td><strong>ABSTAIN</strong></td>
-                    <td>-</td>
-                    <td class="center">{{ $result['abstain_votes'] }}</td>
-                    <td class="center">{{ $abstainPercentage }}%</td>
-                </tr>
-                <tr style="font-weight:bold; background:#eee;">
-                    <td colspan="3" class="center">TOTAL VOTES</td>
-                    <td class="center">{{ $result['total_votes'] }}</td>
-                    <td class="center">100%</td>
-                </tr>
-            </table>
+            @foreach($grouped as $groupKey => $candidates)
+                <h4 style="margin-bottom:2px;">{{ $groupKey }}</h4>
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="center">Rank</th>
+                            <th>Candidate Name</th>
+                            <th>Party</th>
+                            <th class="center">Votes</th>
+                            <th class="center">%</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if($candidates->isEmpty() && $result['abstain_votes'] == 0)
+                            <tr><td colspan="5" class="center">No votes cast for this group</td></tr>
+                        @else
+                            @foreach($candidates as $i => $candidateResult)
+                                @php
+                                    $percentage = $result['total_votes'] > 0 ? round(($candidateResult['votes'] / $result['total_votes']) * 100, 2) : 0;
+                                @endphp
+                                <tr class="{{ $i === 0 && $candidateResult['votes'] > 0 ? 'winner-row' : '' }}">
+                                    <td class="center">{{ $i + 1 }}</td>
+                                    <td>{{ $candidateResult['candidate']->full_name }}</td>
+                                    <td>{{ $candidateResult['candidate']->party ? $candidateResult['candidate']->party->acronym : 'No Party' }}</td>
+                                    <td class="center">{{ $candidateResult['votes'] }}</td>
+                                    <td class="center">{{ $percentage }}%</td>
+                                </tr>
+                            @endforeach
+                        @endif
+                    </tbody>
+                </table>
+            @endforeach
+            @if($result['abstain_votes'] > 0)
+                @php
+                    $abstainPercentage = $result['total_votes'] > 0 ? round(($result['abstain_votes'] / $result['total_votes']) * 100, 2) : 0;
+                @endphp
+                <table>
+                    <tr>
+                        <td class="center">-</td>
+                        <td><strong>ABSTAIN</strong></td>
+                        <td>-</td>
+                        <td class="center">{{ $result['abstain_votes'] }}</td>
+                        <td class="center">{{ $abstainPercentage }}%</td>
+                    </tr>
+                    <tr style="font-weight:bold; background:#eee;">
+                        <td colspan="3" class="center">TOTAL VOTES</td>
+                        <td class="center">{{ $result['total_votes'] }}</td>
+                        <td class="center">100%</td>
+                    </tr>
+                </table>
+            @endif
         @endif
     @endforeach
     <p style="text-align:center; font-size:10pt; margin-top:40px;">This is an official document generated by the ACLC College Electronic Voting System<br>Printed on {{ date('F d, Y \a\t h:i A') }}</p>

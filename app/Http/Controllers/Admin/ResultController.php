@@ -44,37 +44,71 @@ class ResultController extends Controller
                         $totalVotes = 0;
                         $abstainVotes = 0;
 
-
-                        // Special logic for Representative: only count votes from students with same strand and year
+                        // Special logic for Representative: group by course and year_level
                         if (strtolower(trim($position->name)) === 'representative') {
+                            // Group candidates by course and year_level
+                            $groupedCandidates = [];
                             foreach ($position->candidates as $candidate) {
-                                $voteCount = Vote::where('position_id', $position->id)
-                                    ->where('candidate_id', $candidate->id)
-                                    ->whereHas('user', function($query) use ($candidate) {
-                                        $query->where('strand', $candidate->course)
-                                              ->where('year', $candidate->year_level);
+                                $groupKey = ($candidate->course ?? 'Unknown') . '|' . ($candidate->year_level ?? 'Unknown');
+                                if (!isset($groupedCandidates[$groupKey])) {
+                                    $groupedCandidates[$groupKey] = [];
+                                }
+                                $groupedCandidates[$groupKey][] = $candidate;
+                            }
+
+                            // Compute votes and abstain counts per group
+                            $groupCandidateResults = [];
+                            $groupTotalVotes = [];
+                            $groupAbstainVotes = [];
+
+                            foreach ($groupedCandidates as $groupKey => $groupCandidates) {
+                                list($course, $yearLevel) = explode('|', $groupKey);
+                                $groupResults = [];
+                                $groupTotal = 0;
+
+                                foreach ($groupCandidates as $candidate) {
+                                    $voteCount = Vote::where('position_id', $position->id)
+                                        ->where('candidate_id', $candidate->id)
+                                        ->whereHas('user', function($query) use ($candidate) {
+                                            $query->where('strand', $candidate->course)
+                                                  ->where('year', $candidate->year_level);
+                                        })
+                                        ->count();
+                                    $groupTotal += $voteCount;
+                                    $groupResults[] = [
+                                        'candidate' => $candidate,
+                                        'votes' => $voteCount,
+                                    ];
+                                }
+
+                                // Abstain votes for this specific group
+                                $groupAbstain = Vote::where('position_id', $position->id)
+                                    ->where('election_id', $selectedElection->id)
+                                    ->whereNull('candidate_id')
+                                    ->whereHas('user', function($query) use ($course, $yearLevel) {
+                                        $query->where('strand', $course)
+                                              ->where('year', $yearLevel);
                                     })
                                     ->count();
-                                $totalVotes += $voteCount;
-                                $candidateResults[] = [
-                                    'candidate' => $candidate,
-                                    'votes' => $voteCount,
-                                ];
+                                $groupTotal += $groupAbstain;
+
+                                // Sort candidates by votes (descending) within group
+                                usort($groupResults, function($a, $b) {
+                                    return $b['votes'] - $a['votes'];
+                                });
+
+                                $groupCandidateResults[$groupKey] = $groupResults;
+                                $groupTotalVotes[$groupKey] = $groupTotal;
+                                $groupAbstainVotes[$groupKey] = $groupAbstain;
                             }
-                            // Abstain votes: only count abstain from students with same strand/year
-                            $abstainVotes = Vote::where('position_id', $position->id)
-                                ->where('election_id', $selectedElection->id)
-                                ->whereNull('candidate_id')
-                                ->whereHas('user', function($query) use ($position) {
-                                    // Use first candidate as reference for course/year
-                                    $firstCandidate = $position->candidates->first();
-                                    if ($firstCandidate) {
-                                        $query->where('strand', $firstCandidate->course)
-                                              ->where('year', $firstCandidate->year_level);
-                                    }
-                                })
-                                ->count();
-                            $totalVotes += $abstainVotes;
+
+                            $results[] = [
+                                'position' => $position,
+                                'is_representative' => true,
+                                'group_candidate_results' => $groupCandidateResults,
+                                'group_total_votes' => $groupTotalVotes,
+                                'group_abstain_votes' => $groupAbstainVotes,
+                            ];
                         } else {
                             foreach ($position->candidates as $candidate) {
                                 $voteCount = $candidate->votes()->where('position_id', $position->id)->count();
@@ -90,19 +124,20 @@ class ResultController extends Controller
                                 ->whereNull('candidate_id')
                                 ->count();
                             $totalVotes += $abstainVotes;
+
+                            // Sort candidates by votes (descending)
+                            usort($candidateResults, function($a, $b) {
+                                return $b['votes'] - $a['votes'];
+                            });
+
+                            $results[] = [
+                                'position' => $position,
+                                'is_representative' => false,
+                                'candidates' => $candidateResults,
+                                'total_votes' => $totalVotes,
+                                'abstain_votes' => $abstainVotes,
+                            ];
                         }
-
-                        // Sort candidates by votes (descending)
-                        usort($candidateResults, function($a, $b) {
-                            return $b['votes'] - $a['votes'];
-                        });
-
-                        $results[] = [
-                            'position' => $position,
-                            'candidates' => $candidateResults,
-                            'total_votes' => $totalVotes,
-                            'abstain_votes' => $abstainVotes,
-                        ];
                     }
                 }
             }
@@ -280,51 +315,128 @@ class ResultController extends Controller
             foreach ($election->positions as $position) {
                 // Position header
                 fputcsv($file, ['Position: ' . $position->name]);
-                fputcsv($file, ['Candidate Name', 'Party', 'Votes', 'Percentage']);
+                
+                // Special logic for Representative: group by course and year_level
+                if (strtolower(trim($position->name)) === 'representative') {
+                    // Group candidates by course and year_level
+                    $groupedCandidates = [];
+                    foreach ($position->candidates as $candidate) {
+                        $groupKey = ($candidate->course ?? 'Unknown') . '|' . ($candidate->year_level ?? 'Unknown');
+                        if (!isset($groupedCandidates[$groupKey])) {
+                            $groupedCandidates[$groupKey] = [];
+                        }
+                        $groupedCandidates[$groupKey][] = $candidate;
+                    }
 
-                $totalVotes = 0;
-                $candidateResults = [];
+                    foreach ($groupedCandidates as $groupKey => $groupCandidates) {
+                        list($course, $yearLevel) = explode('|', $groupKey);
+                        $groupName = $course . ' - Year ' . $yearLevel;
+                        
+                        fputcsv($file, []); // Empty line before group
+                        fputcsv($file, ['Group: ' . $groupName]);
+                        fputcsv($file, ['Candidate Name', 'Party', 'Votes', 'Percentage']);
+                        
+                        $groupTotal = 0;
+                        $candidateResults = [];
 
-                foreach ($position->candidates as $candidate) {
-                    $voteCount = $candidate->votes()->where('position_id', $position->id)->count();
-                    $totalVotes += $voteCount;
-                    
-                    $candidateResults[] = [
-                        'name' => $candidate->full_name,
-                        'party' => $candidate->party->name ?? 'No Party',
-                        'votes' => $voteCount,
-                    ];
+                        foreach ($groupCandidates as $candidate) {
+                            $voteCount = Vote::where('position_id', $position->id)
+                                ->where('candidate_id', $candidate->id)
+                                ->whereHas('user', function($query) use ($candidate) {
+                                    $query->where('strand', $candidate->course)
+                                          ->where('year', $candidate->year_level);
+                                })
+                                ->count();
+                            $groupTotal += $voteCount;
+                            
+                            $candidateResults[] = [
+                                'name' => $candidate->full_name,
+                                'party' => $candidate->party->name ?? 'No Party',
+                                'votes' => $voteCount,
+                            ];
+                        }
+
+                        // Get abstain votes for this group
+                        $abstainVotes = Vote::where('position_id', $position->id)
+                            ->whereNull('candidate_id')
+                            ->whereHas('user', function($query) use ($course, $yearLevel) {
+                                $query->where('strand', $course)
+                                      ->where('year', $yearLevel);
+                            })
+                            ->count();
+                        $groupTotal += $abstainVotes;
+
+                        // Sort by votes
+                        usort($candidateResults, function($a, $b) {
+                            return $b['votes'] - $a['votes'];
+                        });
+
+                        // Write candidate results
+                        foreach ($candidateResults as $result) {
+                            $percentage = $groupTotal > 0 ? round(($result['votes'] / $groupTotal) * 100, 2) : 0;
+                            fputcsv($file, [
+                                $result['name'],
+                                $result['party'],
+                                $result['votes'],
+                                $percentage . '%'
+                            ]);
+                        }
+
+                        // Abstain row
+                        if ($abstainVotes > 0) {
+                            $percentage = $groupTotal > 0 ? round(($abstainVotes / $groupTotal) * 100, 2) : 0;
+                            fputcsv($file, ['Abstain', '-', $abstainVotes, $percentage . '%']);
+                        }
+
+                        fputcsv($file, ['Total Votes', '', $groupTotal, '100%']);
+                    }
+                } else {
+                    fputcsv($file, ['Candidate Name', 'Party', 'Votes', 'Percentage']);
+
+                    $totalVotes = 0;
+                    $candidateResults = [];
+
+                    foreach ($position->candidates as $candidate) {
+                        $voteCount = $candidate->votes()->where('position_id', $position->id)->count();
+                        $totalVotes += $voteCount;
+                        
+                        $candidateResults[] = [
+                            'name' => $candidate->full_name,
+                            'party' => $candidate->party->name ?? 'No Party',
+                            'votes' => $voteCount,
+                        ];
+                    }
+
+                    // Get abstain votes
+                    $abstainVotes = Vote::where('position_id', $position->id)
+                        ->whereNull('candidate_id')
+                        ->count();
+                    $totalVotes += $abstainVotes;
+
+                    // Sort by votes
+                    usort($candidateResults, function($a, $b) {
+                        return $b['votes'] - $a['votes'];
+                    });
+
+                    // Write candidate results
+                    foreach ($candidateResults as $result) {
+                        $percentage = $totalVotes > 0 ? round(($result['votes'] / $totalVotes) * 100, 2) : 0;
+                        fputcsv($file, [
+                            $result['name'],
+                            $result['party'],
+                            $result['votes'],
+                            $percentage . '%'
+                        ]);
+                    }
+
+                    // Abstain row
+                    if ($abstainVotes > 0) {
+                        $percentage = $totalVotes > 0 ? round(($abstainVotes / $totalVotes) * 100, 2) : 0;
+                        fputcsv($file, ['Abstain', '-', $abstainVotes, $percentage . '%']);
+                    }
+
+                    fputcsv($file, ['Total Votes', '', $totalVotes, '100%']);
                 }
-
-                // Get abstain votes
-                $abstainVotes = Vote::where('position_id', $position->id)
-                    ->whereNull('candidate_id')
-                    ->count();
-                $totalVotes += $abstainVotes;
-
-                // Sort by votes
-                usort($candidateResults, function($a, $b) {
-                    return $b['votes'] - $a['votes'];
-                });
-
-                // Write candidate results
-                foreach ($candidateResults as $result) {
-                    $percentage = $totalVotes > 0 ? round(($result['votes'] / $totalVotes) * 100, 2) : 0;
-                    fputcsv($file, [
-                        $result['name'],
-                        $result['party'],
-                        $result['votes'],
-                        $percentage . '%'
-                    ]);
-                }
-
-                // Abstain row
-                if ($abstainVotes > 0) {
-                    $percentage = $totalVotes > 0 ? round(($abstainVotes / $totalVotes) * 100, 2) : 0;
-                    fputcsv($file, ['Abstain', '-', $abstainVotes, $percentage . '%']);
-                }
-
-                fputcsv($file, ['Total Votes', '', $totalVotes, '100%']);
                 fputcsv($file, []); // Empty line between positions
             }
 
@@ -354,34 +466,101 @@ class ResultController extends Controller
             $totalVotes = 0;
             $abstainVotes = 0;
 
-            foreach ($position->candidates as $candidate) {
-                $voteCount = $candidate->votes()->where('position_id', $position->id)->count();
-                $totalVotes += $voteCount;
+            // Special logic for Representative: group by course and year_level
+            if (strtolower(trim($position->name)) === 'representative') {
+                // Group candidates by course and year_level
+                $groupedCandidates = [];
+                foreach ($position->candidates as $candidate) {
+                    $groupKey = ($candidate->course ?? 'Unknown') . '|' . ($candidate->year_level ?? 'Unknown');
+                    if (!isset($groupedCandidates[$groupKey])) {
+                        $groupedCandidates[$groupKey] = [];
+                    }
+                    $groupedCandidates[$groupKey][] = $candidate;
+                }
+
+                // Compute votes and abstain counts per group
+                $groupCandidateResults = [];
+                $groupTotalVotes = [];
+                $groupAbstainVotes = [];
+
+                foreach ($groupedCandidates as $groupKey => $groupCandidates) {
+                    list($course, $yearLevel) = explode('|', $groupKey);
+                    $groupResults = [];
+                    $groupTotal = 0;
+
+                    foreach ($groupCandidates as $candidate) {
+                        $voteCount = Vote::where('position_id', $position->id)
+                            ->where('candidate_id', $candidate->id)
+                            ->whereHas('user', function($query) use ($candidate) {
+                                $query->where('strand', $candidate->course)
+                                      ->where('year', $candidate->year_level);
+                            })
+                            ->count();
+                        $groupTotal += $voteCount;
+                        $groupResults[] = [
+                            'candidate' => $candidate,
+                            'votes' => $voteCount,
+                        ];
+                    }
+
+                    // Abstain votes for this specific group
+                    $groupAbstain = Vote::where('position_id', $position->id)
+                        ->whereNull('candidate_id')
+                        ->whereHas('user', function($query) use ($course, $yearLevel) {
+                            $query->where('strand', $course)
+                                  ->where('year', $yearLevel);
+                        })
+                        ->count();
+                    $groupTotal += $groupAbstain;
+
+                    // Sort candidates by votes (descending) within group
+                    usort($groupResults, function($a, $b) {
+                        return $b['votes'] - $a['votes'];
+                    });
+
+                    $groupCandidateResults[$groupKey] = $groupResults;
+                    $groupTotalVotes[$groupKey] = $groupTotal;
+                    $groupAbstainVotes[$groupKey] = $groupAbstain;
+                }
+
+                $results[] = [
+                    'position' => $position,
+                    'is_representative' => true,
+                    'group_candidate_results' => $groupCandidateResults,
+                    'group_total_votes' => $groupTotalVotes,
+                    'group_abstain_votes' => $groupAbstainVotes,
+                ];
+            } else {
+                foreach ($position->candidates as $candidate) {
+                    $voteCount = $candidate->votes()->where('position_id', $position->id)->count();
+                    $totalVotes += $voteCount;
+                    
+                    $candidateResults[] = [
+                        'candidate' => $candidate,
+                        'votes' => $voteCount,
+                    ];
+                }
+
+                // Get abstain votes for this position
+                $abstainVotes = Vote::where('position_id', $position->id)
+                    ->whereNull('candidate_id')
+                    ->count();
                 
-                $candidateResults[] = [
-                    'candidate' => $candidate,
-                    'votes' => $voteCount,
+                $totalVotes += $abstainVotes;
+
+                // Sort candidates by votes (descending)
+                usort($candidateResults, function($a, $b) {
+                    return $b['votes'] - $a['votes'];
+                });
+
+                $results[] = [
+                    'position' => $position,
+                    'is_representative' => false,
+                    'candidates' => $candidateResults,
+                    'total_votes' => $totalVotes,
+                    'abstain_votes' => $abstainVotes,
                 ];
             }
-
-            // Get abstain votes for this position
-            $abstainVotes = Vote::where('position_id', $position->id)
-                ->whereNull('candidate_id')
-                ->count();
-            
-            $totalVotes += $abstainVotes;
-
-            // Sort candidates by votes (descending)
-            usort($candidateResults, function($a, $b) {
-                return $b['votes'] - $a['votes'];
-            });
-
-            $results[] = [
-                'position' => $position,
-                'candidates' => $candidateResults,
-                'total_votes' => $totalVotes,
-                'abstain_votes' => $abstainVotes,
-            ];
         }
 
         // Get total voters and votes cast

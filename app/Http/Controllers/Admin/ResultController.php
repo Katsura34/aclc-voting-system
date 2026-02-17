@@ -68,6 +68,7 @@ class ResultController extends Controller
 
                                 foreach ($groupCandidates as $candidate) {
                                     $voteCount = Vote::where('position_id', $position->id)
+                                        ->where('election_id', $selectedElection->id)
                                         ->where('candidate_id', $candidate->id)
                                         ->whereHas('user', function($query) use ($candidate) {
                                             $query->where('strand', $candidate->course)
@@ -341,6 +342,7 @@ class ResultController extends Controller
 
                         foreach ($groupCandidates as $candidate) {
                             $voteCount = Vote::where('position_id', $position->id)
+                                ->where('election_id', $election->id)
                                 ->where('candidate_id', $candidate->id)
                                 ->whereHas('user', function($query) use ($candidate) {
                                     $query->where('strand', $candidate->course)
@@ -358,6 +360,7 @@ class ResultController extends Controller
 
                         // Get abstain votes for this group
                         $abstainVotes = Vote::where('position_id', $position->id)
+                            ->where('election_id', $election->id)
                             ->whereNull('candidate_id')
                             ->whereHas('user', function($query) use ($course, $yearLevel) {
                                 $query->where('strand', $course)
@@ -490,6 +493,7 @@ class ResultController extends Controller
 
                     foreach ($groupCandidates as $candidate) {
                         $voteCount = Vote::where('position_id', $position->id)
+                            ->where('election_id', $election->id)
                             ->where('candidate_id', $candidate->id)
                             ->whereHas('user', function($query) use ($candidate) {
                                 $query->where('strand', $candidate->course)
@@ -505,6 +509,7 @@ class ResultController extends Controller
 
                     // Abstain votes for this specific group
                     $groupAbstain = Vote::where('position_id', $position->id)
+                        ->where('election_id', $election->id)
                         ->whereNull('candidate_id')
                         ->whereHas('user', function($query) use ($course, $yearLevel) {
                             $query->where('strand', $course)

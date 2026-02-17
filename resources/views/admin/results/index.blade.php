@@ -196,6 +196,9 @@
                     <div class="card-header bg-dark text-white">
                         <h4 class="mb-0">
                             <i class="bi bi-award"></i> {{ $result['position']->name }}
+                            @if(isset($result['group']))
+                                <span class="badge bg-info ms-2">{{ $result['group'] }}</span>
+                            @endif
                             <span class="badge bg-light text-dark float-end">
                                 Total Votes: {{ $result['total_votes'] }}
                             </span>

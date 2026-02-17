@@ -392,6 +392,9 @@
     <script>
         let autoRefreshEnabled = true;
         let refreshInterval = null;
+        // If true, when AJAX returns grouped results (Representative) we'll do a full page reload
+        // This is a safe fallback when partial DOM updates are not reliable in your environment.
+        const useFullReloadForGroups = true;
 
         function toggleAutoRefresh() {
             autoRefreshEnabled = !autoRefreshEnabled;
@@ -454,6 +457,15 @@
         }
 
         function updateResults(data) {
+            // If configured, reload page when grouped (Representative) data is present
+            try {
+                if (useFullReloadForGroups && Array.isArray(data.results) && data.results.some(r => r.groups && r.groups.length)) {
+                    console.debug('Grouped results detected; performing full page reload for consistency');
+                    // small delay to allow UI update (indicator) before reload
+                    setTimeout(() => location.reload(), 200);
+                    return;
+                }
+            } catch (e) { console.debug('Reload-on-groups check failed', e); }
             // Update last-updated timestamp (visible confirmation)
             try {
                 const lastEl = document.getElementById('last-updated');

@@ -395,6 +395,9 @@
         // If true, when AJAX returns grouped results (Representative) we'll do a full page reload
         // This is a safe fallback when partial DOM updates are not reliable in your environment.
         const useFullReloadForGroups = true;
+        // When set to true the auto-refresh will use full page reloads instead of AJAX updates.
+        // Set to `true` to avoid AJAX entirely and refresh the whole page every interval.
+        const alwaysFullReload = true;
 
         function toggleAutoRefresh() {
             autoRefreshEnabled = !autoRefreshEnabled;
@@ -416,6 +419,24 @@
             if (refreshInterval) {
                 clearInterval(refreshInterval);
             }
+            // If configured to always reload, perform immediate reload then start interval reloads
+            if (alwaysFullReload) {
+                try {
+                    console.debug('Auto-refresh mode: full page reload (immediate)');
+                    // small delay to allow UI indicator update
+                    setTimeout(() => location.reload(), 150);
+                } catch (e) { console.error('Error performing initial reload', e); }
+
+                refreshInterval = setInterval(() => {
+                    if (autoRefreshEnabled) {
+                        console.debug('Auto-refresh mode: full page reload (interval)');
+                        location.reload();
+                    }
+                }, 10000);
+
+                return;
+            }
+
             // Run one immediate fetch and then start interval (every 10 seconds)
             try {
                 console.debug('Auto-refresh starting: fetching results immediately');

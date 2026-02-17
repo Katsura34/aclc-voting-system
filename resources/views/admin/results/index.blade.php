@@ -429,7 +429,7 @@
         }
 
         function fetchResults() {
-            const electionId = document.getElementById('election_selector')?.value;
+            const electionId = document.getElementById('election_id')?.value;
             
             if (!electionId) {
                 return;
@@ -547,7 +547,7 @@
 
         // Initialize auto-refresh when page loads
         document.addEventListener('DOMContentLoaded', function() {
-            const electionSelector = document.getElementById('election_selector');
+            const electionSelector = document.getElementById('election_id');
             
             // Start auto-refresh if election is selected
             if (electionSelector && electionSelector.value) {

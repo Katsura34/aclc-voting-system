@@ -62,6 +62,7 @@
                         <span class="spinner-border spinner-border-sm me-1"></span> LIVE
                     </span>
                     <small id="last-updated" class="text-muted ms-3" style="font-weight:600; display:none;">Last updated: --</small>
+                    <small id="debug-info" class="text-muted ms-3" style="font-weight:600; display:inline-block;">Debug: </small>
                 </h2>
                 <p class="text-muted mb-0">View voting results and statistics • Auto-refreshes every 10 seconds</p>
             </div>
@@ -470,6 +471,8 @@
             fetch(`{{ route('admin.results.index') }}?election_id=${electionId}&ajax=1`)
                 .then(response => response.json())
                 .then(data => {
+                    // Update AJAX counter and debug display
+                    try { updateDebug('ajax', 'AJAX results received'); } catch(e){}
                     updateResults(data);
                 })
                 .catch(error => {
@@ -534,6 +537,24 @@
                         .replace(/>/g, '&gt;')
                         .replace(/"/g, '&quot;')
                         .replace(/'/g, '&#039;');
+                }
+
+                // Debug update helper: tracks reload/ajax counts in sessionStorage and updates debug UI
+                function updateDebug(kind, note) {
+                    try {
+                        const key = kind === 'ajax' ? 'ajaxCount' : 'reloadCount';
+                        const prev = parseInt(sessionStorage.getItem(key) || '0', 10);
+                        const next = prev + 1;
+                        sessionStorage.setItem(key, next);
+
+                        const debugEl = document.getElementById('debug-info');
+                        if (debugEl) {
+                            const mode = alwaysFullReload ? 'FullReload' : 'AJAX';
+                            const ajaxC = sessionStorage.getItem('ajaxCount') || 0;
+                            const reloadC = sessionStorage.getItem('reloadCount') || 0;
+                            debugEl.textContent = `Debug: mode=${mode} | reloads=${reloadC} | ajax=${ajaxC} | last=${note}`;
+                        }
+                    } catch (e) { console.debug('updateDebug failed', e); }
                 }
 
                 if (result.groups && result.groups.length) {
@@ -644,6 +665,20 @@
                     }
                 });
             }
+
+            // Update debug counters on page load (counts reloads)
+            try {
+                const prev = parseInt(sessionStorage.getItem('reloadCount') || '0', 10);
+                sessionStorage.setItem('reloadCount', prev + 1);
+                const debugEl = document.getElementById('debug-info');
+                if (debugEl) {
+                    const ajaxC = sessionStorage.getItem('ajaxCount') || 0;
+                    const reloadC = sessionStorage.getItem('reloadCount') || 0;
+                    const mode = alwaysFullReload ? 'FullReload' : 'AJAX';
+                    debugEl.style.display = 'inline-block';
+                    debugEl.textContent = `Debug: mode=${mode} | reloads=${reloadC} | ajax=${ajaxC} | last=page load`;
+                }
+            } catch (e) { console.debug('init debug failed', e); }
         });
 
         // Cleanup on page unload

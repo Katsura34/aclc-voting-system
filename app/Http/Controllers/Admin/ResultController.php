@@ -8,6 +8,7 @@ use App\Models\Position;
 use App\Models\Candidate;
 use App\Models\Vote;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class ResultController extends Controller
 {
@@ -125,7 +126,7 @@ class ResultController extends Controller
                 'votedCount'
             ));
         } catch (\Exception $e) {
-            \Log::error('Results display error: ' . $e->getMessage(), [
+            Log::error('Results display error: ' . $e->getMessage(), [
                 'election_id' => $request->election_id ?? null,
                 'trace' => $e->getTraceAsString()
             ]);
@@ -238,7 +239,7 @@ class ResultController extends Controller
                 'results' => $formattedResults,
             ]);
         } catch (\Exception $e) {
-            \Log::error('AJAX results error: ' . $e->getMessage(), [
+            Log::error('AJAX results error: ' . $e->getMessage(), [
                 'election_id' => $electionId,
                 'trace' => $e->getTraceAsString()
             ]);

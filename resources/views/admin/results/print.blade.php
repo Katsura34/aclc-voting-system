@@ -44,7 +44,6 @@
         </tr>
     </table>
     @foreach($results as $result)
-        <h3>{{ $result['position']->name }}</h3>
         @php
             $isRep = strtolower(trim($result['position']->name)) === 'representative';
             if ($isRep) {

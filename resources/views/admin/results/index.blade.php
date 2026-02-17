@@ -418,7 +418,7 @@
                 if (autoRefreshEnabled) {
                     fetchResults();
                 }
-            }, 10000);
+            }, 3000);
         }
 
         function stopAutoRefresh() {

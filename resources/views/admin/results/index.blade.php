@@ -205,13 +205,23 @@
                         @endif
                     </div>
                     <div class="card-body">
-                        @if(empty($result['candidates']) && $result['abstain_votes'] == 0)
+                        @php
+                            $isRep = strtolower(trim($result['position']->name)) === 'representative';
+                            if ($isRep) {
+                                $groups = $result['groups'] ?? [];
+                                $noVotes = empty($groups) || collect($groups)->sum('group_total_votes') == 0;
+                            } else {
+                                $noVotes = empty($result['candidates'] ?? []);
+                            }
+                        @endphp
+
+                        @if($noVotes)
                             <div class="text-center py-4">
                                 <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc;"></i>
                                 <p class="text-muted mt-2">No votes cast for this position</p>
                             </div>
                         @else
-                            @if(strtolower(trim($result['position']->name)) === 'representative')
+                            @if($isRep)
                                 @php
                                     // Use groups provided by controller when available, otherwise fallback to grouping candidates client-side
                                     $groups = $result['groups'] ?? [];

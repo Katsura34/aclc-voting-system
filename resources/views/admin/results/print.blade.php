@@ -45,21 +45,30 @@
     </table>
     @foreach($results as $result)
         @php
-            $isRep = strtolower(trim($result['position']->name)) === 'representative';
+            $posNameLower = strtolower(trim($result['position']->name));
+            $isGrouped = $posNameLower === 'representative' || $posNameLower === 'senators' || strpos($posNameLower, 'house') !== false || isset($result['groups']);
             $winnersOnly = $winnersOnly ?? request()->boolean('winners');
-            if ($isRep) {
+            if ($isGrouped) {
                 $groups = $result['groups'] ?? [];
             } else {
                 $candidates = $result['candidates'] ?? [];
             }
         @endphp
 
-        @if($isRep)
+        @if($isGrouped)
             <div class="position-title">{{ $result['position']->name }}</div>
             @foreach($groups as $group)
                 <table class="excel-table">
                     <tr class="group-row">
-                        <td colspan="5">{{ $group['course'] ?? 'Unknown' }} — Year {{ $group['year'] ?? 'N/A' }}</td>
+                        <td colspan="5">
+                            @if(isset($group['course']))
+                                {{ $group['course'] ?? 'Unknown' }} — Year {{ $group['year'] ?? 'N/A' }}
+                            @elseif(isset($group['house']))
+                                {{ strtoupper($group['house'] ?? 'Unknown') }}
+                            @else
+                                {{ $loop->index ? $loop->index : 'Group' }}
+                            @endif
+                        </td>
                     </tr>
                     <thead>
                         <tr>

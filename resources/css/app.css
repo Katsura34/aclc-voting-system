@@ -102,17 +102,23 @@ body {
 
         .candidates-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
             gap: 20px;
+            align-items: start;
         }
 
         .candidate-card {
             border: 2px solid #e0e0e0;
             border-radius: 12px;
-            padding: 20px;
+            padding: 18px;
             cursor: pointer;
             transition: all 0.3s ease;
             position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 320px;
+            box-sizing: border-box;
         }
 
         .candidate-card:hover {
@@ -140,10 +146,19 @@ body {
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 15px;
+            margin: 8px auto 12px;
             font-size: 4.5rem;
             color: white;
             font-weight: 700;
+            overflow: hidden;
+        }
+
+        .candidate-photo img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
         }
 
         .candidate-name {
@@ -163,12 +178,14 @@ body {
 
         .candidate-party {
             text-align: center;
-            padding: 5px 15px;
+            padding: 6px 14px;
             border-radius: 20px;
             font-size: 0.85rem;
             font-weight: 600;
             display: inline-block;
-            width: 100%;
+            width: auto;
+            margin-top: 6px;
+            text-transform: uppercase;
         }
 
         .candidate-bio {

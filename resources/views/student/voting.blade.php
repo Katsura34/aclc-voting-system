@@ -159,7 +159,7 @@
                                         <div class="candidate-course-badge">{{ strtoupper($candidate->course) }} Senator</div>
                                     @endif
                                     @if($isHousePosition && ($candidate->house ?? ''))
-                                        <div class="candidate-course-badge">{{ strtoupper($candidate->house) }} House</div>
+                                        <div class="candidate-course-badge">House {{ strtoupper($candidate->house) }}</div>
                                     @endif
                                     
                                     <div class="candidate-details">

@@ -448,6 +448,21 @@ class UserController extends Controller
                         $errors[] = "Line {$lineNumber}: Email '{$email}' already exists";
                         continue;
                     }
+                    $gender = trim($gender);
+
+                    // normalize gender casing
+                    if (!empty($gender)) {
+                        $genderLower = strtolower($gender);
+
+                        if ($genderLower === 'male') {
+                            $gender = 'Male';
+                        } elseif ($genderLower === 'female') {
+                            $gender = 'Female';
+                        } elseif ($genderLower === 'other') {
+                            $gender = 'Other';
+                        }
+                    }
+
                     if (!empty($gender) && !in_array($gender, ['Male', 'Female', 'Other'])) {
                         $errors[] = "Line {$lineNumber}: Invalid gender value. Must be Male, Female, or Other";
                         continue;

@@ -105,8 +105,9 @@
                     </div>
                     <div class="card-body">
                         @php
-                            $isRep = strtolower(trim($result['position']->name)) === 'senators';
-                            if ($isRep) {
+                            $posNameLower = strtolower(trim($result['position']->name));
+                            $isGrouped = $posNameLower === 'senators' || $posNameLower === 'representative' || strpos($posNameLower, 'house') !== false || isset($result['groups']);
+                            if ($isGrouped) {
                                 $groups = $result['groups'] ?? [];
                                 $noVotes = empty($groups) || collect($groups)->sum('group_total_votes') == 0;
                             } else {
@@ -117,10 +118,11 @@
                         @if($noVotes)
                             <div class="text-center py-4"><i class="bi bi-inbox" style="font-size:3rem;color:#ccc;"></i><p class="text-muted mt-2">No votes cast for this position</p></div>
                         @else
-                            @if($isRep)
+                            @if($isGrouped)
                                 @php
                                     $groups = $result['groups'] ?? [];
-                                    if (empty($groups) && isset($result['candidates'])) {
+                                    // Fallback grouping only for Representative if groups not present
+                                    if (empty($groups) && isset($result['candidates']) && $posNameLower === 'representative') {
                                         $groups = collect($result['candidates'])->groupBy(function($c) {
                                             $course = $c['candidate']->course ?? 'Unknown';
                                             $year = $c['candidate']->year_level ?? 'Unknown';
@@ -138,7 +140,13 @@
                                 @endphp
 
                                 @foreach($groups as $groupKey => $group)
-                                    <h5 class="mt-4 mb-2">{{ $group['course'] }} {{ $group['year'] }}</h5>
+                                    @if(isset($group['course']))
+                                        <h5 class="mt-4 mb-2">{{ $group['course'] }} {{ $group['year'] }}</h5>
+                                    @elseif(isset($group['house']))
+                                        <h5 class="mt-4 mb-2">{{ strtoupper($group['house'] ?? $groupKey) }}</h5>
+                                    @else
+                                        <h5 class="mt-4 mb-2">{{ $groupKey }}</h5>
+                                    @endif
                                     <div class="table-responsive">
                                         <table class="table table-hover align-middle">
                                             <thead class="table-light">

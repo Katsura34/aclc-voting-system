@@ -347,6 +347,7 @@ class UserController extends Controller
                 }
                 
                 $imported = 0;
+                $updated = 0;
                 $errors = [];
                 $batch = [];
                 $batchSize = 500;
@@ -370,6 +371,21 @@ class UserController extends Controller
                     $password = trim($password);
                     if (empty($usn) || empty($lastname) || empty($firstname) || empty($password)) {
                         $errors[] = "Line {$lineNumber}: USN, lastname, firstname, and password are required";
+                        continue;
+                    }
+                    // Try to find an existing user by firstname + lastname (case-insensitive)
+                    $existing = User::whereRaw('LOWER(firstname) = ? AND LOWER(lastname) = ?', [strtolower($firstname), strtolower($lastname)])->first();
+                    if ($existing) {
+                        // Update house if provided
+                        if (!empty($house) && $existing->house !== $house) {
+                            try {
+                                $existing->update(['house' => $house]);
+                                $updated++;
+                            } catch (\Exception $e) {
+                                $errors[] = "Line {$lineNumber}: Failed to update house for {$firstname} {$lastname}: " . $e->getMessage();
+                            }
+                        }
+                        // Skip creating a new user for this row
                         continue;
                     }
                     $email = $usn . '@aclc.edu.ph';
@@ -428,6 +444,9 @@ class UserController extends Controller
                 ]);
                 
                 $message = "Successfully imported {$imported} user(s)";
+                if (isset($updated) && $updated > 0) {
+                    $message .= ". Updated house for {$updated} existing user(s)";
+                }
                 if (count($errors) > 0) {
                     $message .= ". " . count($errors) . " error(s) occurred: " . implode('; ', array_slice($errors, 0, 5));
                     if (count($errors) > 5) {

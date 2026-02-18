@@ -89,7 +89,7 @@
                             $user = Auth::user();
                             $isRepresentative = strtolower(trim($position->name)) === 'senators';
                             $posName = strtolower(trim($position->name));
-                            $isHousePosition = in_array($posName, ['house lord', 'house lady']);
+                            $isHousePosition = in_array($posName, ['house lord/lady', 'house lady']);
 
                             // Normalize for case-insensitive comparisons
                             $studentHouse = strtolower(trim($user->house ?? ''));

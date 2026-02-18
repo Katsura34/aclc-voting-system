@@ -106,12 +106,13 @@
                                 // Other positions: show all candidates
                                 || (!$isRepresentative && !$isHousePosition)
                             )
-                                <label class="candidate-card" data-position="{{ $position->id }}">
+                                @php $isMultiple = $position->max_winners > 1; @endphp
+                                <label class="candidate-card" data-position="{{ $position->id }}" data-course="{{ $candidate->course }}" data-is-stem="{{ strtolower($candidate->course) === 'stem' ? 1 : 0 }}">
                                     <input 
-                                        type="radio" 
-                                        name="position_{{ $position->id }}" 
+                                        type="{{ $isMultiple ? 'checkbox' : 'radio' }}" 
+                                        name="position_{{ $position->id }}{{ $isMultiple ? '[]' : '' }}" 
                                         value="{{ $candidate->id }}"
-                                        {{ old("position_{$position->id}") == $candidate->id ? 'checked' : '' }}
+                                        {{ $isMultiple ? (is_array(old("position_{$position->id}")) && in_array($candidate->id, old("position_{$position->id}")) ? 'checked' : '') : (old("position_{$position->id}") == $candidate->id ? 'checked' : '') }}
                                     >
                                     <div class="check-indicator">
                                         <i class="bi bi-check-lg"></i>
@@ -213,28 +214,74 @@
         const DEFAULT_PARTY_TEXT = '#6c757d';
         const ALERT_DISMISS_TIMEOUT = 5000;
         
-        // Handle candidate card selection
+        // Handle candidate card selection (supports radio and checkbox)
         document.querySelectorAll('.candidate-card').forEach(card => {
-            card.addEventListener('click', function() {
-                const radio = this.querySelector('input[type="radio"]');
+            card.addEventListener('click', function(e) {
+                // Ignore clicks directly on inputs (they'll be handled naturally)
+                if (e.target && e.target.tagName === 'INPUT') return;
+
+                const input = this.querySelector('input[type="radio"], input[type="checkbox"]');
                 const position = this.dataset.position;
-                
-                // Unselect all cards in this position
-                document.querySelectorAll(`.candidate-card[data-position="${position}"]`).forEach(c => {
-                    c.classList.remove('selected');
-                });
-                
-                // Select this card
-                if (radio) {
-                    radio.checked = true;
+
+                if (!input) return;
+
+                // If checkbox (multiple selection)
+                if (input.type === 'checkbox') {
+                    const isStem = this.dataset.isStem == '1';
+                    const cards = Array.from(document.querySelectorAll(`.candidate-card[data-position="${position}"]`));
+                    const checkboxes = cards.map(c => c.querySelector('input[type="checkbox"]')).filter(Boolean);
+                    const checkedBoxes = checkboxes.filter(cb => cb.checked);
+
+                    // Determine general max winners from position card container
+                    const posContainer = this.closest('.position-card');
+                    const maxWinners = {{ '0' }}; // placeholder will be overridden per-position below
+
+                    // Count current STEM selections
+                    const stemSelected = checkboxes.filter(cb => cb.checked && cb.closest('.candidate-card').dataset.isStem == '1').length;
+
+                    // We'll compute limits using attributes on the position-card element. Ensure it's present.
+                    const posMax = parseInt(posContainer.dataset.maxWinners || '{{ $position->max_winners }}');
+
+                    // STEM-specific cap (2)
+                    const STEM_CAP = 2;
+
+                    // If attempting to check this box (it was unchecked), enforce limits
+                    if (!input.checked) {
+                        // If selecting would exceed general max winners
+                        if (checkedBoxes.length >= posMax) {
+                            showInlineError(this, `You may only choose up to ${posMax} candidate(s) for this position.`);
+                            return;
+                        }
+
+                        // If candidate is STEM and would exceed STEM cap
+                        if (isStem && stemSelected >= STEM_CAP) {
+                            showInlineError(this, `You may only choose up to ${STEM_CAP} STEM candidate(s) for this position.`);
+                            return;
+                        }
+
+                        input.checked = true;
+                        this.classList.add('selected');
+                    } else {
+                        // Uncheck
+                        input.checked = false;
+                        this.classList.remove('selected');
+                    }
+                } else {
+                    // Radio: unselect siblings then select this one
+                    const radios = document.querySelectorAll(`.candidate-card[data-position="${position}"] input[type="radio"]`);
+                    radios.forEach(r => r.closest('.candidate-card').classList.remove('selected'));
+                    input.checked = true;
                     this.classList.add('selected');
                 }
             });
         });
 
-        // Initialize selected cards on page load
-        document.querySelectorAll('input[type="radio"]:checked').forEach(radio => {
-            radio.closest('.candidate-card').classList.add('selected');
+        // Initialize selected cards on page load (radios and checkboxes)
+        document.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach(input => {
+            if (input.checked) {
+                const card = input.closest('.candidate-card');
+                if (card) card.classList.add('selected');
+            }
         });
 
         // Show review modal before submit
@@ -264,6 +311,23 @@
             
             // Default fallback
             return DEFAULT_PARTY_TEXT;
+        }
+
+        // Show inline error near a candidate card
+        function showInlineError(cardEl, message) {
+            // remove existing small alert in this card
+            const existing = cardEl.querySelector('.inline-error');
+            if (existing) existing.remove();
+
+            const div = document.createElement('div');
+            div.className = 'alert alert-danger mt-2 inline-error';
+            div.style.fontSize = '0.85rem';
+            div.textContent = message;
+            cardEl.appendChild(div);
+
+            setTimeout(() => {
+                if (div && div.parentNode) div.remove();
+            }, 4000);
         }
         
         document.getElementById('votingForm').addEventListener('submit', function(e) {

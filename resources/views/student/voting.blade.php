@@ -88,13 +88,17 @@
                         @php
                             $user = Auth::user();
                             $isRepresentative = strtolower(trim($position->name)) === 'senators';
+                            $posName = strtolower(trim($position->name));
+                            $isHousePosition = in_array($posName, ['house lord/lady', 'house lady']);
                         @endphp
                         @foreach($position->candidates as $candidate)
                             @if(
-                                // only show candidates from the same house as the logged-in student
-                                (($candidate->house ?? null) === ($user->house ?? null)) &&
-                                // preserve the existing senators filter by course/strand
-                                ($isRepresentative ? ($candidate->course == $user->strand) : true)
+                                // Senators: filter by student's strand/course
+                                ($isRepresentative && ($candidate->course == $user->strand))
+                                // House Lord/Lady: filter by student's house
+                                || ($isHousePosition && (($candidate->house ?? null) === ($user->house ?? null)))
+                                // Other positions: show all candidates
+                                || (!$isRepresentative && !$isHousePosition)
                             )
                                 <label class="candidate-card" data-position="{{ $position->id }}">
                                     <input 

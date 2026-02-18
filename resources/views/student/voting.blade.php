@@ -75,9 +75,10 @@
                     $posMaxForStudent = ($isRepresentative && $studentStrand === 'stem') ? 2 : $position->max_winners;
                 @endphp
                 <div class="position-card" data-max-winners="{{ $posMaxForStudent }}">
+                    @php $posNameLower = strtolower(trim($position->name)); @endphp
                     <div class="position-title">
                         <i class="bi bi-award"></i>
-                        {{ $position->name }}
+                        {{ (strpos($posNameLower, 'house lord') !== false) ? 'House Lord/Lady' : $position->name }}
                     </div>
                     <div class="position-info">
                         @if($posMaxForStudent > 1)

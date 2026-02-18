@@ -304,13 +304,23 @@
                     }
                 });
             });
-        });
 
-        // Initialize selected cards on page load (radios and checkboxes)
-        document.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach(input => {
-            if (input.checked) {
-                const card = input.closest('.candidate-card');
-                if (card) card.classList.add('selected');
+        // Initialize selected cards on page load (radios and hidden-input multi-selects)
+        document.querySelectorAll('.position-card').forEach(pos => {
+            const posMax = parseInt(pos.dataset.maxWinners || '1', 10);
+            if (posMax > 1) {
+                const hiddenInputs = pos.querySelectorAll('.hidden-inputs input[type="hidden"]');
+                const vals = Array.from(hiddenInputs).map(i => i.value);
+                vals.forEach(v => {
+                    const card = pos.querySelector(`.candidate-card[data-candidate-id="${v}"]`);
+                    if (card) card.classList.add('selected');
+                });
+            } else {
+                const radio = pos.querySelector('input[type="radio"]:checked');
+                if (radio) {
+                    const card = radio.closest('.candidate-card');
+                    if (card) card.classList.add('selected');
+                }
             }
         });
 
@@ -374,12 +384,14 @@
                 const posMax = parseInt(position.dataset.maxWinners || '1', 10);
 
                 if (posMax > 1) {
-                    const checkedBoxes = position.querySelectorAll('input[type="checkbox"]:checked');
-                    if (checkedBoxes.length === 0) {
+                    const hiddenInputs = position.querySelectorAll('.hidden-inputs input[type="hidden"]');
+                    if (hiddenInputs.length === 0) {
                         allSelected = false;
                     } else {
-                        checkedBoxes.forEach(cb => {
-                            const candidateCard = cb.closest('.candidate-card');
+                        hiddenInputs.forEach(h => {
+                            const candidateId = h.value;
+                            const candidateCard = position.querySelector(`.candidate-card[data-candidate-id="${candidateId}"]`);
+                            if (!candidateCard) return;
                             const candidateName = candidateCard.querySelector('.candidate-name').textContent.trim();
                             const candidateParty = candidateCard.querySelector('.candidate-party');
                             const partyName = candidateParty ? candidateParty.textContent.trim() : 'Independent';

@@ -81,8 +81,9 @@ class VotingController extends Controller
                     $maxForStudent = ($isSenator && $studentStrand === 'stem') ? 2 : (int)$position->max_winners;
 
                     if ($maxForStudent > 1) {
-                        // expect an array of candidate ids with a maximum size
-                        $rules[$field] = 'required|array|min:1|max:' . $maxForStudent;
+                        // expect an array of candidate ids with at least one selection
+                        // we will enforce the maximum when saving by truncating extras
+                        $rules[$field] = 'required|array|min:1';
                         // each selected candidate must exist and belong to this position
                         $rules[$field . '.*'] = 'exists:candidates,id,position_id,' . $position->id;
                     } else {
@@ -110,9 +111,9 @@ class VotingController extends Controller
 
                     if (is_array($selected)) {
                         $selected = array_values(array_unique($selected));
-                        // enforce max just in case
+                        // Truncate extras if more selections were submitted than allowed
                         if (count($selected) > $maxForStudent) {
-                            throw new \Exception("Too many selections for position {$position->name}");
+                            $selected = array_slice($selected, 0, $maxForStudent);
                         }
 
                         foreach ($selected as $candidateId) {

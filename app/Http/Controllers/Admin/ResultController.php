@@ -404,7 +404,8 @@ class ResultController extends Controller
                 fputcsv($file, ['Position: ' . $position->name]);
 
                 // Representative: group by course/year
-                if (strtolower(trim($position->name)) === 'representative') {
+                $posNameLower = strtolower(trim($position->name));
+                if ($posNameLower === 'representative') {
                     foreach ($position->candidates->groupBy(function($c) {
                         return ($c->course ?? 'Unknown') . ' ' . ($c->year_level ?? 'Unknown');
                     }) as $groupKey => $candidates) {
@@ -427,6 +428,64 @@ class ResultController extends Controller
                                           ->where('year', $candidate->year_level);
                                 })
                                 ->count();
+
+                            $rows[] = [
+                                'name' => $candidate->full_name,
+                                'party' => $candidate->party->name ?? 'No Party',
+                                'votes' => $votes,
+                            ];
+
+                            $groupTotal += $votes;
+                        }
+
+                        // Write rows with percentages
+                        usort($rows, function($a, $b) { return $b['votes'] - $a['votes']; });
+                        foreach ($rows as $r) {
+                            $percentage = $groupTotal > 0 ? round(($r['votes'] / $groupTotal) * 100, 2) : 0;
+                            fputcsv($file, [$r['name'], $r['party'], $r['votes'], $percentage . '%']);
+                        }
+
+                        fputcsv($file, ['Group Total Votes', '', $groupTotal, '']);
+                        fputcsv($file, []);
+                    }
+                } elseif ($posNameLower === 'senators' || strpos($posNameLower, 'house') !== false) {
+                    // Senators: group by course (strand) and count only votes from matching strand
+                    // House-type positions: group by candidate.house and count only votes from matching house
+                    foreach ($position->candidates->groupBy(function($c) use ($posNameLower) {
+                        if ($posNameLower === 'senators') {
+                            return $c->course ?? 'Unknown';
+                        }
+                        return ($c->house ?? 'Unknown');
+                    }) as $groupKey => $candidates) {
+                        $first = $candidates->first();
+                        if ($posNameLower === 'senators') {
+                            $groupLabel = $first->course ?? 'Unknown';
+                        } else {
+                            $groupLabel = $first->house ?? 'Unknown';
+                        }
+
+                        fputcsv($file, ["Group: {$groupLabel}"]); 
+                        fputcsv($file, ['Candidate Name', 'Party', 'Votes', 'Percentage']);
+
+                        $groupTotal = 0;
+                        $rows = [];
+
+                        foreach ($candidates as $candidate) {
+                            $q = Vote::where('position_id', $position->id)
+                                ->where('election_id', $election->id)
+                                ->where('candidate_id', $candidate->id);
+
+                            if ($posNameLower === 'senators') {
+                                $q->whereHas('user', function($query) use ($candidate) {
+                                    $query->where('strand', $candidate->course);
+                                });
+                            } else {
+                                $q->whereHas('user', function($query) use ($candidate) {
+                                    $query->where('house', $candidate->house);
+                                });
+                            }
+
+                            $votes = $q->count();
 
                             $rows[] = [
                                 'name' => $candidate->full_name,
@@ -512,36 +571,88 @@ class ResultController extends Controller
             $candidateResults = [];
             $totalVotes = 0;
 
-            if (strtolower(trim($position->name)) === 'representative') {
-                // group candidates by course/year
+            $posNameLower = strtolower(trim($position->name));
+            if ($posNameLower === 'representative' || $posNameLower === 'senators' || strpos($posNameLower, 'house') !== false) {
+                // group candidates by course/year for representative
+                // group by course for senators (strand) and by house for house-type positions
                 $groups = [];
                 foreach ($position->candidates as $candidate) {
                     $course = $candidate->course ?? 'Unknown';
                     $year = $candidate->year_level ?? 'Unknown';
-                    $groupKey = $course . ' ' . $year;
 
-                    if (!isset($groups[$groupKey])) {
-                        $groups[$groupKey] = [
-                            'course' => $course,
-                            'year' => $year,
-                            'candidates' => [],
-                            'group_total_votes' => 0,
-                            'abstain_votes' => 0,
-                        ];
+                    if ($posNameLower === 'representative') {
+                        $groupKey = $course . ' ' . $year;
+
+                        $voteCount = Vote::where('position_id', $position->id)
+                            ->where('election_id', $election->id)
+                            ->where('candidate_id', $candidate->id)
+                            ->whereHas('user', function($query) use ($candidate) {
+                                $query->where('strand', $candidate->course)
+                                      ->where('year', $candidate->year_level);
+                            })
+                            ->count();
+
+                        if (!isset($groups[$groupKey])) {
+                            $groups[$groupKey] = [
+                                'course' => $course,
+                                'year' => $year ?: 'Unknown',
+                                'candidates' => [],
+                                'group_total_votes' => 0,
+                                'abstain_votes' => 0,
+                            ];
+                        }
+                    } elseif ($posNameLower === 'senators') {
+                        $groupKey = $course;
+
+                        $voteCount = Vote::where('position_id', $position->id)
+                            ->where('election_id', $election->id)
+                            ->where('candidate_id', $candidate->id)
+                            ->whereHas('user', function($query) use ($candidate) {
+                                $query->where('strand', $candidate->course);
+                            })
+                            ->count();
+
+                        if (!isset($groups[$groupKey])) {
+                            $groups[$groupKey] = [
+                                'course' => $course,
+                                'year' => '',
+                                'candidates' => [],
+                                'group_total_votes' => 0,
+                                'abstain_votes' => 0,
+                            ];
+                        }
+                    } else { // house-type positions
+                        $groupKey = $candidate->house ?? 'Unknown';
+
+                        $voteCount = Vote::where('position_id', $position->id)
+                            ->where('election_id', $election->id)
+                            ->where('candidate_id', $candidate->id)
+                            ->whereHas('user', function($query) use ($candidate) {
+                                $query->where('house', $candidate->house);
+                            })
+                            ->count();
+
+                        if (!isset($groups[$groupKey])) {
+                            $groups[$groupKey] = [
+                                'house' => $candidate->house ?? 'Unknown',
+                                'candidates' => [],
+                                'group_total_votes' => 0,
+                                'abstain_votes' => 0,
+                            ];
+                        }
                     }
 
-                    $votes = $candidate->votes()->where('position_id', $position->id)->count();
                     $groups[$groupKey]['candidates'][] = [
                         'candidate' => $candidate,
-                        'votes' => $votes,
+                        'votes' => $voteCount,
                     ];
-                    $groups[$groupKey]['group_total_votes'] += $votes;
-                    $totalVotes += $votes;
+                    $groups[$groupKey]['group_total_votes'] += $voteCount;
+                    $totalVotes += $voteCount;
                 }
 
-                    foreach ($groups as $key => $group) {
-                        $groups[$key]['candidates'] = collect($groups[$key]['candidates'])->sortByDesc('votes')->values()->all();
-                    }
+                foreach ($groups as $key => $group) {
+                    $groups[$key]['candidates'] = collect($groups[$key]['candidates'])->sortByDesc('votes')->values()->all();
+                }
 
                 $results[] = [
                     'position' => $position,

@@ -90,13 +90,19 @@
                             $isRepresentative = strtolower(trim($position->name)) === 'senators';
                             $posName = strtolower(trim($position->name));
                             $isHousePosition = in_array($posName, ['house lord', 'house lady']);
+
+                            // Normalize for case-insensitive comparisons
+                            $studentHouse = strtolower(trim($user->house ?? ''));
+                            $candidateHouse = null; // will be computed per candidate
+                            $studentStrand = strtolower(trim($user->strand ?? ''));
                         @endphp
                         @foreach($position->candidates as $candidate)
+                            @php $candidateHouse = strtolower(trim($candidate->house ?? '')); $candidateCourse = strtolower(trim($candidate->course ?? '')); @endphp
                             @if(
-                                // Senators: filter by student's strand/course
-                                ($isRepresentative && ($candidate->course == $user->strand))
-                                // House Lord/Lady: filter by student's house
-                                || ($isHousePosition && (($candidate->house ?? null) === ($user->house ?? null)))
+                                // Senators: filter by student's strand/course (case-insensitive)
+                                ($isRepresentative && ($candidateCourse === $studentStrand))
+                                // House Lord/Lady: filter by student's house (case-insensitive, require non-empty)
+                                || ($isHousePosition && $candidateHouse !== '' && $candidateHouse === $studentHouse)
                                 // Other positions: show all candidates
                                 || (!$isRepresentative && !$isHousePosition)
                             )

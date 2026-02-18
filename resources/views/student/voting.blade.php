@@ -237,7 +237,6 @@
 
                     // Determine general max winners from position card container
                     const posContainer = this.closest('.position-card');
-                    const maxWinners = {{ '0' }}; // placeholder will be overridden per-position below
 
                     // Count current STEM selections
                     const stemSelected = checkboxes.filter(cb => cb.checked && cb.closest('.candidate-card').dataset.isStem == '1').length;

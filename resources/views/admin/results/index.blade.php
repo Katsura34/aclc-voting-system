@@ -105,7 +105,7 @@
                     </div>
                     <div class="card-body">
                         @php
-                            $isRep = strtolower(trim($result['position']->name)) === 'representative';
+                            $isRep = strtolower(trim($result['position']->name)) === 'senators';
                             if ($isRep) {
                                 $groups = $result['groups'] ?? [];
                                 $noVotes = empty($groups) || collect($groups)->sum('group_total_votes') == 0;

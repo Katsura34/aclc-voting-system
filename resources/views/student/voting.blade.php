@@ -66,7 +66,7 @@
             @csrf
 
             @foreach($election->positions as $position)
-                <div class="position-card">
+                <div class="position-card" data-max-winners="{{ $position->max_winners }}">
                     <div class="position-title">
                         <i class="bi bi-award"></i>
                         {{ $position->name }}
@@ -214,6 +214,9 @@
         const DEFAULT_PARTY_TEXT = '#6c757d';
         const ALERT_DISMISS_TIMEOUT = 5000;
         
+        // Student strand for STEM-specific rules
+        const STUDENT_STRAND = {!! json_encode(strtolower(trim(Auth::user()->strand ?? ''))) !!};
+
         // Handle candidate card selection (supports radio and checkbox)
         document.querySelectorAll('.candidate-card').forEach(card => {
             card.addEventListener('click', function(e) {
@@ -239,11 +242,11 @@
                     // Count current STEM selections
                     const stemSelected = checkboxes.filter(cb => cb.checked && cb.closest('.candidate-card').dataset.isStem == '1').length;
 
-                    // We'll compute limits using attributes on the position-card element. Ensure it's present.
-                    const posMax = parseInt(posContainer.dataset.maxWinners || '{{ $position->max_winners }}');
+                    // We'll compute limits using attributes on the position-card element.
+                    const posMax = parseInt(posContainer.dataset.maxWinners || '1');
 
-                    // STEM-specific cap (2)
-                    const STEM_CAP = 2;
+                    // STEM-specific cap (2) applies only when the logged-in student's strand is STEM
+                    const STEM_CAP = (STUDENT_STRAND === 'stem') ? 2 : Infinity;
 
                     // If attempting to check this box (it was unchecked), enforce limits
                     if (!input.checked) {
@@ -341,43 +344,45 @@
             
             positions.forEach(position => {
                 const positionTitle = position.querySelector('.position-title').textContent.trim();
-                const selectedRadio = position.querySelector('input[type="radio"]:checked');
-                
-                if (selectedRadio) {
-                    const candidateCard = selectedRadio.closest('.candidate-card');
-                    const candidateName = candidateCard.querySelector('.candidate-name').textContent.trim();
-                    const candidateParty = candidateCard.querySelector('.candidate-party');
-                    const partyName = candidateParty ? candidateParty.textContent.trim() : 'Independent';
-                    
-                    // Escape all user-controlled values to prevent XSS
-                    const safePositionTitle = escapeHtml(positionTitle);
-                    const safeCandidateName = escapeHtml(candidateName);
-                    const safePartyName = escapeHtml(partyName);
-                    
-                    // Get and sanitize party colors
-                    const rawBgColor = candidateParty ? candidateParty.style.backgroundColor : '';
-                    const rawTextColor = candidateParty ? candidateParty.style.color : '';
-                    const partyBgColor = sanitizeColor(rawBgColor) || DEFAULT_PARTY_BG;
-                    const partyTextColor = sanitizeColor(rawTextColor) || DEFAULT_PARTY_TEXT;
-                    
-                    reviewHTML += `
-                        <div class="list-group-item">
-                            <div class="d-flex w-100 justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="mb-1" style="color: var(--aclc-blue);">
-                                        <i class="bi bi-award"></i> ${safePositionTitle}
-                                    </h6>
-                                    <p class="mb-0">
-                                        <strong>${safeCandidateName}</strong>
-                                        <span class="badge" style="background-color: ${partyBgColor}; color: ${partyTextColor};">
-                                            ${safePartyName}
-                                        </span>
-                                    </p>
+                const checkedInputs = position.querySelectorAll('input[type="radio"]:checked, input[type="checkbox"]:checked');
+
+                if (checkedInputs.length > 0) {
+                    checkedInputs.forEach(input => {
+                        const candidateCard = input.closest('.candidate-card');
+                        const candidateName = candidateCard.querySelector('.candidate-name').textContent.trim();
+                        const candidateParty = candidateCard.querySelector('.candidate-party');
+                        const partyName = candidateParty ? candidateParty.textContent.trim() : 'Independent';
+
+                        // Escape all user-controlled values to prevent XSS
+                        const safePositionTitle = escapeHtml(positionTitle);
+                        const safeCandidateName = escapeHtml(candidateName);
+                        const safePartyName = escapeHtml(partyName);
+
+                        // Get and sanitize party colors
+                        const rawBgColor = candidateParty ? candidateParty.style.backgroundColor : '';
+                        const rawTextColor = candidateParty ? candidateParty.style.color : '';
+                        const partyBgColor = sanitizeColor(rawBgColor) || DEFAULT_PARTY_BG;
+                        const partyTextColor = sanitizeColor(rawTextColor) || DEFAULT_PARTY_TEXT;
+
+                        reviewHTML += `
+                            <div class="list-group-item">
+                                <div class="d-flex w-100 justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1" style="color: var(--aclc-blue);">
+                                            <i class="bi bi-award"></i> ${safePositionTitle}
+                                        </h6>
+                                        <p class="mb-0">
+                                            <strong>${safeCandidateName}</strong>
+                                            <span class="badge" style="background-color: ${partyBgColor}; color: ${partyTextColor};">
+                                                ${safePartyName}
+                                            </span>
+                                        </p>
+                                    </div>
+                                    <i class="bi bi-check-circle-fill text-success" style="font-size: 1.5rem;"></i>
                                 </div>
-                                <i class="bi bi-check-circle-fill text-success" style="font-size: 1.5rem;"></i>
                             </div>
-                        </div>
-                    `;
+                        `;
+                    });
                 } else {
                     allSelected = false;
                 }

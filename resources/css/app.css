@@ -102,7 +102,7 @@ body {
 
         .candidates-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
             gap: 20px;
         }
 
@@ -133,15 +133,15 @@ body {
         }
 
         .candidate-photo {
-            width: 180px;
-            height: 180px;
+            width: 220px;
+            height: 220px;
             border-radius: 50%;
             background: linear-gradient(135deg, var(--aclc-blue) 0%, var(--aclc-light-blue) 100%);
             display: flex;
             align-items: center;
             justify-content: center;
             margin: 0 auto 15px;
-            font-size: 4.5rem;
+            font-size: 5rem;
             color: white;
             font-weight: 700;
         }

@@ -44,32 +44,58 @@ class ResultController extends Controller
                         $candidateResults = [];
                         $totalVotes = 0;
 
-                        // Special logic for Representative: group by course + year and count votes only from matching students
-                        if (strtolower(trim($position->name)) === 'representative') {
+                        // Special logic for Representative and Senators:
+                        // - Representative: group by course + year and count votes only from matching students
+                        // - Senators: group by course (strand) and count votes only from students in that strand
+                        $posNameLower = strtolower(trim($position->name));
+                        if ($posNameLower === 'representative' || $posNameLower === 'senators') {
                             $groups = [];
 
                             foreach ($position->candidates as $candidate) {
                                 $course = $candidate->course ?? 'Unknown';
-                                $year = $candidate->year_level ?? 'Unknown';
-                                $groupKey = $course . ' ' . $year;
+                                $year = $candidate->year_level ?? '';
 
-                                $voteCount = Vote::where('position_id', $position->id)
-                                    ->where('election_id', $selectedElection->id)
-                                    ->where('candidate_id', $candidate->id)
-                                    ->whereHas('user', function($query) use ($candidate) {
-                                        $query->where('strand', $candidate->course)
-                                              ->where('year', $candidate->year_level);
-                                    })
-                                    ->count();
+                                if ($posNameLower === 'representative') {
+                                    $groupKey = $course . ' ' . $year;
 
-                                if (!isset($groups[$groupKey])) {
-                                    $groups[$groupKey] = [
-                                        'course' => $course,
-                                        'year' => $year,
-                                        'candidates' => [],
-                                        'group_total_votes' => 0,
-                                        'abstain_votes' => 0,
-                                    ];
+                                    $voteCount = Vote::where('position_id', $position->id)
+                                        ->where('election_id', $selectedElection->id)
+                                        ->where('candidate_id', $candidate->id)
+                                        ->whereHas('user', function($query) use ($candidate) {
+                                            $query->where('strand', $candidate->course)
+                                                  ->where('year', $candidate->year_level);
+                                        })
+                                        ->count();
+
+                                    if (!isset($groups[$groupKey])) {
+                                        $groups[$groupKey] = [
+                                            'course' => $course,
+                                            'year' => $year ?: 'Unknown',
+                                            'candidates' => [],
+                                            'group_total_votes' => 0,
+                                            'abstain_votes' => 0,
+                                        ];
+                                    }
+                                } else { // senators: group by course only, count votes only from users with matching strand
+                                    $groupKey = $course;
+
+                                    $voteCount = Vote::where('position_id', $position->id)
+                                        ->where('election_id', $selectedElection->id)
+                                        ->where('candidate_id', $candidate->id)
+                                        ->whereHas('user', function($query) use ($candidate) {
+                                            $query->where('strand', $candidate->course);
+                                        })
+                                        ->count();
+
+                                    if (!isset($groups[$groupKey])) {
+                                        $groups[$groupKey] = [
+                                            'course' => $course,
+                                            'year' => '',
+                                            'candidates' => [],
+                                            'group_total_votes' => 0,
+                                            'abstain_votes' => 0,
+                                        ];
+                                    }
                                 }
 
                                 $groups[$groupKey]['candidates'][] = [
@@ -177,32 +203,57 @@ class ResultController extends Controller
             foreach ($selectedElection->positions as $position) {
                 $totalVotes = 0;
 
-                // Representative special handling: group by course+year and only count users matching candidate's course/year
-                if (strtolower(trim($position->name)) === 'representative') {
+                // Representative and Senators special handling:
+                // - Representative: group by course/year and only count users matching candidate's course/year
+                // - Senators: group by course (strand) and only count users whose strand matches candidate's course
+                $posNameLower = strtolower(trim($position->name));
+                if ($posNameLower === 'representative' || $posNameLower === 'senators') {
                     $groups = [];
-
                     foreach ($position->candidates as $candidate) {
                         $course = $candidate->course ?? 'Unknown';
-                        $year = $candidate->year_level ?? 'Unknown';
-                        $groupKey = $course . ' ' . $year;
+                        $year = $candidate->year_level ?? '';
 
-                        $voteCount = Vote::where('position_id', $position->id)
-                            ->where('election_id', $electionId)
-                            ->where('candidate_id', $candidate->id)
-                            ->whereHas('user', function($query) use ($candidate) {
-                                $query->where('strand', $candidate->course)
-                                      ->where('year', $candidate->year_level);
-                            })
-                            ->count();
+                        if ($posNameLower === 'representative') {
+                            $groupKey = $course . ' ' . $year;
 
-                        if (!isset($groups[$groupKey])) {
-                            $groups[$groupKey] = [
-                                'course' => $course,
-                                'year' => $year,
-                                'candidates' => [],
-                                'group_total_votes' => 0,
-                                'abstain_votes' => 0,
-                            ];
+                            $voteCount = Vote::where('position_id', $position->id)
+                                ->where('election_id', $electionId)
+                                ->where('candidate_id', $candidate->id)
+                                ->whereHas('user', function($query) use ($candidate) {
+                                    $query->where('strand', $candidate->course)
+                                          ->where('year', $candidate->year_level);
+                                })
+                                ->count();
+
+                            if (!isset($groups[$groupKey])) {
+                                $groups[$groupKey] = [
+                                    'course' => $course,
+                                    'year' => $year ?: 'Unknown',
+                                    'candidates' => [],
+                                    'group_total_votes' => 0,
+                                    'abstain_votes' => 0,
+                                ];
+                            }
+                        } else { // senators: group by course only
+                            $groupKey = $course;
+
+                            $voteCount = Vote::where('position_id', $position->id)
+                                ->where('election_id', $electionId)
+                                ->where('candidate_id', $candidate->id)
+                                ->whereHas('user', function($query) use ($candidate) {
+                                    $query->where('strand', $candidate->course);
+                                })
+                                ->count();
+
+                            if (!isset($groups[$groupKey])) {
+                                $groups[$groupKey] = [
+                                    'course' => $course,
+                                    'year' => '',
+                                    'candidates' => [],
+                                    'group_total_votes' => 0,
+                                    'abstain_votes' => 0,
+                                ];
+                            }
                         }
 
                         $groups[$groupKey]['candidates'][] = [

@@ -260,6 +260,23 @@
                             </div>
                         </div>
 
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <label for="house" class="form-label fw-bold">
+                                    House
+                                </label>
+                                <input type="text"
+                                       class="form-control @error('house') is-invalid @enderror"
+                                       id="house"
+                                       name="house"
+                                       value="{{ old('house', $candidate->house) }}"
+                                       placeholder="e.g., Red, Blue, Alpha">
+                                @error('house')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+
                         <!-- Bio -->
                         <div class="mb-4">
                             <label for="bio" class="form-label fw-bold">

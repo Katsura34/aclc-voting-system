@@ -147,6 +147,21 @@
                                 </div>
                             </div>
 
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label for="house" class="form-label">House</label>
+                                    <input type="text"
+                                           class="form-control @error('house') is-invalid @enderror"
+                                           id="house"
+                                           name="house"
+                                           value="{{ old('house') }}"
+                                           placeholder="e.g., Red, Blue, Alpha">
+                                    @error('house')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+
                             <hr>
 
                             <div class="row mb-3">

@@ -189,7 +189,8 @@ class CandidateController extends Controller
                 'position_id' => 'required|exists:positions,id',
                 'party_id' => 'required|exists:parties,id',
                 'course' => 'nullable|string|max:255',
-                'year_level' => 'nullable|integer|min:1|max:12',
+                    'year_level' => 'nullable|integer|min:1|max:12',
+                    'house' => 'nullable|string|max:100',
                 'bio' => 'nullable|string',
                 'photo' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
             ]);
@@ -285,7 +286,8 @@ class CandidateController extends Controller
                 'position_id' => 'required|exists:positions,id',
                 'party_id' => 'required|exists:parties,id',
                 'course' => 'nullable|string|max:255',
-                'year_level' => 'nullable|integer|min:1|max:12',
+                    'year_level' => 'nullable|integer|min:1|max:12',
+                    'house' => 'nullable|string|max:100',
                 'bio' => 'nullable|string',
                 'photo' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
                 'remove_photo' => 'nullable|boolean',
@@ -514,6 +516,7 @@ class CandidateController extends Controller
                         'middle_name' => 'nullable|string|max:255',
                         'course' => 'nullable|string|max:255',
                         'year_level' => 'nullable|integer|min:1|max:12',
+                        'house' => 'nullable|string|max:100',
                         'bio' => 'nullable|string',
                         'position_name' => 'required|string',
                     ]);
@@ -532,13 +535,14 @@ class CandidateController extends Controller
                     }
                     $positionId = $positionMap[$positionKey];
 
-                    // Create candidate
+                    // Create candidate (include house when present)
                     Candidate::create([
                         'first_name' => $data['first_name'],
                         'last_name' => $data['last_name'],
                         'middle_name' => $data['middle_name'] ?? null,
                         'course' => $data['course'] ?? null,
                         'year_level' => isset($data['year_level']) && $data['year_level'] !== '' ? (int)$data['year_level'] : null,
+                        'house' => $data['house'] ?? null,
                         'bio' => $data['bio'] ?? null,
                         'position_id' => $positionId,
                         'party_id' => $request->party_id,

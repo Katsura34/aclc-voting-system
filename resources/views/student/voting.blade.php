@@ -155,6 +155,9 @@
                                     <div class="candidate-name">
                                         {{ $candidate->full_name }}
                                     </div>
+                                    @if($isRepresentative && ($candidate->course ?? ''))
+                                        <div class="candidate-course-badge">{{ strtoupper($candidate->course) }} Senator</div>
+                                    @endif
                                     
                                     <div class="candidate-details">
                                         @if($candidate->course && $candidate->year_level)

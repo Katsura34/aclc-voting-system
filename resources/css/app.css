@@ -179,6 +179,18 @@ body {
             font-style: italic;
         }
 
+        .candidate-course-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 999px;
+            background: linear-gradient(135deg, var(--aclc-light-blue), var(--aclc-blue));
+            color: #fff;
+            font-weight: 700;
+            font-size: 0.95rem;
+            text-align: center;
+            margin: 0 auto 8px; 
+        }
+
         .check-indicator {
             position: absolute;
             top: 10px;

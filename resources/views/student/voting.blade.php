@@ -118,13 +118,24 @@
                                     // Allow multiple if position max for student > 1
                                     $isMultiple = (int)($posMaxForStudent ?? $position->max_winners) > 1;
                                 @endphp
-                                <label class="candidate-card" data-position="{{ $position->id }}" data-course="{{ $candidate->course }}" data-is-stem="{{ strtolower($candidate->course) === 'stem' ? 1 : 0 }}">
-                                    <input 
-                                        type="{{ $isMultiple ? 'checkbox' : 'radio' }}" 
-                                        name="position_{{ $position->id }}{{ $isMultiple ? '[]' : '' }}" 
-                                        value="{{ $candidate->id }}"
-                                        {{ $isMultiple ? (is_array(old("position_{$position->id}")) && in_array($candidate->id, old("position_{$position->id}")) ? 'checked' : '') : (old("position_{$position->id}") == $candidate->id ? 'checked' : '') }}
-                                    >
+                                <label class="candidate-card" data-position="{{ $position->id }}" data-candidate-id="{{ $candidate->id }}" data-course="{{ $candidate->course }}" data-is-stem="{{ strtolower($candidate->course) === 'stem' ? 1 : 0 }}">
+                                    @if($isMultiple)
+                                        {{-- Hidden inputs container for selected values (populated by JS) --}}
+                                        <div class="hidden-inputs" data-field="position_{{ $position->id }}">
+                                            @if(is_array(old("position_{$position->id}")))
+                                                @foreach(old("position_{$position->id}") as $sel)
+                                                    <input type="hidden" name="position_{{ $position->id }}[]" value="{{ $sel }}">
+                                                @endforeach
+                                            @endif
+                                        </div>
+                                    @else
+                                        <input 
+                                            type="radio" 
+                                            name="position_{{ $position->id }}" 
+                                            value="{{ $candidate->id }}"
+                                            {{ old("position_{$position->id}") == $candidate->id ? 'checked' : '' }}
+                                        >
+                                    @endif
                                     <div class="check-indicator">
                                         <i class="bi bi-check-lg"></i>
                                     </div>
@@ -227,62 +238,71 @@
         
         // Handle candidate card selection (supports radio and checkbox)
         document.querySelectorAll('.candidate-card').forEach(card => {
-            card.addEventListener('click', function(e) {
-                // Ignore clicks directly on inputs (they'll be handled naturally)
-                if (e.target && e.target.tagName === 'INPUT') return;
-
-                const input = this.querySelector('input[type="radio"], input[type="checkbox"]');
-                const position = this.dataset.position;
-
-                if (!input) return;
-
-                // If checkbox (multiple selection)
-                if (input.type === 'checkbox') {
-                    const isStem = this.dataset.isStem == '1';
-                    const cards = Array.from(document.querySelectorAll(`.candidate-card[data-position="${position}"]`));
-                    const checkboxes = cards.map(c => c.querySelector('input[type="checkbox"]')).filter(Boolean);
-                    const checkedBoxes = checkboxes.filter(cb => cb.checked);
-
-                    // Determine general max winners from position card container
+                card.addEventListener('click', function(e) {
+                    const position = this.dataset.position;
                     const posContainer = this.closest('.position-card');
+                    if (!posContainer) return;
 
-                    // Count current STEM selections
-                    const stemSelected = checkboxes.filter(cb => cb.checked && cb.closest('.candidate-card').dataset.isStem == '1').length;
-
-                    // Read position max from data attribute (set server-side)
                     const posMax = parseInt(posContainer.dataset.maxWinners || '1', 10);
+                    const isMultiple = posMax > 1;
 
-                    // STEM-specific cap (2)
-                    const STEM_CAP = 2;
+                    const candidateId = this.dataset.candidateId;
+                    if (!candidateId) return;
 
-                    // If attempting to check this box (it was unchecked), enforce limits
-                    if (!input.checked) {
-                        // If selecting would exceed general max winners
-                        if (checkedBoxes.length >= posMax) {
-                            showInlineError(this, `You may only choose up to ${posMax} candidate(s) for this position.`);
-                            return;
+                    if (isMultiple) {
+                        // Manage hidden inputs under the position container
+                        const hiddenContainer = posContainer.querySelector('.hidden-inputs');
+                        if (!hiddenContainer) return;
+
+                        const existing = Array.from(hiddenContainer.querySelectorAll('input[type="hidden"]'));
+                        const values = existing.map(i => i.value);
+
+                        const isSelected = values.includes(candidateId);
+
+                        // Count STEM selected
+                        const stemSelected = Array.from(posContainer.querySelectorAll('.candidate-card.selected')).filter(c => c.dataset.isStem == '1').length;
+                        const isStem = this.dataset.isStem == '1';
+
+                        if (!isSelected) {
+                            // Enforce max
+                            if (values.length >= posMax) {
+                                showInlineError(this, `You may only choose up to ${posMax} candidate(s) for this position.`);
+                                return;
+                            }
+                            // Enforce STEM cap when applicable (only affects senators; server also enforces)
+                            if (isStem && stemSelected >= 2) {
+                                showInlineError(this, `You may only choose up to 2 STEM candidate(s) for this position.`);
+                                return;
+                            }
+
+                            // Add hidden input
+                            const input = document.createElement('input');
+                            input.type = 'hidden';
+                            input.name = `position_${position}[]`;
+                            input.value = candidateId;
+                            hiddenContainer.appendChild(input);
+
+                            this.classList.add('selected');
+                        } else {
+                            // Remove hidden input
+                            const match = existing.find(i => i.value === candidateId);
+                            if (match && match.parentNode) match.parentNode.removeChild(match);
+                            this.classList.remove('selected');
                         }
-
-                        // If candidate is STEM and would exceed STEM cap
-                        if (isStem && stemSelected >= STEM_CAP) {
-                            showInlineError(this, `You may only choose up to ${STEM_CAP} STEM candidate(s) for this position.`);
-                            return;
-                        }
-
-                        input.checked = true;
-                        this.classList.add('selected');
                     } else {
-                        // Uncheck
-                        input.checked = false;
-                        this.classList.remove('selected');
+                        // Single selection radio behavior
+                        // Unselect siblings
+                        posContainer.querySelectorAll('.candidate-card.selected').forEach(c => c.classList.remove('selected'));
+                        // Remove any existing radio input selection (radios are native inputs)
+                        const radios = posContainer.querySelectorAll('input[type="radio"]');
+                        radios.forEach(r => r.checked = false);
+
+                        // Find this label's radio and check it (if present)
+                        const radio = this.querySelector('input[type="radio"]');
+                        if (radio) radio.checked = true;
+                        this.classList.add('selected');
                     }
-                } else {
-                    // Radio: unselect siblings then select this one
-                    const radios = document.querySelectorAll(`.candidate-card[data-position="${position}"] input[type="radio"]`);
-                    radios.forEach(r => r.closest('.candidate-card').classList.remove('selected'));
-                    input.checked = true;
-                    this.classList.add('selected');
-                }
+                });
             });
         });
 

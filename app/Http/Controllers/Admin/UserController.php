@@ -66,9 +66,10 @@ class UserController extends Controller
                 'email' => 'required|email|max:255|unique:users,email',
                 'password' => 'required|string|min:8|confirmed',
                 'user_type' => 'required|in:student,admin',
-                'strand' => 'nullable|string|max:100',
-                'year' => 'nullable|string|max:50',
-                'gender' => 'nullable|in:Male,Female,Other',
+                    'strand' => 'nullable|string|max:100',
+                    'year' => 'nullable|string|max:50',
+                    'house' => 'nullable|string|max:100',
+                    'gender' => 'nullable|in:Male,Female,Other',
             ]);
 
             DB::beginTransaction();
@@ -137,6 +138,7 @@ class UserController extends Controller
                 'user_type' => 'required|in:student,admin',
                 'strand' => 'nullable|string|max:100',
                 'year' => 'nullable|string|max:50',
+                'house' => 'nullable|string|max:100',
                 'gender' => 'nullable|in:Male,Female,Other',
                 'has_voted' => 'boolean',
             ]);
@@ -293,12 +295,12 @@ class UserController extends Controller
         $callback = function() {
             $file = fopen('php://output', 'w');
             
-            // Add CSV headers
-            fputcsv($file, ['usn', 'lastname', 'firstname', 'strand', 'year', 'gender', 'password']);
+            // Add CSV headers (include 'house')
+            fputcsv($file, ['usn', 'lastname', 'firstname', 'strand', 'year', 'house', 'gender', 'password']);
             
-            // Add example row
-            fputcsv($file, ['2024-001', 'Doe', 'John', 'STEM', '1st Year', 'Male', 'password123']);
-            fputcsv($file, ['2024-002', 'Smith', 'Jane', 'ABM', '2nd Year', 'Female', 'password123']);
+            // Add example rows
+            fputcsv($file, ['2024-001', 'Doe', 'John', 'STEM', '1st Year', 'Red', 'Male', 'password123']);
+            fputcsv($file, ['2024-002', 'Smith', 'Jane', 'ABM', '2nd Year', 'Blue', 'Female', 'password123']);
             
             fclose($file);
         };
@@ -337,10 +339,9 @@ class UserController extends Controller
                     return strtolower(trim($col));
                 }, $header);
                 
-                // Validate header format
-                $expectedHeader = ['usn', 'lastname', 'firstname', 'strand', 'year', 'gender', 'password'];
+                // Validate header format (include 'house')
+                $expectedHeader = ['usn', 'lastname', 'firstname', 'strand', 'year', 'house', 'gender', 'password'];
                 if ($header !== $expectedHeader) {
-                    // ...existing code...
                     return redirect()->back()
                         ->with('error', 'Invalid CSV format. Expected columns: ' . implode(', ', $expectedHeader));
                 }
@@ -354,16 +355,17 @@ class UserController extends Controller
                     if (empty(array_filter($row))) {
                         continue;
                     }
-                    if (count($row) !== 7) {
+                    if (count($row) !== 8) {
                         $errors[] = "Line {$lineNumber}: Invalid number of columns";
                         continue;
                     }
-                    list($usn, $lastname, $firstname, $strand, $year, $gender, $password) = $row;
+                    list($usn, $lastname, $firstname, $strand, $year, $house, $gender, $password) = $row;
                     $usn = trim($usn);
                     $lastname = trim($lastname);
                     $firstname = trim($firstname);
                     $strand = trim($strand);
                     $year = trim($year);
+                    $house = trim($house);
                     $gender = trim($gender);
                     $password = trim($password);
                     if (empty($usn) || empty($lastname) || empty($firstname) || empty($password)) {
@@ -389,6 +391,7 @@ class UserController extends Controller
                         'firstname' => $firstname,
                         'strand' => $strand ?: null,
                         'year' => $year ?: null,
+                        'house' => $house ?: null,
                         'gender' => $gender ?: null,
                         'email' => $email,
                         'password' => Hash::make($password),

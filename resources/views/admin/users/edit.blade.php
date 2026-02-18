@@ -146,6 +146,21 @@
                                 </div>
                             </div>
 
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label for="house" class="form-label">House</label>
+                                    <input type="text"
+                                           class="form-control @error('house') is-invalid @enderror"
+                                           id="house"
+                                           name="house"
+                                           value="{{ old('house', $user->house) }}"
+                                           placeholder="e.g., Red, Blue, Alpha">
+                                    @error('house')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+
                             <div class="mb-3">
                                 <label for="has_voted" class="form-label">Voting Status</label>
                                 <select class="form-select @error('has_voted') is-invalid @enderror" 

@@ -258,7 +258,7 @@
                     <div class="modal-body">
                         <div class="alert alert-info">
                             <i class="bi bi-info-circle"></i> 
-                            <strong>CSV Format:</strong> usn, lastname, firstname, course, year_level, gender, password
+                            <strong>CSV Format:</strong> usn, lastname, firstname, strand, year, house, gender, password
                         </div>
                         <div class="mb-3">
                             <label for="csv_file" class="form-label">Select CSV File</label>

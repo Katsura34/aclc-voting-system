@@ -87,11 +87,11 @@
                     <div class="candidates-grid">
                         @php
                             $user = Auth::user();
-                            $isRepresentative = strtolower(trim($position->name)) === 'representative';
+                            $isRepresentative = strtolower(trim($position->name)) === 'senators';
                         @endphp
                         @foreach($position->candidates as $candidate)
                             @if(
-                                $isRepresentative && $candidate->course == $user->strand && $candidate->year_level == $user->year
+                                $isRepresentative && $candidate->course == $user->strand
                                     ? true
                                     : !$isRepresentative
                             )
@@ -155,6 +155,11 @@
                 </button>
             </div>
         </form>
+
+
+
+
+        
     </div>
 
     <!-- Review Modal -->

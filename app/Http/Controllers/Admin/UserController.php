@@ -352,13 +352,21 @@ class UserController extends Controller
                     return strtolower(trim($col));
                 }, $header);
                 
-                // Validate header format (include 'house')
-                $expectedHeader = ['usn', 'lastname', 'firstname', 'strand', 'year', 'house', 'gender', 'password'];
-                if ($header !== $expectedHeader) {
+                // Support two CSV formats:
+                // Full import: ['usn','lastname','firstname','strand','year','house','gender','password']
+                // Short update-only: ['lastname','firstname','house']
+                $fullHeader = ['usn', 'lastname', 'firstname', 'strand', 'year', 'house', 'gender', 'password'];
+                $shortHeader = ['lastname', 'firstname', 'house'];
+
+                if ($header === $fullHeader) {
+                    $mode = 'full';
+                } elseif ($header === $shortHeader) {
+                    $mode = 'short';
+                } else {
                     return redirect()->back()
-                        ->with('error', 'Invalid CSV format. Expected columns: ' . implode(', ', $expectedHeader));
+                        ->with('error', 'Invalid CSV format. Expected columns: ' . implode(', ', $fullHeader) . ' OR ' . implode(', ', $shortHeader));
                 }
-                
+
                 $imported = 0;
                 $updated = 0;
                 $errors = [];
@@ -369,36 +377,66 @@ class UserController extends Controller
                     if (empty(array_filter($row))) {
                         continue;
                     }
-                    if (count($row) !== 8) {
-                        $errors[] = "Line {$lineNumber}: Invalid number of columns";
-                        continue;
-                    }
-                    list($usn, $lastname, $firstname, $strand, $year, $house, $gender, $password) = $row;
-                    $usn = trim($usn);
-                    $lastname = trim($lastname);
-                    $firstname = trim($firstname);
-                    $strand = trim($strand);
-                    $year = trim($year);
-                    $house = trim($house);
-                    $gender = trim($gender);
-                    $password = trim($password);
-                    if (empty($usn) || empty($lastname) || empty($firstname) || empty($password)) {
-                        $errors[] = "Line {$lineNumber}: USN, lastname, firstname, and password are required";
-                        continue;
-                    }
-                    // Try to find an existing user by firstname + lastname (case-insensitive)
-                    $existing = User::whereRaw('LOWER(firstname) = ? AND LOWER(lastname) = ?', [strtolower($firstname), strtolower($lastname)])->first();
-                    if ($existing) {
-                        // Update house if provided
-                        if (!empty($house) && $existing->house !== $house) {
-                            try {
-                                $existing->update(['house' => $house]);
-                                $updated++;
-                            } catch (\Exception $e) {
-                                $errors[] = "Line {$lineNumber}: Failed to update house for {$firstname} {$lastname}: " . $e->getMessage();
-                            }
+                    if ($mode === 'full') {
+                        if (count($row) !== 8) {
+                            $errors[] = "Line {$lineNumber}: Invalid number of columns for full import";
+                            continue;
                         }
-                        // Skip creating a new user for this row
+                        list($usn, $lastname, $firstname, $strand, $year, $house, $gender, $password) = $row;
+                        $usn = trim($usn);
+                        $lastname = trim($lastname);
+                        $firstname = trim($firstname);
+                        $strand = trim($strand);
+                        $year = trim($year);
+                        $house = trim($house);
+                        $gender = trim($gender);
+                        $password = trim($password);
+                        if (empty($usn) || empty($lastname) || empty($firstname) || empty($password)) {
+                            $errors[] = "Line {$lineNumber}: USN, lastname, firstname, and password are required";
+                            continue;
+                        }
+                        // Try to find an existing user by firstname + lastname (case-insensitive)
+                        $existing = User::whereRaw('LOWER(firstname) = ? AND LOWER(lastname) = ?', [strtolower($firstname), strtolower($lastname)])->first();
+                        if ($existing) {
+                            // Update house if provided
+                            if (!empty($house) && $existing->house !== $house) {
+                                try {
+                                    $existing->update(['house' => $house]);
+                                    $updated++;
+                                } catch (\Exception $e) {
+                                    $errors[] = "Line {$lineNumber}: Failed to update house for {$firstname} {$lastname}: " . $e->getMessage();
+                                }
+                            }
+                            // Skip creating a new user for this row
+                            continue;
+                        }
+                    } else { // short mode
+                        if (count($row) !== 3) {
+                            $errors[] = "Line {$lineNumber}: Invalid number of columns for short update (expected 3)";
+                            continue;
+                        }
+                        list($lastname, $firstname, $house) = $row;
+                        $lastname = trim($lastname);
+                        $firstname = trim($firstname);
+                        $house = trim($house);
+                        if (empty($lastname) || empty($firstname)) {
+                            $errors[] = "Line {$lineNumber}: lastname and firstname are required for short update";
+                            continue;
+                        }
+                        $existing = User::whereRaw('LOWER(firstname) = ? AND LOWER(lastname) = ?', [strtolower($firstname), strtolower($lastname)])->first();
+                        if ($existing) {
+                            if (!empty($house) && $existing->house !== $house) {
+                                try {
+                                    $existing->update(['house' => $house]);
+                                    $updated++;
+                                } catch (\Exception $e) {
+                                    $errors[] = "Line {$lineNumber}: Failed to update house for {$firstname} {$lastname}: " . $e->getMessage();
+                                }
+                            }
+                        } else {
+                            $errors[] = "Line {$lineNumber}: No existing user found for {$firstname} {$lastname}";
+                        }
+                        // Short mode does not create new users, continue to next row
                         continue;
                     }
                     $email = $usn . '@aclc.edu.ph';

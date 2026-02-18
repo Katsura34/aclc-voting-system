@@ -44,12 +44,11 @@ class ResultController extends Controller
                         $candidateResults = [];
                         $totalVotes = 0;
 
-                        // Special logic for Representative, Senators, and House-type positions:
+                        // Special logic for Representative and Senators:
                         // - Representative: group by course + year and count votes only from matching students
                         // - Senators: group by course (strand) and count votes only from students in that strand
-                        // - House-type: group by candidate.house and count votes only from users in that house
                         $posNameLower = strtolower(trim($position->name));
-                        if ($posNameLower === 'representative' || $posNameLower === 'senators' || strpos($posNameLower, 'house') !== false) {
+                        if ($posNameLower === 'representative' || $posNameLower === 'senators') {
                             $groups = [];
 
                             foreach ($position->candidates as $candidate) {
@@ -77,7 +76,7 @@ class ResultController extends Controller
                                             'abstain_votes' => 0,
                                         ];
                                     }
-                                } elseif ($posNameLower === 'senators') {
+                                } else { // senators: group by course only, count votes only from users with matching strand
                                     $groupKey = $course;
 
                                     $voteCount = Vote::where('position_id', $position->id)
@@ -92,25 +91,6 @@ class ResultController extends Controller
                                         $groups[$groupKey] = [
                                             'course' => $course,
                                             'year' => '',
-                                            'candidates' => [],
-                                            'group_total_votes' => 0,
-                                            'abstain_votes' => 0,
-                                        ];
-                                    }
-                                } else { // house-type positions
-                                    $groupKey = $candidate->house ?? 'Unknown';
-
-                                    $voteCount = Vote::where('position_id', $position->id)
-                                        ->where('election_id', $selectedElection->id)
-                                        ->where('candidate_id', $candidate->id)
-                                        ->whereHas('user', function($query) use ($candidate) {
-                                            $query->where('house', $candidate->house);
-                                        })
-                                        ->count();
-
-                                    if (!isset($groups[$groupKey])) {
-                                        $groups[$groupKey] = [
-                                            'house' => $candidate->house ?? 'Unknown',
                                             'candidates' => [],
                                             'group_total_votes' => 0,
                                             'abstain_votes' => 0,
@@ -140,8 +120,6 @@ class ResultController extends Controller
                                 'total_votes' => $totalVotes,
                                 'abstain_votes' => 0,
                             ];
-                        
-                        }
                         } else {
                             foreach ($position->candidates as $candidate) {
                                 $voteCount = $candidate->votes()
@@ -225,12 +203,11 @@ class ResultController extends Controller
             foreach ($selectedElection->positions as $position) {
                 $totalVotes = 0;
 
-                // Representative, Senators, and House-type special handling:
+                // Representative and Senators special handling:
                 // - Representative: group by course/year and only count users matching candidate's course/year
                 // - Senators: group by course (strand) and only count users whose strand matches candidate's course
-                // - House-type: group by candidate.house and only count users whose house matches candidate.house
                 $posNameLower = strtolower(trim($position->name));
-                if ($posNameLower === 'representative' || $posNameLower === 'senators' || strpos($posNameLower, 'house') !== false) {
+                if ($posNameLower === 'representative' || $posNameLower === 'senators') {
                     $groups = [];
                     foreach ($position->candidates as $candidate) {
                         $course = $candidate->course ?? 'Unknown';
@@ -257,7 +234,7 @@ class ResultController extends Controller
                                     'abstain_votes' => 0,
                                 ];
                             }
-                        } elseif ($posNameLower === 'senators') {
+                        } else { // senators: group by course only
                             $groupKey = $course;
 
                             $voteCount = Vote::where('position_id', $position->id)
@@ -272,25 +249,6 @@ class ResultController extends Controller
                                 $groups[$groupKey] = [
                                     'course' => $course,
                                     'year' => '',
-                                    'candidates' => [],
-                                    'group_total_votes' => 0,
-                                    'abstain_votes' => 0,
-                                ];
-                            }
-                        } else { // house-type
-                            $groupKey = $candidate->house ?? 'Unknown';
-
-                            $voteCount = Vote::where('position_id', $position->id)
-                                ->where('election_id', $electionId)
-                                ->where('candidate_id', $candidate->id)
-                                ->whereHas('user', function($query) use ($candidate) {
-                                    $query->where('house', $candidate->house);
-                                })
-                                ->count();
-
-                            if (!isset($groups[$groupKey])) {
-                                $groups[$groupKey] = [
-                                    'house' => $candidate->house ?? 'Unknown',
                                     'candidates' => [],
                                     'group_total_votes' => 0,
                                     'abstain_votes' => 0,

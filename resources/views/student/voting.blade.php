@@ -80,8 +80,8 @@
                         {{ $position->name }}
                     </div>
                     <div class="position-info">
-                        @if($position->max_winners > 1)
-                            Choose up to {{ $position->max_winners }} candidates
+                        @if($posMaxForStudent > 1)
+                            Choose up to {{ $posMaxForStudent }} candidate(s)
                         @else
                             Choose one candidate
                         @endif
@@ -93,6 +93,17 @@
                     @enderror
 
                     <div class="candidates-grid">
+                        {{-- Hidden inputs container for multi-select positions (one per position) --}}
+                        @php $isMultipleGlobal = (int)($posMaxForStudent ?? $position->max_winners) > 1; @endphp
+                        @if($isMultipleGlobal)
+                            <div class="hidden-inputs" data-field="position_{{ $position->id }}">
+                                @if(is_array(old("position_{$position->id}")))
+                                    @foreach(old("position_{$position->id}") as $sel)
+                                        <input type="hidden" name="position_{{ $position->id }}[]" value="{{ $sel }}">
+                                    @endforeach
+                                @endif
+                            </div>
+                        @endif
                         @php
                             $user = Auth::user();
                             $isRepresentative = strtolower(trim($position->name)) === 'senators';
@@ -119,16 +130,7 @@
                                     $isMultiple = (int)($posMaxForStudent ?? $position->max_winners) > 1;
                                 @endphp
                                 <label class="candidate-card" data-position="{{ $position->id }}" data-candidate-id="{{ $candidate->id }}" data-course="{{ $candidate->course }}" data-is-stem="{{ strtolower($candidate->course) === 'stem' ? 1 : 0 }}">
-                                    @if($isMultiple)
-                                        {{-- Hidden inputs container for selected values (populated by JS) --}}
-                                        <div class="hidden-inputs" data-field="position_{{ $position->id }}">
-                                            @if(is_array(old("position_{$position->id}")))
-                                                @foreach(old("position_{$position->id}") as $sel)
-                                                    <input type="hidden" name="position_{{ $position->id }}[]" value="{{ $sel }}">
-                                                @endforeach
-                                            @endif
-                                        </div>
-                                    @else
+                                    @if(!$isMultiple)
                                         <input 
                                             type="radio" 
                                             name="position_{{ $position->id }}" 

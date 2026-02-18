@@ -351,45 +351,87 @@
             
             positions.forEach(position => {
                 const positionTitle = position.querySelector('.position-title').textContent.trim();
-                const selectedRadio = position.querySelector('input[type="radio"]:checked');
-                
-                if (selectedRadio) {
-                    const candidateCard = selectedRadio.closest('.candidate-card');
-                    const candidateName = candidateCard.querySelector('.candidate-name').textContent.trim();
-                    const candidateParty = candidateCard.querySelector('.candidate-party');
-                    const partyName = candidateParty ? candidateParty.textContent.trim() : 'Independent';
-                    
-                    // Escape all user-controlled values to prevent XSS
-                    const safePositionTitle = escapeHtml(positionTitle);
-                    const safeCandidateName = escapeHtml(candidateName);
-                    const safePartyName = escapeHtml(partyName);
-                    
-                    // Get and sanitize party colors
-                    const rawBgColor = candidateParty ? candidateParty.style.backgroundColor : '';
-                    const rawTextColor = candidateParty ? candidateParty.style.color : '';
-                    const partyBgColor = sanitizeColor(rawBgColor) || DEFAULT_PARTY_BG;
-                    const partyTextColor = sanitizeColor(rawTextColor) || DEFAULT_PARTY_TEXT;
-                    
-                    reviewHTML += `
-                        <div class="list-group-item">
-                            <div class="d-flex w-100 justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="mb-1" style="color: var(--aclc-blue);">
-                                        <i class="bi bi-award"></i> ${safePositionTitle}
-                                    </h6>
-                                    <p class="mb-0">
-                                        <strong>${safeCandidateName}</strong>
-                                        <span class="badge" style="background-color: ${partyBgColor}; color: ${partyTextColor};">
-                                            ${safePartyName}
-                                        </span>
-                                    </p>
+                const posMax = parseInt(position.dataset.maxWinners || '1', 10);
+
+                if (posMax > 1) {
+                    const checkedBoxes = position.querySelectorAll('input[type="checkbox"]:checked');
+                    if (checkedBoxes.length === 0) {
+                        allSelected = false;
+                    } else {
+                        checkedBoxes.forEach(cb => {
+                            const candidateCard = cb.closest('.candidate-card');
+                            const candidateName = candidateCard.querySelector('.candidate-name').textContent.trim();
+                            const candidateParty = candidateCard.querySelector('.candidate-party');
+                            const partyName = candidateParty ? candidateParty.textContent.trim() : 'Independent';
+
+                            const safePositionTitle = escapeHtml(positionTitle);
+                            const safeCandidateName = escapeHtml(candidateName);
+                            const safePartyName = escapeHtml(partyName);
+
+                            const rawBgColor = candidateParty ? candidateParty.style.backgroundColor : '';
+                            const rawTextColor = candidateParty ? candidateParty.style.color : '';
+                            const partyBgColor = sanitizeColor(rawBgColor) || DEFAULT_PARTY_BG;
+                            const partyTextColor = sanitizeColor(rawTextColor) || DEFAULT_PARTY_TEXT;
+
+                            reviewHTML += `
+                                <div class="list-group-item">
+                                    <div class="d-flex w-100 justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1" style="color: var(--aclc-blue);">
+                                                <i class="bi bi-award"></i> ${safePositionTitle}
+                                            </h6>
+                                            <p class="mb-0">
+                                                <strong>${safeCandidateName}</strong>
+                                                <span class="badge" style="background-color: ${partyBgColor}; color: ${partyTextColor};">
+                                                    ${safePartyName}
+                                                </span>
+                                            </p>
+                                        </div>
+                                        <i class="bi bi-check-circle-fill text-success" style="font-size: 1.5rem;"></i>
+                                    </div>
                                 </div>
-                                <i class="bi bi-check-circle-fill text-success" style="font-size: 1.5rem;"></i>
-                            </div>
-                        </div>
-                    `;
+                            `;
+                        });
+                    }
                 } else {
-                    allSelected = false;
+                    const selectedRadio = position.querySelector('input[type="radio"]:checked');
+                    if (selectedRadio) {
+                        const candidateCard = selectedRadio.closest('.candidate-card');
+                        const candidateName = candidateCard.querySelector('.candidate-name').textContent.trim();
+                        const candidateParty = candidateCard.querySelector('.candidate-party');
+                        const partyName = candidateParty ? candidateParty.textContent.trim() : 'Independent';
+
+                        // Escape and sanitize
+                        const safePositionTitle = escapeHtml(positionTitle);
+                        const safeCandidateName = escapeHtml(candidateName);
+                        const safePartyName = escapeHtml(partyName);
+
+                        const rawBgColor = candidateParty ? candidateParty.style.backgroundColor : '';
+                        const rawTextColor = candidateParty ? candidateParty.style.color : '';
+                        const partyBgColor = sanitizeColor(rawBgColor) || DEFAULT_PARTY_BG;
+                        const partyTextColor = sanitizeColor(rawTextColor) || DEFAULT_PARTY_TEXT;
+
+                        reviewHTML += `
+                            <div class="list-group-item">
+                                <div class="d-flex w-100 justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1" style="color: var(--aclc-blue);">
+                                            <i class="bi bi-award"></i> ${safePositionTitle}
+                                        </h6>
+                                        <p class="mb-0">
+                                            <strong>${safeCandidateName}</strong>
+                                            <span class="badge" style="background-color: ${partyBgColor}; color: ${partyTextColor};">
+                                                ${safePartyName}
+                                            </span>
+                                        </p>
+                                    </div>
+                                    <i class="bi bi-check-circle-fill text-success" style="font-size: 1.5rem;"></i>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        allSelected = false;
+                    }
                 }
             });
             

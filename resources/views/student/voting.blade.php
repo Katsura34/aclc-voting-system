@@ -108,7 +108,7 @@
                             $user = Auth::user();
                             $isRepresentative = strtolower(trim($position->name)) === 'senators';
                             $posName = strtolower(trim($position->name));
-                            $isHousePosition = in_array($posName, ['house lord', 'house lady']);
+                            $isHousePosition = in_array($posName, ['house lord/lady', 'house lord']);
 
                             // Normalize for case-insensitive comparisons
                             $studentHouse = strtolower(trim($user->house ?? ''));
@@ -157,6 +157,9 @@
                                     </div>
                                     @if($isRepresentative && ($candidate->course ?? ''))
                                         <div class="candidate-course-badge">{{ strtoupper($candidate->course) }} Senator</div>
+                                    @endif
+                                    @if($isHousePosition && ($candidate->house ?? ''))
+                                        <div class="candidate-course-badge">{{ strtoupper($candidate->house) }} House</div>
                                     @endif
                                     
                                     <div class="candidate-details">

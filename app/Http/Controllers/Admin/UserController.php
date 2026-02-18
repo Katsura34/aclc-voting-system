@@ -59,18 +59,31 @@ class UserController extends Controller
     public function store(Request $request)
     {
         try {
+            // Validate input (uniqueness handled manually to allow updating existing users by name)
             $validated = $request->validate([
-                'usn' => 'required|string|max:50|unique:users,usn',
+                'usn' => 'required|string|max:50',
                 'firstname' => 'required|string|max:100',
                 'lastname' => 'required|string|max:100',
-                'email' => 'required|email|max:255|unique:users,email',
+                'email' => 'required|email|max:255',
                 'password' => 'required|string|min:8|confirmed',
                 'user_type' => 'required|in:student,admin',
-                    'strand' => 'nullable|string|max:100',
-                    'year' => 'nullable|string|max:50',
-                    'house' => 'nullable|string|max:100',
-                    'gender' => 'nullable|in:Male,Female,Other',
+                'strand' => 'nullable|string|max:100',
+                'year' => 'nullable|string|max:50',
+                'house' => 'nullable|string|max:100',
+                'gender' => 'nullable|in:Male,Female,Other',
             ]);
+
+            // If a user already exists by firstname+lastname, update only the house and return
+            $existing = User::whereRaw('LOWER(firstname) = ? AND LOWER(lastname) = ?', [strtolower($validated['firstname']), strtolower($validated['lastname'])])->first();
+            if ($existing) {
+                if (!empty($validated['house']) && $existing->house !== $validated['house']) {
+                    $existing->update(['house' => $validated['house']]);
+                    Log::info('Existing user house updated via create form', ['user_id' => $existing->id, 'name' => $existing->firstname . ' ' . $existing->lastname, 'house' => $validated['house']]);
+                }
+
+                return redirect()->route('admin.users.index')
+                    ->with('success', 'Existing user found — house updated.');
+            }
 
             DB::beginTransaction();
             

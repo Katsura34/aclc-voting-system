@@ -13,6 +13,7 @@ class Candidate extends Model
         'party_id',
         'course',
         'year_level',
+        'house',
         'bio',
         'photo_path',
     ];

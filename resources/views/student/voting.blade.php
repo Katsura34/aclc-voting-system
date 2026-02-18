@@ -91,9 +91,10 @@
                         @endphp
                         @foreach($position->candidates as $candidate)
                             @if(
-                                $isRepresentative && $candidate->course == $user->strand
-                                    ? true
-                                    : !$isRepresentative
+                                // only show candidates from the same house as the logged-in student
+                                (($candidate->house ?? null) === ($user->house ?? null)) &&
+                                // preserve the existing senators filter by course/strand
+                                ($isRepresentative ? ($candidate->course == $user->strand) : true)
                             )
                                 <label class="candidate-card" data-position="{{ $position->id }}">
                                     <input 

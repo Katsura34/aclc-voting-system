@@ -23,6 +23,7 @@ class User extends Authenticatable
         'lastname',
         'strand',
         'year',
+        'house',
         'gender',
         'email',
         'user_type',

@@ -68,12 +68,27 @@ class VotingController extends Controller
                     ->with('error', 'No active election found.');
             }
 
-            // Validate votes - required only if position has candidates
+            // Validate votes - support arrays for multi-winner positions
             $positions = Position::where('election_id', $election->id)->get();
             $rules = [];
             foreach ($positions as $position) {
                 if ($position->candidates()->count() > 0) {
-                    $rules["position_{$position->id}"] = 'required|exists:candidates,id';
+                    $field = "position_{$position->id}";
+
+                    // Determine per-student max for senators: STEM students may choose up to 2
+                    $isSenator = strtolower(trim($position->name)) === 'senators';
+                    $studentStrand = strtolower(trim($user->strand ?? ''));
+                    $maxForStudent = ($isSenator && $studentStrand === 'stem') ? 2 : (int)$position->max_winners;
+
+                    if ($maxForStudent > 1) {
+                        // expect an array of candidate ids with a maximum size
+                        $rules[$field] = 'required|array|min:1|max:' . $maxForStudent;
+                        // each selected candidate must exist and belong to this position
+                        $rules[$field . '.*'] = 'exists:candidates,id,position_id,' . $position->id;
+                    } else {
+                        // single selection
+                        $rules[$field] = 'required|exists:candidates,id,position_id,' . $position->id;
+                    }
                 }
             }
             $validated = $request->validate($rules);
@@ -84,31 +99,74 @@ class VotingController extends Controller
             try {
                 // Save votes
                 foreach ($positions as $position) {
-                    $candidateId = $request->input("position_{$position->id}");
-                    
-                    Vote::create([
-                        'user_id' => $user->id,
-                        'election_id' => $election->id,
-                        'position_id' => $position->id,
-                        'candidate_id' => $candidateId,
-                    ]);
+                    $field = "position_{$position->id}";
 
-                    // Create audit log entry
-                    $candidate = Candidate::find($candidateId);
-                    AuditLog::create([
-                        'user_id' => $user->id,
-                        'election_id' => $election->id,
-                        'position_id' => $position->id,
-                        'candidate_id' => $candidateId,
-                        'action_type' => 'vote_cast',
-                        'user_usn' => $user->usn,
-                        'user_name' => $user->full_name,
-                        'candidate_name' => $candidate ? $candidate->full_name : null,
-                        'position_name' => $position->name,
-                        'ip_address' => $request->ip(),
-                        'user_agent' => $request->userAgent(),
-                        'voted_at' => now(),
-                    ]);
+                    // Determine per-student max for senators: STEM students may choose up to 2
+                    $isSenator = strtolower(trim($position->name)) === 'senators';
+                    $studentStrand = strtolower(trim($user->strand ?? ''));
+                    $maxForStudent = ($isSenator && $studentStrand === 'stem') ? 2 : (int)$position->max_winners;
+
+                    $selected = $request->input($field);
+
+                    if (is_array($selected)) {
+                        $selected = array_values(array_unique($selected));
+                        // enforce max just in case
+                        if (count($selected) > $maxForStudent) {
+                            throw new \Exception("Too many selections for position {$position->name}");
+                        }
+
+                        foreach ($selected as $candidateId) {
+                            Vote::create([
+                                'user_id' => $user->id,
+                                'election_id' => $election->id,
+                                'position_id' => $position->id,
+                                'candidate_id' => $candidateId,
+                            ]);
+
+                            // Create audit log entry
+                            $candidate = Candidate::find($candidateId);
+                            AuditLog::create([
+                                'user_id' => $user->id,
+                                'election_id' => $election->id,
+                                'position_id' => $position->id,
+                                'candidate_id' => $candidateId,
+                                'action_type' => 'vote_cast',
+                                'user_usn' => $user->usn,
+                                'user_name' => $user->full_name,
+                                'candidate_name' => $candidate ? $candidate->full_name : null,
+                                'position_name' => $position->name,
+                                'ip_address' => $request->ip(),
+                                'user_agent' => $request->userAgent(),
+                                'voted_at' => now(),
+                            ]);
+                        }
+                    } else {
+                        // single selection
+                        $candidateId = $selected;
+                        Vote::create([
+                            'user_id' => $user->id,
+                            'election_id' => $election->id,
+                            'position_id' => $position->id,
+                            'candidate_id' => $candidateId,
+                        ]);
+
+                        // Create audit log entry
+                        $candidate = Candidate::find($candidateId);
+                        AuditLog::create([
+                            'user_id' => $user->id,
+                            'election_id' => $election->id,
+                            'position_id' => $position->id,
+                            'candidate_id' => $candidateId,
+                            'action_type' => 'vote_cast',
+                            'user_usn' => $user->usn,
+                            'user_name' => $user->full_name,
+                            'candidate_name' => $candidate ? $candidate->full_name : null,
+                            'position_name' => $position->name,
+                            'ip_address' => $request->ip(),
+                            'user_agent' => $request->userAgent(),
+                            'voted_at' => now(),
+                        ]);
+                    }
                 }
 
                 // Mark user as voted

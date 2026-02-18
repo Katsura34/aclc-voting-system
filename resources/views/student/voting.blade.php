@@ -66,7 +66,15 @@
             @csrf
 
             @foreach($election->positions as $position)
-                <div class="position-card">
+                @php
+                    // Determine if this position should allow multiple selections for this student
+                    $user = Auth::user();
+                    $studentStrand = strtolower(trim($user->strand ?? ''));
+                    $isRepresentative = strtolower(trim($position->name)) === 'senators';
+                    // If senators and student is STEM, allow up to 2 selections for this position
+                    $posMaxForStudent = ($isRepresentative && $studentStrand === 'stem') ? 2 : $position->max_winners;
+                @endphp
+                <div class="position-card" data-max-winners="{{ $posMaxForStudent }}">
                     <div class="position-title">
                         <i class="bi bi-award"></i>
                         {{ $position->name }}
@@ -106,7 +114,10 @@
                                 // Other positions: show all candidates
                                 || (!$isRepresentative && !$isHousePosition)
                             )
-                                @php $isMultiple = $position->max_winners > 1; @endphp
+                                @php
+                                    // Allow multiple if position max for student > 1
+                                    $isMultiple = (int)($posMaxForStudent ?? $position->max_winners) > 1;
+                                @endphp
                                 <label class="candidate-card" data-position="{{ $position->id }}" data-course="{{ $candidate->course }}" data-is-stem="{{ strtolower($candidate->course) === 'stem' ? 1 : 0 }}">
                                     <input 
                                         type="{{ $isMultiple ? 'checkbox' : 'radio' }}" 

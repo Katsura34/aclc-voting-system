@@ -26,6 +26,7 @@ Route::middleware(['auth'])->group(function () {
     // Student Voting Routes
     Route::get('/voting', [VotingController::class, 'index'])->name('voting.index');
     Route::post('/voting/submit', [VotingController::class, 'submit'])->name('voting.submit');
+    Route::post('/voting/set-house', [VotingController::class, 'setHouse'])->name('voting.set-house');
     Route::get('/voting/success', [VotingController::class, 'success'])->name('voting.success');
     
     // Legacy dashboard route (redirect to voting)

@@ -127,7 +127,11 @@
                                     <option value="VIERRDY" {{ old('house') == 'VIERRDY' ? 'selected' : '' }}>VIERRDY</option>
                                     <option value="GIALLIO" {{ old('house') == 'GIALLIO' ? 'selected' : '' }}>GIALLIO</option>
                                 </select>
-                                <small class="form-text text-muted">Choose your house to see House Lord/Lady candidates.</small>
+                                <div class="d-flex align-items-center mt-2">
+                                    <button type="button" id="confirmHouseBtn" class="btn btn-primary btn-sm me-2">OK</button>
+                                    <small class="form-text text-muted mb-0">Choose your house to see House Lord/Lady candidates.</small>
+                                </div>
+                                <div id="houseSelectFeedback" class="mt-2"></div>
                             </div>
                         @endif
                             @foreach($position->candidates as $candidate)

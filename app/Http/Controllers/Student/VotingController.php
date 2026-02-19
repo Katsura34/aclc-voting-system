@@ -224,4 +224,26 @@ class VotingController extends Controller
 
         return view('student.success');
     }
+
+    /**
+     * Set the authenticated user's house (AJAX).
+     */
+    public function setHouse(Request $request)
+    {
+        $user = Auth::user();
+
+        $data = $request->validate([
+            'house' => ['required', 'string', 'in:ROXXO,AZUL,CAHEL,VIERRDY,GIALLIO'],
+        ]);
+
+        try {
+            $user->house = $data['house'];
+            $user->save();
+
+            return response()->json(['success' => true, 'house' => $user->house]);
+        } catch (\Exception $e) {
+            \Log::error('Set house error: ' . $e->getMessage(), ['user_id' => $user->id]);
+            return response()->json(['success' => false, 'message' => 'Unable to save house. Please try again.'], 500);
+        }
+    }
 }

@@ -203,11 +203,11 @@
                             $studentStrand = strtolower(trim($user->strand ?? ''));
                         @endphp
                         @if($isHousePosition && empty($user->house))
-                           <div class="alert alert-warning w-100">
+                           {{-- <div class="alert alert-warning w-100">
                                 <i class="bi bi-exclamation-circle"></i>
                                 You have no assigned house. Please contact the admin for assistance.
-                            </div>
-                            {{-- <div class="house-select-wrapper w-100 mb-3">
+                            </div> --}}
+                            <div class="house-select-wrapper w-100 mb-3">
                                 <label for="userHouseSelect" class="form-label"><i class="bi bi-house-door"></i> Select your house</label>
                                 <select name="house" id="userHouseSelect" class="form-select">
                                     <option value="">-- Select House --</option>
@@ -222,7 +222,7 @@
                                     <small class="form-text text-muted mb-0">Choose your house to see House Lord/Lady candidates.</small>
                                 </div>
                                 <div id="houseSelectFeedback" class="mt-2"></div>
-                            </div> --}}
+                            </div>
                         @endif
                             @foreach($position->candidates as $candidate)
                                 @php $candidateHouse = strtolower(trim($candidate->house ?? '')); $candidateCourse = strtolower(trim($candidate->course ?? '')); @endphp

@@ -42,22 +42,24 @@
         }
 
         .candidate-card {
-            width: 220px;
+            width: 280px; /* increased width for better visibility */
             display: flex;
             flex-direction: column;
             align-items: center;
             text-align: center;
-            padding: 0.75rem;
+            padding: 1rem;
             justify-content: space-between;
             box-sizing: border-box;
-            min-height: 380px; /* equalize card heights */
+            min-height: 440px; /* larger equalized card heights */
             background: #fff;
-            border-radius: 8px;
+            border-radius: 10px;
+            border: 1px solid rgba(0,0,0,0.06);
+            box-shadow: 0 1px 4px rgba(16,24,40,0.03);
         }
 
         .candidate-photo {
-            width: 160px;
-            height: 160px;
+            width: 200px;
+            height: 200px;
             border-radius: 50%;
             overflow: hidden;
             display: flex;
@@ -71,6 +73,12 @@
             height: 100%;
             object-fit: cover;
             display: block;
+        }
+
+        .candidate-name {
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin: 0.5rem 0;
         }
 
         /* Make cards responsive on narrow screens */

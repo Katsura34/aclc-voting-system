@@ -111,17 +111,25 @@
                             $posName = strtolower(trim($position->name));
                             $isHousePosition = in_array($posName, ['house lord/lady', 'house lord']);
 
-                            // Normalize for case-insensitive comparisons
-                            $studentHouse = strtolower(trim($user->house ?? ''));
+                            // Prefer previously selected house (old input) then user's assigned house
+                            $studentHouse = strtolower(trim(old('house', $user->house ?? '')));
                             $candidateHouse = null; // will be computed per candidate
                             $studentStrand = strtolower(trim($user->strand ?? ''));
                         @endphp
                         @if($isHousePosition && empty($user->house))
-                            <div class="alert alert-warning w-100">
-                                <i class="bi bi-exclamation-circle"></i>
-                                You have no assigned house. Please contact the admin for assistance.
+                            <div class="house-select-wrapper w-100 mb-3">
+                                <label for="userHouseSelect" class="form-label"><i class="bi bi-house-door"></i> Select your house</label>
+                                <select name="house" id="userHouseSelect" class="form-select">
+                                    <option value="">-- Select House --</option>
+                                    <option value="ROXXO" {{ old('house') == 'ROXXO' ? 'selected' : '' }}>ROXXO</option>
+                                    <option value="AZUL" {{ old('house') == 'AZUL' ? 'selected' : '' }}>AZUL</option>
+                                    <option value="CAHEL" {{ old('house') == 'CAHEL' ? 'selected' : '' }}>CAHEL</option>
+                                    <option value="VIERRDY" {{ old('house') == 'VIERRDY' ? 'selected' : '' }}>VIERRDY</option>
+                                    <option value="GIALLIO" {{ old('house') == 'GIALLIO' ? 'selected' : '' }}>GIALLIO</option>
+                                </select>
+                                <small class="form-text text-muted">Choose your house to see House Lord/Lady candidates.</small>
                             </div>
-                        @else
+                        @endif
                             @foreach($position->candidates as $candidate)
                                 @php $candidateHouse = strtolower(trim($candidate->house ?? '')); $candidateCourse = strtolower(trim($candidate->course ?? '')); @endphp
                                 @if(

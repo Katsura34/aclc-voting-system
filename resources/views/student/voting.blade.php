@@ -42,15 +42,15 @@
         }
 
         .candidate-card {
-            width: 320px; /* wider for clearer visibility */
+            width: 498px; /* requested wider card */
             display: flex;
             flex-direction: column;
             align-items: center;
             text-align: center;
             padding: 1rem;
-            justify-content: space-between;
+            justify-content: center; /* center content vertically */
             box-sizing: border-box;
-            min-height: 435px; /* reduced height by 5px from previous */
+            min-height: 435px;
             background: #fff;
             border-radius: 10px;
             border: 1px solid rgba(0,0,0,0.06);
@@ -58,8 +58,8 @@
         }
 
         .candidate-photo {
-            width: 220px;
-            height: 220px;
+            width: 360px;
+            height: 360px;
             border-radius: 50%;
             overflow: hidden;
             display: flex;

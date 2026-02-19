@@ -18,6 +18,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            cursor: pointer; /* make entire position card appear clickable */
         }
 
         .position-title {
@@ -556,6 +557,21 @@
                 card.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 card.classList.add('highlighted');
                 setTimeout(() => { card.classList.remove('highlighted'); }, 1800);
+            });
+        });
+
+        // Make clicking anywhere on the position-card (except candidate elements) scroll to and highlight it
+        document.querySelectorAll('.position-card').forEach(card => {
+            card.addEventListener('click', function(e) {
+                // If the click originated from a candidate-card or any interactive element, ignore
+                if (e.target.closest('.candidate-card') || e.target.closest('input') || e.target.closest('.hidden-inputs') || e.target.closest('button') || e.target.closest('a')) {
+                    return;
+                }
+
+                // Otherwise, scroll to this position and highlight
+                this.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                this.classList.add('highlighted');
+                setTimeout(() => { this.classList.remove('highlighted'); }, 1800);
             });
         });
         

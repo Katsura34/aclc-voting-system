@@ -201,7 +201,6 @@
                                     </label>
                                 @endif
                             @endforeach
-                        @endif
                     </div>
                 </div>
             @endforeach

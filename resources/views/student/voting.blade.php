@@ -389,6 +389,60 @@
             return DEFAULT_PARTY_TEXT;
         }
 
+            // Handle house selection save (AJAX)
+            (function() {
+                const houseSelect = document.getElementById('userHouseSelect');
+                const confirmBtn = document.getElementById('confirmHouseBtn');
+                const feedbackEl = document.getElementById('houseSelectFeedback');
+                const setHouseUrl = "{{ route('voting.set-house') }}";
+
+                function showHouseFeedback(html, isError = false) {
+                    if (!feedbackEl) return;
+                    feedbackEl.innerHTML = html;
+                    feedbackEl.className = isError ? 'text-danger' : 'text-success';
+                    if (isError) setTimeout(() => { if (feedbackEl) feedbackEl.innerHTML = ''; }, 4000);
+                }
+
+                if (confirmBtn && houseSelect) {
+                    confirmBtn.addEventListener('click', async function() {
+                        const house = houseSelect.value || '';
+                        if (!house) {
+                            showHouseFeedback('<i class="bi bi-exclamation-circle"></i> Please select a house.', true);
+                            return;
+                        }
+
+                        confirmBtn.disabled = true;
+                        const originalText = confirmBtn.innerHTML;
+                        confirmBtn.innerHTML = 'Saving...';
+
+                        try {
+                            const res = await fetch(setHouseUrl, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                                },
+                                body: JSON.stringify({ house })
+                            });
+
+                            const json = await res.json().catch(() => ({}));
+                            if (res.ok && json.success) {
+                                // reload so server-side user.house is used when rendering candidates
+                                location.reload();
+                                return;
+                            }
+
+                            showHouseFeedback('<i class="bi bi-x-circle"></i> ' + (json.message || 'Unable to save house.'), true);
+                        } catch (err) {
+                            showHouseFeedback('<i class="bi bi-x-circle"></i> Network error. Please try again.', true);
+                        } finally {
+                            confirmBtn.disabled = false;
+                            confirmBtn.innerHTML = originalText;
+                        }
+                    });
+                }
+            })();
+
         // Show inline error near a candidate card
         function showInlineError(cardEl, message) {
             // remove existing small alert in this card

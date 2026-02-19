@@ -548,20 +548,14 @@
             }, 4000);
         }
         
-        // Scroll-to-position on header click or keyboard activation
-        document.querySelectorAll('.position-header').forEach(header => {
-            header.addEventListener('click', function() {
+        // Scroll-to-position on title click
+        document.querySelectorAll('.position-title').forEach(title => {
+            title.addEventListener('click', function() {
                 const card = this.closest('.position-card');
                 if (!card) return;
                 card.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 card.classList.add('highlighted');
                 setTimeout(() => { card.classList.remove('highlighted'); }, 1800);
-            });
-            header.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    this.click();
-                }
             });
         });
         

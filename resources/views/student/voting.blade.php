@@ -119,7 +119,7 @@
                         @if($isHousePosition && empty($user->house))
                             <div class="alert alert-warning w-100">
                                 <i class="bi bi-exclamation-circle"></i>
-                                You need to ask the admin because you don't have a house assigned.
+                                You have no assigned house. Please contact the admin for assistance.
                             </div>
                         @else
                             @foreach($position->candidates as $candidate)

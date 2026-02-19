@@ -12,6 +12,31 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"> --}}
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     
+    <style>
+        /* Center candidate cards inside each position */
+        .candidates-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .candidate-card {
+            width: 220px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding: 0.75rem;
+        }
+
+        /* Make cards responsive on narrow screens */
+        @media (max-width: 576px) {
+            .candidate-card { width: 100%; }
+        }
+    </style>
+
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
 
 </head>

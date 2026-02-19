@@ -26,6 +26,11 @@
             font-weight: 700;
         }
 
+        /* Make the title look clickable when hovered */
+        .position-title {
+            cursor: pointer;
+        }
+
         .position-info {
             width: 100%;
             text-align: center;
@@ -84,6 +89,11 @@
         /* Make cards responsive on narrow screens */
         @media (max-width: 576px) {
             .candidate-card { width: 100%; }
+        }
+        /* Highlight effect when scrolling to a position */
+        .position-card.highlighted {
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.08), 0 6px 14px rgba(16,24,40,0.06);
+            transition: box-shadow 250ms ease-in-out;
         }
     </style>
 
@@ -537,6 +547,17 @@
                 if (div && div.parentNode) div.remove();
             }, 4000);
         }
+        
+        // Scroll-to-position on title click
+        document.querySelectorAll('.position-title').forEach(title => {
+            title.addEventListener('click', function() {
+                const card = this.closest('.position-card');
+                if (!card) return;
+                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                card.classList.add('highlighted');
+                setTimeout(() => { card.classList.remove('highlighted'); }, 1800);
+            });
+        });
         
         document.getElementById('votingForm').addEventListener('submit', function(e) {
             e.preventDefault();

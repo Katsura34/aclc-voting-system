@@ -14,12 +14,31 @@
     
     <style>
         /* Center candidate cards inside each position */
+        .position-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .position-title {
+            width: 100%;
+            text-align: center;
+            font-weight: 700;
+        }
+
+        .position-info {
+            width: 100%;
+            text-align: center;
+            margin-bottom: 0.5rem;
+        }
+
         .candidates-grid {
             display: flex;
             flex-wrap: wrap;
             gap: 1rem;
             justify-content: center;
             align-items: flex-start;
+            margin-top: 0.5rem;
         }
 
         .candidate-card {

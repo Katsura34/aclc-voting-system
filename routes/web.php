@@ -10,7 +10,6 @@ use App\Http\Controllers\Admin\PositionController;
 use App\Http\Controllers\Admin\CandidateController;
 use App\Http\Controllers\Admin\ResultController;
 use App\Http\Controllers\Admin\UserController;
-use App\Http\Controllers\Admin\PulseController;
 use App\Http\Controllers\Student\VotingController;
 
 Route::get('/', function () {
@@ -38,7 +37,6 @@ Route::middleware(['auth'])->group(function () {
 // Admin Routes
 Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
-    Route::get('/pulse', [PulseController::class, 'index'])->name('admin.pulse');
     
     // Election Management
     Route::resource('elections', ElectionController::class)->names([

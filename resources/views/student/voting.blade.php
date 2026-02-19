@@ -340,15 +340,23 @@
             }
         });
 
-        // Show review modal before submit
-        const reviewModal = new bootstrap.Modal(document.getElementById('reviewModal'));
-        
-        // Helper function to escape HTML to prevent XSS
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
+        // Run after DOM is ready so bootstrap (Vite module) is available
+        document.addEventListener('DOMContentLoaded', function() {
+            // Lazily create the Bootstrap modal instance (handles delayed module load)
+            let reviewModal = null;
+            function getReviewModal() {
+                if (reviewModal) return reviewModal;
+                if (!window.bootstrap || !document.getElementById('reviewModal')) return null;
+                reviewModal = new window.bootstrap.Modal(document.getElementById('reviewModal'));
+                return reviewModal;
+            }
+
+            // Helper function to escape HTML to prevent XSS
+            function escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
         
         // Helper function to validate and sanitize color values
         function sanitizeColor(color) {
@@ -511,14 +519,25 @@
             
             // Populate and show the review modal
             reviewContent.innerHTML = reviewHTML;
-            reviewModal.show();
+            const m = getReviewModal();
+            if (m) {
+                m.show();
+            } else {
+                // Fallback: focus review content so user sees it
+                reviewContent.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                console.warn('Bootstrap modal not available; ensure app.js is loaded.');
+            }
         });
-
-        // Confirm submit button
-        document.getElementById('confirmSubmitBtn').addEventListener('click', function() {
-            reviewModal.hide();
-            // Submit the form
-            document.getElementById('votingForm').submit();
+            // Confirm submit button
+            const confirmBtn = document.getElementById('confirmSubmitBtn');
+            if (confirmBtn) {
+                confirmBtn.addEventListener('click', function() {
+                    const m2 = getReviewModal();
+                    if (m2) m2.hide();
+                    // Submit the form
+                    document.getElementById('votingForm').submit();
+                });
+            }
         });
     </script>
 </body>

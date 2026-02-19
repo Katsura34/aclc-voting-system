@@ -48,6 +48,29 @@
             align-items: center;
             text-align: center;
             padding: 0.75rem;
+            justify-content: space-between;
+            box-sizing: border-box;
+            min-height: 380px; /* equalize card heights */
+            background: #fff;
+            border-radius: 8px;
+        }
+
+        .candidate-photo {
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .candidate-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
         }
 
         /* Make cards responsive on narrow screens */

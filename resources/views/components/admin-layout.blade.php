@@ -200,6 +200,44 @@
     <!-- Sidebar Component -->
     <x-admin-sidebar />
 
+    {{-- Top-right admin-only link (not in sidebar) --}}
+    @if(auth()->check() && auth()->user()->user_type === 'admin')
+    <div class="admin-topbar">
+        <a href="{{ route('admin.pulse') }}" target="_blank" rel="noopener" class="pulse-link">
+            <i class="bi bi-lightning-charge"></i>
+            Laravel Pulse
+        </a>
+    </div>
+    @endif
+
+    <style>
+        .admin-topbar {
+            position: fixed;
+            top: 12px;
+            right: 20px;
+            z-index: 1100;
+            display: flex;
+            align-items: center;
+        }
+
+        .pulse-link {
+            background: rgba(255,255,255,0.95);
+            padding: 8px 12px;
+            border-radius: 8px;
+            color: #003366;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        }
+
+        .pulse-link:hover {
+            background: #f0f4f8;
+        }
+    </style>
+
     <!-- Main Content -->
     <div class="main-content">
         {{ $slot }}

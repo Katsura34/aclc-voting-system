@@ -35,10 +35,7 @@
             width: 100%;
             text-align: center;
             margin-bottom: 0.5rem;
-            }
         }
-            /* Make the entire header clickable */
-            .position-header { cursor: pointer; }
 
         .candidates-grid {
             display: flex;
@@ -164,19 +161,17 @@
                 @endphp
                 <div class="position-card" data-max-winners="{{ $posMaxForStudent }}">
                     @php $posNameLower = strtolower(trim($position->name)); @endphp
-                    <div class="position-header" role="button" tabindex="0">
-                        <div class="position-title">
-                            <i class="bi bi-award"></i>
-                            {{ (strpos($posNameLower, 'house lord') !== false) ? 'House Lord/Lady' : $position->name }}
-                        </div>
-                        <div class="position-info">
-                            @if($posMaxForStudent > 1)
-                                Choose up to {{ $posMaxForStudent }} candidate(s)
-                            @else
-                                Choose one candidate
-                            @endif
-                            <span class="text-danger">*</span>
-                        </div>
+                    <div class="position-title">
+                        <i class="bi bi-award"></i>
+                        {{ (strpos($posNameLower, 'house lord') !== false) ? 'House Lord/Lady' : $position->name }}
+                    </div>
+                    <div class="position-info">
+                        @if($posMaxForStudent > 1)
+                            Choose up to {{ $posMaxForStudent }} candidate(s)
+                        @else
+                            Choose one candidate
+                        @endif
+                        <span class="text-danger">*</span>
                     </div>
 
                     @error("position_{$position->id}")
@@ -553,14 +548,20 @@
             }, 4000);
         }
         
-        // Scroll-to-position on title click
-        document.querySelectorAll('.position-title').forEach(title => {
-            title.addEventListener('click', function() {
+        // Scroll-to-position on header click or keyboard activation
+        document.querySelectorAll('.position-header').forEach(header => {
+            header.addEventListener('click', function() {
                 const card = this.closest('.position-card');
                 if (!card) return;
                 card.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 card.classList.add('highlighted');
                 setTimeout(() => { card.classList.remove('highlighted'); }, 1800);
+            });
+            header.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    this.click();
+                }
             });
         });
         

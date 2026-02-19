@@ -35,7 +35,10 @@
             width: 100%;
             text-align: center;
             margin-bottom: 0.5rem;
+            }
         }
+            /* Make the entire header clickable */
+            .position-header { cursor: pointer; }
 
         .candidates-grid {
             display: flex;
@@ -161,17 +164,19 @@
                 @endphp
                 <div class="position-card" data-max-winners="{{ $posMaxForStudent }}">
                     @php $posNameLower = strtolower(trim($position->name)); @endphp
-                    <div class="position-title">
-                        <i class="bi bi-award"></i>
-                        {{ (strpos($posNameLower, 'house lord') !== false) ? 'House Lord/Lady' : $position->name }}
-                    </div>
-                    <div class="position-info">
-                        @if($posMaxForStudent > 1)
-                            Choose up to {{ $posMaxForStudent }} candidate(s)
-                        @else
-                            Choose one candidate
-                        @endif
-                        <span class="text-danger">*</span>
+                    <div class="position-header" role="button" tabindex="0">
+                        <div class="position-title">
+                            <i class="bi bi-award"></i>
+                            {{ (strpos($posNameLower, 'house lord') !== false) ? 'House Lord/Lady' : $position->name }}
+                        </div>
+                        <div class="position-info">
+                            @if($posMaxForStudent > 1)
+                                Choose up to {{ $posMaxForStudent }} candidate(s)
+                            @else
+                                Choose one candidate
+                            @endif
+                            <span class="text-danger">*</span>
+                        </div>
                     </div>
 
                     @error("position_{$position->id}")

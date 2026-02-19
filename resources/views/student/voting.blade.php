@@ -376,8 +376,14 @@
 
                         const isSelected = values.includes(candidateId);
 
-                        // Count STEM selected
-                        const stemSelected = Array.from(posContainer.querySelectorAll('.candidate-card.selected')).filter(c => c.dataset.isStem == '1').length;
+                        // More reliable STEM count: derive from hidden inputs (fallback to .selected cards)
+                        let stemSelected = values.reduce((count, id) => {
+                            const c = posContainer.querySelector(`.candidate-card[data-candidate-id="${id}"]`);
+                            return count + ((c && c.dataset.isStem == '1') ? 1 : 0);
+                        }, 0);
+                        if (stemSelected === 0) {
+                            stemSelected = Array.from(posContainer.querySelectorAll('.candidate-card.selected')).filter(c => c.dataset.isStem == '1').length;
+                        }
                         const isStem = this.dataset.isStem == '1';
 
                         if (!isSelected) {

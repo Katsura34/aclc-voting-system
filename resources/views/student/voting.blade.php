@@ -117,7 +117,10 @@
                             $studentStrand = strtolower(trim($user->strand ?? ''));
                         @endphp
                         @if($isHousePosition && empty($user->house))
-                           
+                           <div class="alert alert-warning w-100">
+                                <i class="bi bi-exclamation-circle"></i>
+                                You have no assigned house. Please contact the admin for assistance.
+                            </div>
                             {{-- <div class="house-select-wrapper w-100 mb-3">
                                 <label for="userHouseSelect" class="form-label"><i class="bi bi-house-door"></i> Select your house</label>
                                 <select name="house" id="userHouseSelect" class="form-select">

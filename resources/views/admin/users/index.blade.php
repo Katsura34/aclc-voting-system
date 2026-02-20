@@ -177,7 +177,7 @@
                                                 </form>
                                             @endif
                                             
-                                            <form action="{{ route('admin.users.destroy', $user) }}" 
+                                            {{-- <form action="{{ route('admin.users.destroy', $user) }}" 
                                                   method="POST" 
                                                   class="d-inline"
                                                   onsubmit="return confirm('Are you sure you want to delete this user?')">
@@ -189,7 +189,7 @@
                                                         {{ $user->id === auth()->user()->id ? 'disabled' : '' }}>
                                                     <i class="bi bi-trash"></i>
                                                 </button>
-                                            </form>
+                                            </form> --}}
                                         </div>
                                     </td>
                                 </tr>

@@ -45,9 +45,9 @@
                 {{-- <a href="{{ route('admin.users.download-template') }}" class="btn btn-info">
                     <i class="bi bi-download"></i> Download Template
                 </a> --}}
-                <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#resetAllVotesModal">
+                {{-- <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#resetAllVotesModal">
                     <i class="bi bi-arrow-counterclockwise"></i> Reset All Votes
-                </button>
+                </button> --}}
                 <a href="{{ route('admin.users.create') }}" class="btn btn-primary">
                     <i class="bi bi-plus-circle"></i> Add New Student
                 </a>

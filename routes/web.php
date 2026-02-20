@@ -77,6 +77,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
         'update' => 'admin.positions.update',
         'destroy' => 'admin.positions.destroy',
     ]);
+
     
     // Candidate Management
     Route::get('candidates/download-template', [CandidateController::class, 'downloadTemplate'])

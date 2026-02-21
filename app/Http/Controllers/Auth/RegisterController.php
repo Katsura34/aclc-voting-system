@@ -1,6 +1,8 @@
 
 <?php
 
+namespace App\Http\Controllers\Auth;
+
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
@@ -9,7 +11,7 @@ use Illuminate\Support\Facades\Validator;
 
 
 
-namespace App\Http\Controllers\Auth;
+
 
 
 class RegisterController extends Controller
@@ -45,8 +47,7 @@ class RegisterController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-        // Optionally log the user in after registration
-        auth()->login($user);
+        
 
         return redirect()->route('home')->with('success', 'Registration successful!');
     }

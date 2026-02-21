@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Log;
 
 class LoginController extends Controller
 {
@@ -48,7 +49,7 @@ class LoginController extends Controller
                     ->where('id', '!=', $currentSessionId)
                     ->delete();
 
-                \Log::info('User logged in (previous sessions invalidated)', [
+                Log::info('User logged in (previous sessions invalidated)', [
                     'user_id' => $user->id,
                     'usn' => $user->usn
                 ]);
@@ -67,7 +68,7 @@ class LoginController extends Controller
         } catch (ValidationException $e) {
             throw $e;
         } catch (\Exception $e) {
-            \Log::error('Login error: ' . $e->getMessage(), [
+            Log::error('Login error: ' . $e->getMessage(), [
                 'usn' => $request->usn,
                 'trace' => $e->getTraceAsString()
             ]);

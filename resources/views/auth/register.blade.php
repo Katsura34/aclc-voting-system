@@ -1,6 +1,14 @@
 @extends('layouts.app')
 
 @section('content')
+<div class="mb-3">
+    <label for="school_name" class="form-label">{{ __('School Name') }}</label>
+    <input id="school_name" type="text" class="form-control @error('school_name') is-invalid @enderror"
+           name="school_name" value="{{ old('school_name') }}" required>
+    @error('school_name')
+        <span class="invalid-feedback">{{ $message }}</span>
+    @enderror
+</div>
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-md-6">

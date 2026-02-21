@@ -51,9 +51,7 @@
                     <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#exportModal">
                         <i class="bi bi-box-arrow-up"></i> Export CSV
                     </button>
-                    <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#exportModal">
-                        <i class="bi bi-upload"></i> Export CSV
-                    </button>
+                
                 {{-- <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#resetAllVotesModal">
                     <i class="bi bi-arrow-counterclockwise"></i> Reset All Votes
                 </button> --}}

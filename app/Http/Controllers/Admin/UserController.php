@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Log;
 
-class UserController extends Controller
+class UserController extends Controller{
     /**
      * Export users to CSV with voting status filter.
      */
@@ -53,7 +53,7 @@ class UserController extends Controller
 
         return response()->stream($callback, 200, $headers);
     }
-{
+
     /**
      * Display a listing of users.
      */

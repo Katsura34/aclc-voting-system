@@ -5,7 +5,7 @@
     <title>Register</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="">
+<body class="bg-black-5">
    
 </body>
 </html>

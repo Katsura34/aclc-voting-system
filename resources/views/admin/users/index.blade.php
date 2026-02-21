@@ -48,7 +48,7 @@
                     {{-- <a href="{{ route('admin.users.download-template') }}" class="btn btn-info">
                         <i class="bi bi-download"></i> Download Template
                     </a> --}}
-                    <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#importModal">
+                    <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#exportModal">
                         <i class="bi bi-upload"></i> Export CSV
                     </button>
                 {{-- <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#resetAllVotesModal">

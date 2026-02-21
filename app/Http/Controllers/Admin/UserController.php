@@ -28,7 +28,7 @@ class UserController extends Controller{
 
         $headers = [
             'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="students_export.csv"',
+            'Content-Disposition' => 'attachment; filename="voted_students.csv"',
         ];
 
         $callback = function() use ($users) {

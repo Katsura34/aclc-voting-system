@@ -1,7 +1,7 @@
 @import 'bootstrap/dist/css/bootstrap.min.css';
 @import 'bootstrap-icons/font/bootstrap-icons.css';
-/* @import 'tailwindcss'; */
-
+/* @import 'tailwindcss'; */@import 'tailwindcss/base';
+@import 'tailwindcss/components';
 :root {
     --aclc-blue: #003366;
     --aclc-light-blue: #00509E;

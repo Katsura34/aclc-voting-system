@@ -11,6 +11,48 @@ use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
+    /**
+     * Export users to CSV with voting status filter.
+     */
+    public function export(Request $request)
+    {
+        $query = User::query();
+        $query->where('user_type', 'student');
+
+        // Filter by voting status
+        if ($request->filled('has_voted')) {
+            $query->where('has_voted', $request->has_voted === 'yes' ? true : false);
+        }
+
+        $users = $query->orderBy('usn')->get();
+
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="students_export.csv"',
+        ];
+
+        $callback = function() use ($users) {
+            $file = fopen('php://output', 'w');
+            // CSV header
+            fputcsv($file, ['usn', 'lastname', 'firstname', 'strand', 'year', 'house', 'gender', 'email', 'has_voted']);
+            foreach ($users as $user) {
+                fputcsv($file, [
+                    $user->usn,
+                    $user->lastname,
+                    $user->firstname,
+                    $user->strand,
+                    $user->year,
+                    $user->house,
+                    $user->gender,
+                    $user->email,
+                    $user->has_voted ? 'yes' : 'no',
+                ]);
+            }
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
 {
     /**
      * Display a listing of users.

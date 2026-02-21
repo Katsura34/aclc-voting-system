@@ -119,6 +119,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
         ->name('admin.users.reset-vote');
     Route::post('users/reset-all-votes', [UserController::class, 'resetAllVotes'])
         ->name('admin.users.reset-all-votes');
+        Route::get('users/export', [UserController::class, 'export'])
+            ->name('admin.users.export');
     Route::resource('users', UserController::class)->names([
         'index' => 'admin.users.index',
         'create' => 'admin.users.create',

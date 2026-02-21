@@ -361,78 +361,65 @@
         const ALERT_DISMISS_TIMEOUT = 5000;
         
         // Handle candidate card selection (supports radio and checkbox)
-        document.querySelectorAll('.candidate-card').forEach(card => {
+            document.querySelectorAll('.candidate-card').forEach(card => {
+                const checkbox = card.querySelector('input[type="checkbox"]');
+                const radio = card.querySelector('input[type="radio"]');
                 card.addEventListener('click', function(e) {
                     const position = this.dataset.position;
                     const posContainer = this.closest('.position-card');
                     if (!posContainer) return;
-
                     const posMax = parseInt(posContainer.dataset.maxWinners || '1', 10);
                     const isMultiple = posMax > 1;
-
                     const candidateId = this.dataset.candidateId;
                     if (!candidateId) return;
 
                     if (isMultiple) {
-                        // Manage hidden inputs under the position container
-                        const hiddenContainer = posContainer.querySelector('.hidden-inputs');
+                        // Only toggle if not clicking the checkbox directly
+                        if (e.target === checkbox) return;
+                        checkbox.checked = !checkbox.checked;
+                        checkbox.dispatchEvent(new Event('change'));
+                    } else {
+                        // Only toggle if not clicking the radio directly
+                        if (e.target === radio) return;
+                        radio.checked = true;
+                        radio.dispatchEvent(new Event('change'));
+                    }
+                });
+                if (checkbox) {
+                    checkbox.addEventListener('change', function(e) {
+                        const hiddenContainer = card.closest('.position-card').querySelector('.hidden-inputs');
                         if (!hiddenContainer) return;
-
                         const existing = Array.from(hiddenContainer.querySelectorAll('input[type="hidden"]'));
                         const values = existing.map(i => i.value);
-
                         const isSelected = values.includes(candidateId);
-
-                        // More reliable STEM count: derive from hidden inputs (fallback to .selected cards)
-                        let stemSelected = values.reduce((count, id) => {
-                            const c = posContainer.querySelector(`.candidate-card[data-candidate-id="${id}"]`);
-                            return count + ((c && c.dataset.isStem == '1') ? 1 : 0);
-                        }, 0);
-                        if (stemSelected === 0) {
-                            stemSelected = Array.from(posContainer.querySelectorAll('.candidate-card.selected')).filter(c => c.dataset.isStem == '1').length;
+                        // Enforce max
+                        if (checkbox.checked && values.length >= posMax) {
+                            checkbox.checked = false;
+                            showInlineError(card, `You may only choose up to ${posMax} candidate(s) for this position.`);
+                            return;
                         }
-                        const isStem = this.dataset.isStem == '1';
-
-                        if (!isSelected) {
-                            // Enforce max
-                            if (values.length >= posMax) {
-                                showInlineError(this, `You may only choose up to ${posMax} candidate(s) for this position.`);
-                                return;
-                            }
-                            // Enforce STEM cap when applicable (only affects senators; server also enforces)
-                            if (isStem && stemSelected >= 2) {
-                                showInlineError(this, `You may only choose up to 2 STEM candidate(s) for this position.`);
-                                return;
-                            }
-
+                        if (checkbox.checked && !isSelected) {
                             // Add hidden input
                             const input = document.createElement('input');
                             input.type = 'hidden';
                             input.name = `position_${position}[]`;
                             input.value = candidateId;
                             hiddenContainer.appendChild(input);
-
-                            this.classList.add('selected');
-                        } else {
+                            card.classList.add('selected');
+                        } else if (!checkbox.checked && isSelected) {
                             // Remove hidden input
                             const match = existing.find(i => i.value === candidateId);
                             if (match && match.parentNode) match.parentNode.removeChild(match);
-                            this.classList.remove('selected');
+                            card.classList.remove('selected');
                         }
-                    } else {
-                        // Single selection radio behavior
-                        // Unselect siblings
-                        posContainer.querySelectorAll('.candidate-card.selected').forEach(c => c.classList.remove('selected'));
-                        // Remove any existing radio input selection (radios are native inputs)
-                        const radios = posContainer.querySelectorAll('input[type="radio"]');
-                        radios.forEach(r => r.checked = false);
-
-                        // Find this label's radio and check it (if present)
-                        const radio = this.querySelector('input[type="radio"]');
-                        if (radio) radio.checked = true;
-                        this.classList.add('selected');
-                    }
-                });
+                    });
+                }
+                if (radio) {
+                    radio.addEventListener('change', function(e) {
+                        card.closest('.position-card').querySelectorAll('.candidate-card').forEach(c => c.classList.remove('selected'));
+                        card.classList.add('selected');
+                    });
+                }
             });
 
         // Initialize selected cards on page load (radios and hidden-input multi-selects)

@@ -40,7 +40,7 @@
             </div>
             <div class="btn-group">
                 <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#importModal">
-                    <i class="bi bi-upload"></i> Import CSV
+                    <i class="bi bi-download"></i> Import CSV
                 </button>
                 {{-- <a href="{{ route('admin.users.download-template') }}" class="btn btn-info">
                     <i class="bi bi-download"></i> Download Template

@@ -8,6 +8,9 @@
     @error('school_name')
         <span class="invalid-feedback">{{ $message }}</span>
     @enderror
+@error('school_name')
+    <span class="text-red-500 text-sm">{{ $message }}</span>
+@enderror
 </div>
 <div class="container">
     <div class="row justify-content-center">

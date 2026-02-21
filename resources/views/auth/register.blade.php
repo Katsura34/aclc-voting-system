@@ -5,7 +5,6 @@
     <title>User Registration</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    
 </head>
 <body class="bg-light">
     <div class="container">
@@ -22,14 +21,15 @@
                                 <input type="text" id="school_name" name="school_name" class="form-control" required autofocus placeholder="Enter your school name">
                             </div>
 
-                            <div class="mb-3">
-                                <label for="first_name" class="form-label">First Name</label>
-                                <input type="text" id="first_name" name="first_name" class="form-control" required placeholder="Enter your first name">
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="last_name" class="form-label">Last Name</label>
-                                <input type="text" id="last_name" name="last_name" class="form-control" required placeholder="Enter your last name">
+                            <div class="row mb-3">
+                                <div class="col">
+                                    <label for="first_name" class="form-label">First Name</label>
+                                    <input type="text" id="first_name" name="first_name" class="form-control" required placeholder="Enter your first name">
+                                </div>
+                                <div class="col">
+                                    <label for="last_name" class="form-label">Last Name</label>
+                                    <input type="text" id="last_name" name="last_name" class="form-control" required placeholder="Enter your last name">
+                                </div>
                             </div>
 
                             <div class="mb-3">
@@ -54,5 +54,6 @@
             </div>
         </div>
     </div>
+
 </body>
 </html>

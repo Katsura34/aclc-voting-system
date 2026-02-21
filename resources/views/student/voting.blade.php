@@ -239,14 +239,21 @@
                                         $isMultiple = (int)($posMaxForStudent ?? $position->max_winners) > 1;
                                     @endphp
                                     <label class="candidate-card" data-position="{{ $position->id }}" data-candidate-id="{{ $candidate->id }}" data-course="{{ $candidate->course }}" data-is-stem="{{ strtolower($candidate->course) === 'stem' ? 1 : 0 }}">
-                                        @if(!$isMultiple)
-                                            <input 
-                                                type="radio" 
-                                                name="position_{{ $position->id }}" 
-                                                value="{{ $candidate->id }}"
-                                                {{ old("position_{$position->id}") == $candidate->id ? 'checked' : '' }}
-                                            >
-                                        @endif
+                                            @if($isMultiple)
+                                                <input 
+                                                    type="checkbox" 
+                                                    class="multi-vote-checkbox"
+                                                    value="{{ $candidate->id }}"
+                                                    @if(is_array(old("position_{$position->id}")) && in_array($candidate->id, old("position_{$position->id}"))) checked @endif
+                                                >
+                                            @else
+                                                <input 
+                                                    type="radio" 
+                                                    name="position_{{ $position->id }}" 
+                                                    value="{{ $candidate->id }}"
+                                                    {{ old("position_{$position->id}") == $candidate->id ? 'checked' : '' }}
+                                                >
+                                            @endif
                                         <div class="check-indicator">
                                             <i class="bi bi-check-lg"></i>
                                         </div>

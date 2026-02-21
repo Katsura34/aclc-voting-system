@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\CandidateController;
 use App\Http\Controllers\Admin\ResultController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Student\VotingController;
+use App\Http\Controllers\Auth\RegisterController as regitser;
 
 Route::get('/', function () {
     return redirect('/login');
@@ -20,7 +21,7 @@ Route::get('/', function () {
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
-Route::
+Route::get('/register', [regitser::class, 'showRegistrationForm'])->name('register');
 
 // Protected Routes
 Route::middleware(['auth'])->group(function () {

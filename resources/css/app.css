@@ -2,7 +2,7 @@
 @import 'bootstrap/dist/css/bootstrap.min.css';
 @import 'bootstrap-icons/font/bootstrap-icons.css';
 
-@tailwind base;
+@import "tailwindcss/preflight";
 @tailwind components;
 @tailwind utilities;
   

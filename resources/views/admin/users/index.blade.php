@@ -42,9 +42,18 @@
                 <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#importModal">
                     <i class="bi bi-download"></i> Import CSV
                 </button>
-                <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#exportModal">
-                    <i class="bi bi-box-arrow-up"></i> Export
-                </button>
+                {{-- <a href="{{ route('admin.users.download-template') }}" class="btn btn-info">
+                    <i class="bi bi-download"></i> Download Template
+                </a> --}}
+                    {{-- <a href="{{ route('admin.users.download-template') }}" class="btn btn-info">
+                        <i class="bi bi-download"></i> Download Template
+                    </a> --}}
+                    <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#exportModal">
+                        <i class="bi bi-upload"></i> Export CSV
+                    </button>
+                {{-- <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#resetAllVotesModal">
+                    <i class="bi bi-arrow-counterclockwise"></i> Reset All Votes
+                </button> --}}
                 <a href="{{ route('admin.users.create') }}" class="btn btn-primary">
                     <i class="bi bi-plus-circle"></i> Add New Student
                 </a>
@@ -283,42 +292,6 @@
         </div>
     </div>
 
-
-    <!-- Export Modal -->
-    <div class="modal fade" id="exportModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header bg-warning text-dark">
-                    <h5 class="modal-title">
-                        <i class="bi bi-box-arrow-up"></i> Export Students
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <form action="{{ route('admin.users.export') }}" method="GET">
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label for="export_has_voted" class="form-label">Filter by Voting Status</label>
-                            <select class="form-select" id="export_has_voted" name="has_voted">
-                                <option value="">All Students</option>
-                                <option value="yes">Has Voted</option>
-                                <option value="no">Not Voted</option>
-                            </select>
-                        </div>
-                        <div class="alert alert-info">
-                            <i class="bi bi-info-circle"></i> Export will only include students based on the selected voting status.
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-warning">
-                            <i class="bi bi-box-arrow-up"></i> Export
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
     <!-- Loading Spinner Overlay with Numeric Progress -->
     <style>
 #import-loading-overlay {
@@ -332,56 +305,56 @@
     justify-content: center;
     flex-direction: column;
 }
-    </style>
-    <div id="import-loading-overlay">
-        <div style="text-align:center;">
-            <div class="spinner-border text-success" style="width:4rem;height:4rem;" role="status">
-                <span class="visually-hidden">Loading...</span>
-            </div>
-            <div class="mt-3 fw-bold text-success">Importing users, please wait...</div>
+</style>
+<div id="import-loading-overlay">
+    <div style="text-align:center;">
+        <div class="spinner-border text-success" style="width:4rem;height:4rem;" role="status">
+            <span class="visually-hidden">Loading...</span>
         </div>
+        <div class="mt-3 fw-bold text-success">Importing users, please wait...</div>
     </div>
+</div>
 
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        var importForm = document.querySelector('#importModal form');
-        var overlay = document.getElementById('import-loading-overlay');
-        if(importForm) {
-            importForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                overlay.style.display = 'flex';
-                // Remove progress number logic
-                var formData = new FormData(importForm);
-                var xhr = new XMLHttpRequest();
-                xhr.open('POST', importForm.action, true);
-                xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-                xhr.onload = function() {
-                    overlay.style.display = 'none';
-                    if (xhr.status === 200) {
-                        try {
-                            var response = JSON.parse(xhr.responseText);
-                            if(response.success) {
-                                window.location.reload();
-                            } else if(response.error) {
-                                // Do nothing, rely on server-side error message
-                            } else {
-                                window.location.reload();
-                            }
-                        } catch (err) {
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var importForm = document.querySelector('#importModal form');
+    var overlay = document.getElementById('import-loading-overlay');
+    if(importForm) {
+        importForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            overlay.style.display = 'flex';
+            // Remove progress number logic
+            var formData = new FormData(importForm);
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', importForm.action, true);
+            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+            xhr.onload = function() {
+                overlay.style.display = 'none';
+                if (xhr.status === 200) {
+                    try {
+                        var response = JSON.parse(xhr.responseText);
+                        if(response.success) {
+                            window.location.reload();
+                        } else if(response.error) {
+                            // Do nothing, rely on server-side error message
+                        } else {
                             window.location.reload();
                         }
-                    } else {
-                        // Do nothing, rely on server-side error message
+                    } catch (err) {
+                        window.location.reload();
                     }
-                };
-                xhr.onerror = function() {
-                    overlay.style.display = 'none';
+                } else {
                     // Do nothing, rely on server-side error message
-                };
-                xhr.send(formData);
-            });
-        }
-    });
-    </script>
+                }
+            };
+            xhr.onerror = function() {
+                overlay.style.display = 'none';
+                // Do nothing, rely on server-side error message
+            };
+            xhr.send(formData);
+        });
+    }
+});
+</script>
 
 </x-admin-layout>

@@ -16,10 +16,6 @@
     <div class="login-container">
         <!-- Left Panel with Logos -->
         <div class="left-panel">
-            <div class="sparkles sparkle-1">✦</div>
-            <div class="sparkles sparkle-2">✦</div>
-            <div class="sparkles sparkle-3">✦</div>
-            <div class="sparkles sparkle-4">✦</div>
 
             <div class="logo-container">
                 <div class="main-logo">
@@ -68,7 +64,7 @@
                         name="usn" 
                         class="form-control @error('usn') is-invalid @enderror" 
                         value="{{ old('usn') }}" 
-                        placeholder="Username (USN)"
+                        placeholder="Email Address"
                         autocomplete="username"
                         required 
                         autofocus

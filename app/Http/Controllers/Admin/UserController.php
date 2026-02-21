@@ -34,7 +34,7 @@ class UserController extends Controller{
         $callback = function() use ($users) {
             $file = fopen('php://output', 'w');
             // CSV header
-            fputcsv($file, ['usn', 'lastname', 'firstname', 'strand', 'year', 'house', 'gender', 'email', 'has_voted']);
+            fputcsv($file, ['usn', 'lastname', 'firstname', 'strand', 'year', 'house', 'gender', 'has_voted']);
             foreach ($users as $user) {
                 fputcsv($file, [
                     $user->usn,
@@ -44,7 +44,6 @@ class UserController extends Controller{
                     $user->year,
                     $user->house,
                     $user->gender,
-                    $user->email,
                     $user->has_voted ? 'yes' : 'no',
                 ]);
             }

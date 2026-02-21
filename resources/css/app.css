@@ -3,8 +3,6 @@
 @import 'bootstrap-icons/font/bootstrap-icons.css';
 
 @import "tailwindcss/preflight";
-@tailwind components;
-@tailwind utilities;
   
 :root {
     --aclc-blue: #003366;

@@ -48,6 +48,9 @@
                     {{-- <a href="{{ route('admin.users.download-template') }}" class="btn btn-info">
                         <i class="bi bi-download"></i> Download Template
                     </a> --}}
+                    <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#exportModal">
+                        <i class="bi bi-box-arrow-up"></i> Export CSV
+                    </button>
                     <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#exportModal">
                         <i class="bi bi-upload"></i> Export CSV
                     </button>
@@ -291,6 +294,46 @@
             </div>
         </div>
     </div>
+
+        <!-- Export CSV Modal -->
+        <div class="modal fade" id="exportModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header bg-warning text-dark">
+                        <h5 class="modal-title">
+                            <i class="bi bi-box-arrow-up"></i> Export Users to CSV
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <form action="{{ route('admin.users.export') }}" method="GET">
+                        <div class="modal-body">
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle"></i>
+                                <strong>Export Format:</strong> usn, lastname, firstname, strand, year, house, gender, email, has_voted
+                            </div>
+                            <div class="mb-3">
+                                <label for="export_has_voted" class="form-label">Filter by Voting Status</label>
+                                <select class="form-select" id="export_has_voted" name="has_voted">
+                                    <option value="">All Students</option>
+                                    <option value="yes">Has Voted</option>
+                                    <option value="no">Not Voted</option>
+                                </select>
+                            </div>
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                Only students matching the selected voting status will be exported.
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-warning">
+                                <i class="bi bi-box-arrow-up"></i> Export CSV
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
 
     <!-- Loading Spinner Overlay with Numeric Progress -->
     <style>

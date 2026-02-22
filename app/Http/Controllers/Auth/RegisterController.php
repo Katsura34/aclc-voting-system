@@ -23,10 +23,13 @@ class RegisterController extends Controller
      */
     public function register(Request $request)
     {
+
         $validator = Validator::make($request->all(), [
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
+            'school_name' => 'required|string|max:255',
+            'firstname'   => 'required|string|max:100',
+            'lastname'    => 'required|string|max:100',
+            'email'       => 'required|string|email|max:255|unique:users',
+              'password'    => 'required|string|confirmed',
         ]);
 
         if ($validator->fails()) {
@@ -35,12 +38,24 @@ class RegisterController extends Controller
                 ->withInput();
         }
 
+
         $user = User::create([
-            'name'     => $request->name,
-            'email'    => $request->email,
-            'password' => Hash::make($request->password),
+              'school_name' => $request->school_name,
+              'firstname'   => $request->firstname,
+              'lastname'    => $request->lastname,
+              'name'        => $request->firstname . ' ' . $request->lastname,
+              'email'       => $request->email,
+              'password'    => Hash::make($request->password),
         ]);
 
-        return redirect()->route('home')->with('success', 'Registration successful!');
+        // Store credentials in session for display
+        $credentials = [
+            'school_name' => $user->school_name,
+            'firstname' => $user->firstname,
+            'lastname' => $user->lastname,
+            'email' => $user->email,
+            'password' => $request->password, // plain password for display only
+        ];
+        return redirect()->route('register')->with('show_credentials', $credentials);
     }
 }

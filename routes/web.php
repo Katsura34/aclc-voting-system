@@ -24,6 +24,7 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
 // Registration Routes
 Route::get('/register', [regitser::class, 'showRegistrationForm'])->name('register');
+Route::post('/register', [regitser::class, 'register']);
 
 // Protected Routes
 Route::middleware(['auth'])->group(function () {

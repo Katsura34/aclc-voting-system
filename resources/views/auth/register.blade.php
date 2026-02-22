@@ -27,9 +27,7 @@
     </style>
 </head>
 <body class="bg-light" id="mainBody">
-    <button class="btn btn-secondary btn-dark-toggle" id="themeToggleBtn" type="button">
-        Toggle Dark Mode
-    </button>
+
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-md-6">

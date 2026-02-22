@@ -28,7 +28,11 @@
 </head>
 <body class="bg-light" id="mainBody">
  <dev class="scroller">
-     .scorller-inner
+     <dev class="scroller-inner">
+         <dev class="scroller-inner">    name    </dev>  
+         <dev class="scroller-inner">    name    </dev>  
+         <dev class="scroller-inner">    name    </dev>  
+    </dev>
  </dev>
 
     <div class="container">
